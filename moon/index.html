@@ -1,10 +1,22 @@
 <!DOCTYPE html>
-<html lang="el">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Moon &amp; Sky</title> <!-- SUITE NAME prefix όταν επιλεγεί το όνομα -->
-<meta name="description" content="Η φάση της σελήνης και το χρώμα του ουρανού ανά ώρα. Ο πιο ήσυχος συνοδός σου. Χωρίς cookies, χωρίς tracking.">
+<title>Moon &amp; Sky — Soffitta</title>
+<meta name="description" content="The current moon phase and the color of the sky, hour by hour. Time-travel through days and years. Free, open source, no cookies, no tracking.">
+<link rel="canonical" href="https://soffitta.site/moon/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://soffitta.site/moon/">
+<meta property="og:title" content="Moon &amp; Sky — Soffitta">
+<meta property="og:description" content="The moon phase and the color of the sky — now, or any day you like.">
+<!-- TODO (αργότερα): og-cover.png 1200×630 στον φάκελο moon/ -->
+<meta property="og:image" content="https://soffitta.site/moon/og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0d1117">
+<link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d1117'/%3E%3Cpath d='M10 35L32 11L54 35' fill='none' stroke='%23e6ce9a' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='25' y='40' width='14' height='13' rx='3' fill='%23cfd8dc'/%3E%3C/svg%3E">
+<link rel="manifest" href="../manifest.webmanifest">
 <style>
   :root {
     --bg: #0d1117;
@@ -44,6 +56,46 @@
   header h1 { font-size: 1.2rem; font-weight: 800; }
   header h1 span { color: var(--accent); }
   header .clock { font-size: 0.9rem; color: var(--text-muted); font-variant-numeric: tabular-nums; letter-spacing: 0.05em; }
+
+  /* ===== ΕΡΓΑΛΕΙΑ (γλώσσα + εγκατάσταση) ===== */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .lang-switch {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .lang-switch button {
+    background: none;
+    border: none;
+    padding: 6px 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+    letter-spacing: 0.04em;
+  }
+
+  .lang-switch button.active {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  #installBtn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+  }
+  #installBtn:hover { border-color: var(--accent); }
 
   /* ===== ΟΥΡΑΝΟΣ ===== */
   #sky {
@@ -159,14 +211,24 @@
   }
 </style>
 </head>
+
 <body>
 
 <div id="sky"></div>
 <canvas id="stars"></canvas>
 
 <header>
-  <h1>🌙 Moon &amp; <span>Sky</span></h1>
-  <span class="clock" id="clock"></span>
+  <div>
+    <h1>🌙 Moon &amp; <span>Sky</span></h1>
+    <span class="clock" id="clock"></span>
+  </div>
+  <div class="toolbar">
+    <button id="installBtn" hidden data-en="⬇ Install app" data-el="⬇ Εγκατάσταση">⬇ Install app</button>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button id="langEn" class="active">EN</button>
+      <button id="langEl">ΕΛ</button>
+    </div>
+  </div>
 </header>
 
 <main>
@@ -181,32 +243,37 @@
 
   <div class="facts">
     <div class="fact">
-      <div class="k">Ηλικία σελήνης</div>
+      <div class="k" data-en="Moon age" data-el="Ηλικία σελήνης">Moon age</div>
       <div class="v" id="ageEl"></div>
     </div>
     <div class="fact">
-      <div class="k">Φωτεινότητα</div>
+      <div class="k" data-en="Illumination" data-el="Φωτεινότητα">Illumination</div>
       <div class="v" id="illumEl"></div>
     </div>
     <div class="fact">
-      <div class="k">Επόμενη πανσέληνος</div>
+      <div class="k" data-en="Next full moon" data-el="Επόμενη πανσέληνος">Next full moon</div>
       <div class="v" id="fullEl"></div>
     </div>
     <div class="fact">
-      <div class="k">Επόμενη νέα σελήνη</div>
+      <div class="k" data-en="Next new moon" data-el="Επόμενη νέα σελήνη">Next new moon</div>
       <div class="v" id="newEl"></div>
     </div>
   </div>
 
   <p style="font-size:0.72rem;color:var(--text-muted);">
-    <span class="kbd">Η</span> χρονο ταξίδευμα · <span class="kbd">now</span> επιστροφή στο τώρα
+    <span class="kbd">←</span> <span class="kbd">→</span>
+    <span data-en="time travel ·" data-el="χρονοταξίδευμα ·">time travel ·</span>
+    <span class="kbd">N</span>
+    <span data-en="back to now" data-el="επιστροφή στο τώρα">back to now</span>
   </p>
 </main>
 
 <footer>
-  Designed by <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
-  <a href="../">Όλα τα apps</a><br>
-  Χωρίς cookies · Χωρίς tracking · Open source · Υπολογισμός 100% τοπικός
+  <span data-en="Designed by" data-el="Σχεδιασμένο από τον">Designed by</span>
+  <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="../" data-en="All apps" data-el="Όλα τα apps">All apps</a><br>
+  <span data-en="No cookies · No tracking · Open source · Computed 100% locally"
+        data-el="Χωρίς cookies · Χωρίς tracking · Ανοιχτού κώδικα · Υπολογισμός 100% τοπικός">No cookies · No tracking · Open source · Computed 100% locally</span>
 </footer>
 
 <script>
@@ -214,7 +281,7 @@
 (function () {
 
   var SYNODIC = 29.530588853;                 // μέση συνοδική περίοδος (μέρες)
-  var KNOWN_NEW = Date.UTC(2000, 0, 6, 18, 14) / 86400000; // νέα σελήνη 6/1/2000 18:14 UTC (Julian-like)
+  var KNOWN_NEW = Date.UTC(2000, 0, 6, 18, 14) / 86400000; // νέα σελήνη 6/1/2000 18:14 UTC
 
   var skyEl = document.getElementById("sky");
   var starsCanvas = document.getElementById("stars");
@@ -228,12 +295,84 @@
   var illumEl = document.getElementById("illumEl");
   var fullEl = document.getElementById("fullEl");
   var newEl = document.getElementById("newEl");
+  var langEnBtn = document.getElementById("langEn");
+  var langElBtn = document.getElementById("langEl");
+  var installBtn = document.getElementById("installBtn");
 
-  var dayOffset = 0; // χρονοταξίδευμα (ημέρες από το τώρα)
+  // ===== i18n (κοινό μοτίβο σε όλη τη σουίτα) =====
+  var LANG_KEY = "soffitta.lang";
+
+  var T = {
+    title: {
+      en: "Moon & Sky — Soffitta",
+      el: "Σελήνη & Ουρανός — Soffitta"
+    },
+    metaDesc: {
+      en: "The current moon phase and the color of the sky, hour by hour. Time-travel through days and years. Free, open source, no cookies, no tracking.",
+      el: "Η φάση της σελήνης και το χρώμα του ουρανού ανά ώρα. Ο πιο ήσυχος συνοδός σου. Χωρίς cookies, χωρίς tracking."
+    },
+    days: { en: " days", el: " ημέρες" },
+    months: {
+      en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+      el: ["Ιαν", "Φεβ", "Μαρ", "Απρ", "Μαϊ", "Ιουν", "Ιουλ", "Αυγ", "Σεπ", "Οκτ", "Νοε", "Δεκ"]
+    }
+  };
+
+  var currentLang = detectLang();
+
+  function detectLang() {
+    try {
+      var saved = localStorage.getItem(LANG_KEY);
+      if (saved === "en" || saved === "el") return saved;
+    } catch (e) {}
+    var nav = (navigator.language || "en").slice(0, 2).toLowerCase();
+    return nav === "el" ? "el" : "en";
+  }
+
+  function applyStatic() {
+    document.documentElement.setAttribute("lang", currentLang);
+    document.title = T.title[currentLang];
+    var metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute("content", T.metaDesc[currentLang]);
+    var nodes = document.querySelectorAll("[data-en]");
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].textContent = currentLang === "el"
+        ? nodes[i].getAttribute("data-el")
+        : nodes[i].getAttribute("data-en");
+    }
+    langEnBtn.classList.toggle("active", currentLang === "en");
+    langElBtn.classList.toggle("active", currentLang === "el");
+    update(); // τα JS-rendered κείμενα (φάσεις, μήνες) σε ενεργή γλώσσα
+  }
+
+  function setLang(lang) {
+    currentLang = lang;
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    applyStatic();
+  }
+
+  langEnBtn.addEventListener("click", function () { setLang("en"); });
+  langElBtn.addEventListener("click", function () { setLang("el"); });
+
+  // ===== ΦΑΣΕΙΣ (δίγλωσσες — JS-rendered όπως οι παλέτες) =====
+    var PHASES = [
+    { upto: 0.017, name_en: "New Moon",         name_el: "Νέα Σελήνη",        sub_en: "The moon hides together with the sun.",    sub_el: "Το φεγγάρι κρύβεται μαζί με τον ήλιο." },
+    { upto: 0.236, name_en: "Waxing Crescent",   name_el: "Αύξων Αμφίκυρτος",  sub_en: "A thin sliver of light toward the west.",  sub_el: "Λεπτή λόγχη φωτός προς τη δύση." },
+    { upto: 0.264, name_en: "First Quarter",     name_el: "Πρώτο Τέταρτο",     sub_en: "Half disk, half way there.",                sub_el: "Μισός δίσκος, μισός δρόμος." },
+    { upto: 0.486, name_en: "Waxing Gibbous",    name_el: "Αύξων Λαμπρός",     sub_en: "Almost full — it grows every night.",       sub_el: "Σχεδόν πλήρες — μεγαλώνει κάθε βράδυ." },
+    { upto: 0.514, name_en: "Full Moon",         name_el: "Πανσέληνος",        sub_en: "The whole disk lit as bright as it gets.",  sub_el: "Ολόκληρος ο δίσκος φωτεινός όσο γίνεται." },
+    { upto: 0.736, name_en: "Waning Gibbous",    name_el: "Φθίνων Λαμπρός",    sub_en: "The light recedes little by little.",      sub_el: "Το φως αποσύρεται σιγά σιγά." },
+    { upto: 0.764, name_en: "Last Quarter",       name_el: "Τελευταίο Τέταρτο", sub_en: "The second half — the beginning of the end.", sub_el: "Το δεύτερο μισό — αρχή του τέλους." },
+    { upto: 0.983, name_en: "Waning Crescent",   name_el: "Φθίνων Αμφίκυρτος", sub_en: "A thin sliver before the new beginning.",  sub_el: "Λεπτή λόγχη πριν από το καινούργιο ξεκίνημα." },
+    { upto: 1.001, name_en: "New Moon",          name_el: "Νέα Σελήνη",        sub_en: "The moon hides together with the sun.",    sub_el: "Το φεγγάρι κρύβεται μαζί με τον ήλιο." }
+  ];
+
+  // ===== STATE =====
+  var dayOffset = 0;      // χρονοταξίδευμα (ημέρες από το τώρα)
   var stars = [];
-  var moonPhase = 0; // 0..1, 0 = νέα σελήνη
+  var moonPhase = 0;      // 0..1, 0 = νέα σελήνη
 
-  // ===== ΦΑΣΗ ΣΕΛΗΝΗΣ =====
+  // ===== ΦΑΣΗ ΣΕΛΗΝΗΣ (αστρονομία — αμετάβλητη) =====
   function moonAge(date) {
     var days = date.getTime() / 86400000;
     var age = (days - KNOWN_NEW) % SYNODIC;
@@ -245,18 +384,6 @@
     return age / SYNODIC; // 0..1
   }
 
-  var PHASES = [
-    { upto: 0.017,   name: "Νέα Σελήνη",        sub: "Το φεγγάρι κρύβεται μαζί με τον ήλιο." },
-    { upto: 0.236,   name: "Αυξανόμενο Αμφίκυρτο", sub: "Λεπτή λεπροπή ουρανού προς τη δύση." },
-    { upto: 0.264,   name: "Πρώτο Τέταρτο",     sub: "Μισός δίσκος, μισός δρόμος." },
-    { upto: 0.486,   name: "Αυξανόμενο Λαμπρό", sub: "Σχεδόν πλήρες — μεγαλώνει κάθε βράδυ." },
-    { upto: 0.514,   name: "Πανσέληνος",         sub: "Ολόκληρος ο δίσκος φωτεινός όσο γίνεται." },
-    { upto: 0.736,   name: "Φθίνον Λαμπρό",     sub: "Το φως αποσύρεται σιγά σιγά." },
-    { upto: 0.764,   name: "Τελευταίο Τέταρτο", sub: "Το δεύτερο μισό — αρχή του τέλους." },
-    { upto: 0.983,   name: "Φθίνον Αμφίκυρτο",  sub: "Λεπτή λεπροπή πριν από το καινούργιο ξεκίνημα." },
-    { upto: 1.001,   name: "Νέα Σελήνη",        sub: "Το φεγγάρι κρύβεται μαζί με τον ήλιο." }
-  ];
-
   function phaseInfo(p) {
     for (var i = 0; i < PHASES.length; i++) {
       if (p <= PHASES[i].upto) return PHASES[i];
@@ -265,11 +392,10 @@
   }
 
   function illumination(p) {
-    // κλάσμα φωτισμένου δίσκου
     return (1 - Math.cos(2 * Math.PI * p)) / 2;
   }
 
-  // ===== ΣΧΕΔΙΑΣΜΟΣ ΦΕΓΓΑΡΙΟΥ =====
+  // ===== ΣΧΕΔΙΑΣΜΟΣ ΦΕΓΓΑΡΙΟΥ (αμετάβλητο — καθαρισμένο crater clip) =====
   function drawMoon(phase) {
     var w = moonCanvas.width, h = moonCanvas.height;
     mctx.clearRect(0, 0, w, h);
@@ -283,7 +409,6 @@
     mctx.fill();
 
     // Φωτεινό τμήμα: σύνθεση δύο τόξων
-    // p: 0=νέα, 0.25=πρώτο τέταρτο (δεξιά φωτεινή), 0.5=πλήρης, 0.75=τελευταίο τέταρτο (αριστερά φωτεινή)
     mctx.save();
     mctx.beginPath();
     mctx.arc(cx, cy, R, 0, Math.PI * 2);
@@ -302,10 +427,10 @@
     }
     mctx.restore();
 
-    // Κρατήρες (μόνο στο φωτεινό μέρος — illustrative)
+    // Κρατήρες — illustrative, αμυδρά σε όλο τον δίσκο
     mctx.save();
     mctx.beginPath();
-    if (phase < 0.5) mctx.arc(cx, cy, R, 0, Math.PI * 2);
+    mctx.arc(cx, cy, R, 0, Math.PI * 2);
     mctx.clip();
     mctx.globalAlpha = 0.12;
     mctx.fillStyle = "#555";
@@ -326,12 +451,9 @@
     mctx.fill();
   }
 
-  // Σχεδίαση φωτεινού λοξοτόμου (μηλώδες τμήμα)
-  // t: 0..1 μέσα στο μισό κύκλο (0=λέπτυσμα, 0.5=ημισέληνος, 1=πλήρης)
+  // Σχεδίαση φωτεινού λοξοτόμου (μηνώδους τμήματος)
+  // t: 0..1 μέσα στο μισό κύκλο (0=λεπτό, 0.5=ημισέληνος, 1=πλήρης)
   function drawLune(cx, cy, R, t, waxingRight) {
-    // Το φως καταλαμβάνει πλάτος R*|cos(theta)| από το ανάλογο τόξο
-    // Απλοποιημένο μοντέλο: ellipse x-semiaxis = R*(1 - 2t') με σωστό τόξο
-    // t' σε [-1, 1]: -1 = καμία φωτεινή πλευρά (τέρμα), 1 = πλήρης
     var tt = Math.max(-1, Math.min(1, t)); // clamp
 
     mctx.beginPath();
@@ -349,19 +471,16 @@
 
     // Εσωτερικό όριο: ημικύκλιο/έλλειψη με άξονα R * k
     var k = Math.cos(Math.PI * (tt / 2)); // 1 → -1
-    // Όταν tt=0 → k=1 (λεπτή σедельник), tt=1 → k=-1 (πλήρης)
     var rx = R * Math.abs(k);
-    var sweep = (k >= 0) !== waxingRight; // κατεύθυνση εσωτερικού τόξου
+    var sweep = (k >= 0) !== waxingRight;
 
     mctx.ellipse(cx, cy, rx, R, 0, endAng, startAng, sweep);
     mctx.closePath();
     mctx.fill();
   }
-
-  // ===== ΟΥΡΑΝΟΣ =====
-  // Gradient ουρανού ανάλογα με την ώρα (ημέρα/νύχτα/λικνίστρες)
+  
+    // ===== ΟΥΡΑΝΟΣ =====
   function skyFor(hour) {
-    // Σημεία-κλειδιά: 0=βαθιά νύχτα, 5=προαύγιο, 7=sunrise, 12=μεσημέρι, 18=sunset, 20=σούρουπο
     var stops = [
       { h: 0,  top: "#05070d", bottom: "#0b1020" },
       { h: 4,  top: "#06080f", bottom: "#101728" },
@@ -407,7 +526,6 @@
   }
 
   function nightAmount(hour) {
-    // 1 = πλήρης νύχτα (αστέρια ορατά), 0 = μέση ημέρα
     if (hour <= 5 || hour >= 21) return 1;
     if (hour >= 7 && hour <= 18) return 0;
     if (hour > 5 && hour < 7) return 1 - (hour - 5) / 2;
@@ -425,8 +543,8 @@
         x: Math.random() * starsCanvas.width,
         y: Math.random() * starsCanvas.height * 0.85,
         r: 0.4 + Math.random() * 1.2,
-        tw: Math.random() * Math.PI * 2,   // φάση twinkle
-        sp: 0.5 + Math.random() * 1.5       // ταχύτητα twinkle
+        tw: Math.random() * Math.PI * 2,
+        sp: 0.5 + Math.random() * 1.5
       });
     }
   }
@@ -448,10 +566,9 @@
     return new Date(Date.now() + dayOffset * 86400000);
   }
 
-  var MONTHS = ["Ιαν", "Φεβ", "Μαρ", "Απρ", "Μαϊ", "Ιουν", "Ιουλ", "Αυγ", "Σεπ", "Οκτ", "Νοε", "Δεκ"];
-
   function fmtDate(d) {
-    return d.getDate() + " " + MONTHS[d.getMonth()] + " " + d.getFullYear();
+    var M = T.months[currentLang];
+    return d.getDate() + " " + M[d.getMonth()] + " " + d.getFullYear();
   }
 
   function update() {
@@ -474,10 +591,10 @@
       ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
 
     var info = phaseInfo(moonPhase);
-    phaseNameEl.textContent = info.name;
-    phaseSubEl.textContent = info.sub;
+    phaseNameEl.textContent = currentLang === "el" ? info.name_el : info.name_en;
+    phaseSubEl.textContent = currentLang === "el" ? info.sub_el : info.sub_en;
 
-    ageEl.textContent = age.toFixed(1) + " ημέρες";
+    ageEl.textContent = age.toFixed(1) + T.days[currentLang];
     illumEl.textContent = Math.round(illumination(moonPhase) * 100) + "%";
 
     // Επόμενες πανσέληνοι/νέες σελήνες
@@ -497,7 +614,7 @@
 
   function loop(t) {
     drawStars(t);
-    if (Date.now() - lastUpdate > 20000) { // ανανέωση κάθε 20''
+    if (Date.now() - lastUpdate > 20000) {
       update();
       lastUpdate = Date.now();
     }
@@ -505,6 +622,7 @@
   }
 
   // ===== ΧΡΟΝΟΤΑΞΙΔΕΥΜΑ =====
+  // N δουλεύει και σε ελληνικό layout (ν/Ν) — bug #3 του audit
   document.addEventListener("keydown", function (e) {
     var tag = (e.target && e.target.tagName || "").toLowerCase();
     if (tag === "input" || tag === "select" || tag === "textarea") return;
@@ -513,17 +631,17 @@
       if (dayOffset > 3650) dayOffset = 3650;
       if (dayOffset < -3650) dayOffset = -3650;
       update();
-    } else if (e.key === "n" || e.key === "N" || e.key === "Home") {
+    } else if (e.key === "n" || e.key === "N" || e.key === "ν" || e.key === "Ν" || e.key === "Home") {
       dayOffset = 0;
       update();
     }
   });
 
-  // Σάρωση/πατήμα: χρονοταξίδευση ελαφρώς — κάθε 90ms = 1 μέρα
+  // Κράτημα: χρονοταξίδευμα — κάθε 90ms = 1 μέρα
   var holding = false;
   var holdDir = 0;
 
-  skyEl.parentElement.addEventListener("pointerdown", function (e) {
+  document.body.addEventListener("pointerdown", function (e) {
     if (e.target.closest("a, button")) return;
     holding = true;
     holdDir = e.clientX > window.innerWidth / 2 ? 1 : -1;
@@ -545,9 +663,39 @@
   });
 
   // ===== INIT =====
+  applyStatic();
   seedStars();
-  update();
   requestAnimationFrame(loop);
+
+  // ===== ΕΓΚΑΤΑΣΤΑΣΗ (PWA) =====
+  var deferredPrompt = null;
+
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.hidden = false;
+  });
+
+  installBtn.addEventListener("click", function () {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  window.addEventListener("appinstalled", function () {
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  // ===== SERVICE WORKER (offline — κοινός SW της σουίτας στη ρίζα) =====
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("../sw.js").catch(function (err) {
+        console.warn("SW registration failed:", err);
+      });
+    });
+  }
 
 })();
 </script>

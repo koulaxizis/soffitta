@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One-Sentence Diary — Soffitta</title>
+<meta name="description" content="One sentence a day — a tiny, playful diary. Timeline, streaks, .txt export. Stored locally, never uploaded. Free, open source, no cookies, no tracking.">
+<link rel="canonical" href="https://soffitta.site/diary/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://soffitta.site/diary/">
+<meta property="og:title" content="One-Sentence Diary — Soffitta">
+<meta property="og:description" content="One sentence a day — timeline, streak, .txt export.">
+<!-- TODO (αργότερα): og-cover.png 1200×630 στον φάκελο diary/ -->
+<meta property="og:image" content="https://soffitta.site/diary/og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1a1014">
+<link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231a1014'/%3E%3Cpath d='M10 35L32 11L54 35' fill='none' stroke='%23e6ce9a' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='25' y='40' width='14' height='13' rx='3' fill='%23f4a8b8'/%3E%3C/svg%3E">
+<link rel="manifest" href="../manifest.webmanifest">
+<style>
+  :root {
+    --bg: #1a1014;
+    --surface: #241820;
+    --surface-2: #2f1f29;
+    --border: #453041;
+    --text: #f5ebe9;
+    --text-muted: #ab8f97;
+    --accent: #f4a8b8;
+    --accent-soft: rgba(244, 168, 184, 0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  header h1 { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.01em; }
+  header h1 span { color: var(--accent); }
+  header .hint { font-size: 0.8rem; color: var(--text-muted); }
+
+  /* ===== ΕΡΓΑΛΕΙΑ (γλώσσα + εγκατάσταση) ===== */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .lang-switch {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .lang-switch button {
+    background: none;
+    border: none;
+    padding: 6px 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+    letter-spacing: 0.04em;
+  }
+
+  .lang-switch button.active {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  #installBtn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+  }
+  #installBtn:hover { border-color: var(--accent); }
+
+  /* ===== TODAY ===== */
+  .today {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+  }
+
+  .date-line {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .date-big {
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  .streak {
+    font-size: 0.78rem;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .write {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  }
+
+  textarea {
+    width: 100%;
+    background: none;
+    color: var(--text);
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+    font-size: 1.05rem;
+    line-height: 1.7;
+    min-height: 56px;
+    overflow: hidden;
+  }
+
+  textarea::placeholder { color: var(--text-muted); }
+
+  .write-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 10px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+
+  .char-count {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .char-max { color: var(--accent); }
+
+  button {
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  }
+
+  button:hover { border-color: var(--accent); }
+  button:active { transform: translateY(1px); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #2a1218; }
+  button.primary:hover { filter: brightness(1.08); background: var(--accent); }
+
+  /* ===== TIMELINE ===== */
+  .timeline-head {
+    max-width: 680px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .timeline-head h2 {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+
+  .month-nav {
+    display: flex;
+    gap: 6px;
+  }
+
+  .month-nav button {
+    padding: 5px 11px;
+    font-size: 0.75rem;
+  }
+
+  .month-label {
+    font-size: 0.75rem;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    min-width: 9ch;
+    text-align: center;
+  }
+
+  .timeline {
+    display: flex;
+    gap: 12px;
+    max-width: 680px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 14px 24px 0;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    padding-bottom: 12px;
+  }
+
+  .day-card {
+    flex: 0 0 auto;
+    width: 200px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.1s ease;
+    position: relative;
+  }
+
+  .day-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+  .day-card .date {
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .day-card .sentence {
+    margin-top: 8px;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--text);
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .day-card.today { border-color: var(--accent); }
+
+  .empty-note {
+    max-width: 680px;
+    width: 100%;
+    margin: 8px auto 0;
+    padding: 0 24px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  footer {
+    margin-top: auto;
+    padding: 18px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.7;
+  }
+
+  footer a { color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--text-muted); }
+  footer a:hover { border-bottom-style: solid; }
+</style>
+</head>
+
+<body>
+
+<header>
+  <div>
+    <h1>📅 One-Sentence <span>Diary</span></h1>
+    <p class="hint" data-en="One sentence a day — that's the whole deal."
+       data-el="Μία πρόταση τη μέρα — τόσο απλά.">One sentence a day — that's the whole deal.</p>
+  </div>
+  <div class="toolbar">
+    <button id="installBtn" hidden data-en="⬇ Install app" data-el="⬇ Εγκατάσταση">⬇ Install app</button>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button id="langEn" class="active">EN</button>
+      <button id="langEl">ΕΛ</button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== ΣΗΜΕΡΑ ===== -->
+<section class="today">
+
+  <div class="date-line">
+    <span class="date-big" id="dateBig"></span>
+    <span class="streak" id="streakBadge" hidden></span>
+  </div>
+
+  <div class="write">
+    <textarea id="sentenceInput" maxlength="200"
+              data-ph-en="Today, in one sentence…"
+              data-ph-el="Σήμερα, σε μία πρόταση…"
+              placeholder="Today, in one sentence…"></textarea>
+    <div class="write-controls">
+      <span class="char-count"><span id="charNum">0</span> / <span class="char-max">200</span></span>
+      <button class="primary" id="saveBtn" data-en="✦ Save today" data-el="✦ Αποθήκευση">✦ Save today</button>
+    </div>
+  </div>
+
+</section>
+
+<!-- ===== TIMELINE ===== -->
+<section class="timeline-head">
+  <h2 data-en="Timeline" data-el="Χρονογραμμή">Timeline</h2>
+  <div class="month-nav">
+    <button id="prevMonthBtn" title="←">◀</button>
+    <span class="month-label" id="monthLabel"></span>
+    <button id="nextMonthBtn" title="→">▶</button>
+  </div>
+  <button id="exportBtn">💾 .txt</button>
+</section>
+
+<div class="timeline" id="timeline"></div>
+<p class="empty-note" id="emptyNote" hidden
+   data-en="Nothing here yet — future days are waiting."
+   data-el="Τίποτα εδώ ακόμα — οι μέρες που έρχονται περιμένουν.">Nothing here yet — future days are waiting.</p>
+
+<footer>
+  <span data-en="Designed by" data-el="Σχεδιασμένο από τον">Designed by</span>
+    <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="../" data-en="All apps" data-el="Όλα τα apps">All apps</a><br>
+  <span data-en="No cookies · No tracking · Open source · Your sentences stay on this device"
+        data-el="Χωρίς cookies · Χωρίς tracking · Ανοιχτού κώδικα · Οι προτάσεις σου μένουν σε αυτή τη συσκευή">No cookies · No tracking · Open source · Your sentences stay on this device</span>
+</footer>
+
+<script>
+"use strict";
+(function () {
+
+  // ===== DOM =====
+  var dateBig = document.getElementById("dateBig");
+  var streakBadge = document.getElementById("streakBadge");
+  var sentenceInput = document.getElementById("sentenceInput");
+  var charNum = document.getElementById("charNum");
+  var saveBtn = document.getElementById("saveBtn");
+  var timelineEl = document.getElementById("timeline");
+  var emptyNote = document.getElementById("emptyNote");
+  var prevMonthBtn = document.getElementById("prevMonthBtn");
+  var nextMonthBtn = document.getElementById("nextMonthBtn");
+  var monthLabel = document.getElementById("monthLabel");
+  var exportBtn = document.getElementById("exportBtn");
+  var langEnBtn = document.getElementById("langEn");
+  var langElBtn = document.getElementById("langEl");
+  var installBtn = document.getElementById("installBtn");
+
+  // ===== i18n (κοινό μοτίβο σε όλη τη σουίτα) =====
+  var LANG_KEY = "soffitta.lang";
+  var DIARY_KEY = "soffitta.diary";
+
+  var T = {
+    title: {
+      en: "One-Sentence Diary — Soffitta",
+      el: "Μονοπρότασο Ημερολόγιο — Soffitta"
+    },
+    metaDesc: {
+      en: "One sentence a day — a tiny, playful diary. Timeline, streaks, .txt export. Stored locally, never uploaded. Free, open source, no cookies, no tracking.",
+      el: "Μία πρόταση τη μέρα — ένα μικρό, παιχνιδιάρικο ημερολόγιο. Χρονογραμμή, streaks, εξαγωγή .txt. Μένει τοπικά στη συσκευή σου. Χωρίς cookies, χωρίς tracking."
+    },
+    saveBtn:  { en: "✦ Save today", el: "✦ Αποθήκευση" },
+    saved:    { en: "Saved ✓", el: "Αποθηκεύτηκε ✓" },
+    edited:   { en: "Updated ✓", el: "Ενημερώθηκε ✓" },
+    streak:   { en: "🔥 {n} days in a row", el: "🔥 {n} μέρες στη σειρά" },
+    confirmClearOne: {
+      en: "Empty it out? The sentence will be deleted.",
+      el: "Να αδειάσει; Η πρόταση θα διαγραφεί."
+    }
+  };
+
+  var currentLang = detectLang();
+
+  function detectLang() {
+    try {
+      var saved = localStorage.getItem(LANG_KEY);
+      if (saved === "en" || saved === "el") return saved;
+    } catch (e) {}
+    var nav = (navigator.language || "en").slice(0, 2).toLowerCase();
+    return nav === "el" ? "el" : "en";
+  }
+
+  function locale() { return currentLang === "el" ? "el-GR" : "en-GB"; }
+
+  function applyStatic() {
+    document.documentElement.setAttribute("lang", currentLang);
+    document.title = T.title[currentLang];
+    var metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute("content", T.metaDesc[currentLang]);
+    var nodes = document.querySelectorAll("[data-en]");
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].textContent = currentLang === "el"
+        ? nodes[i].getAttribute("data-el")
+        : nodes[i].getAttribute("data-en");
+    }
+    sentenceInput.placeholder = currentLang === "el"
+      ? sentenceInput.getAttribute("data-ph-el")
+      : sentenceInput.getAttribute("data-ph-en");
+    langEnBtn.classList.toggle("active", currentLang === "en");
+    langElBtn.classList.toggle("active", currentLang === "el");
+
+    renderDateLine();
+    updateStreak();
+    renderMonthLabel();
+    renderTimeline();
+  }
+
+  function setLang(lang) {
+    currentLang = lang;
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    applyStatic();
+  }
+
+  langEnBtn.addEventListener("click", function () { setLang("en"); });
+  langElBtn.addEventListener("click", function () { setLang("el"); });
+
+  // ===== ΗΜΕΡΟΜΗΝΙΕΣ =====
+  function pad2(n) { return (n < 10 ? "0" : "") + String(n); }
+
+  function keyFor(d) {
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  }
+
+  function todayKey() { return keyFor(new Date()); }
+
+  function dateFromKey(key) {
+    var p = key.split("-");
+    return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+  }
+
+  // ===== STORAGE (ένα plain key — extreme minimal) =====
+  var diary = {};
+
+  function loadStore() {
+    try {
+      var raw = localStorage.getItem(DIARY_KEY);
+      if (raw) {
+        var obj = JSON.parse(raw);
+        if (obj && typeof obj === "object") diary = obj;
+      }
+    } catch (e) { diary = {}; }
+  }
+
+  function saveStore() {
+    try { localStorage.setItem(DIARY_KEY, JSON.stringify(diary)); } catch (e) {}
+  }
+
+  // ===== TODAY =====
+  function renderDateLine() {
+    dateBig.textContent = new Date().toLocaleDateString(locale(), {
+      weekday: "long", year: "numeric", month: "long", day: "numeric"
+    });
+  }
+
+  function autosize() {
+    sentenceInput.style.height = "auto";
+    sentenceInput.style.height = Math.max(56, sentenceInput.scrollHeight) + "px";
+  }
+
+  sentenceInput.addEventListener("input", function () {
+    charNum.textContent = String(sentenceInput.value.length);
+    autosize();
+  });
+
+  var flashTimer = null;
+
+  function flash(msg) {
+    saveBtn.textContent = msg;
+    saveBtn.disabled = true;
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(function () {
+      saveBtn.textContent = T.saveBtn[currentLang];
+      saveBtn.disabled = false;
+    }, 1800);
+  }
+
+  function saveToday() {
+    var v = sentenceInput.value.trim();
+    var isNew = !diary[todayKey()];
+    if (!v) {
+      // Άδειο submit σε ήδη γραμμένη μέρα = διαγραφή (με επιβεβαίωση)
+      if (diary[todayKey()]) {
+        if (window.confirm(T.confirmClearOne[currentLang])) {
+          delete diary[todayKey()];
+          saveStore();
+          updateStreak();
+          renderTimeline();
+        }
+      }
+      return;
+    }
+    diary[todayKey()] = v;
+    saveStore();
+    flash(isNew ? T.saved[currentLang] : T.edited[currentLang]);
+    updateStreak();
+    renderTimeline();
+  }
+
+  saveBtn.addEventListener("click", saveToday);
+
+  sentenceInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      saveToday();
+    }
+  });
+
+  // ===== STREAK =====
+  // Συνεχόμενες μέρες που τελειώνουν σήμερα (ή χθες, αν σήμερα δεν έχει γραφτεί ακόμα)
+  function updateStreak() {
+    var streak = 0;
+    var d = new Date();
+    if (!diary[keyFor(d)]) {
+      d.setDate(d.getDate() - 1);
+      if (!diary[keyFor(d)]) {
+        streakBadge.hidden = true;
+        return;
+      }
+    }
+    while (diary[keyFor(d)]) {
+      streak++;
+      d.setDate(d.getDate() - 1);
+    }
+    if (streak >= 2) {
+      streakBadge.hidden = false;
+      streakBadge.textContent = T.streak[currentLang].replace("{n}", String(streak));
+    } else {
+      streakBadge.hidden = true;
+    }
+  }
+
+  // ===== TIMELINE =====
+  var viewYear = new Date().getFullYear();
+  var viewMonth = new Date().getMonth(); // 0..11
+
+  function renderMonthLabel() {
+    var d = new Date(viewYear, viewMonth, 1);
+    monthLabel.textContent = d.toLocaleDateString(locale(), { month: "long", year: "numeric" });
+  }
+
+  function renderTimeline() {
+    var prefix = viewYear + "-" + pad2(viewMonth + 1);
+    var keys = [];
+    for (var k in diary) {
+      if (Object.prototype.hasOwnProperty.call(diary, k) && k.indexOf(prefix) === 0) keys.push(k);
+    }
+    keys.sort(); // αύξουσα — το πιο πρόσφατο δεξιά
+
+    timelineEl.innerHTML = "";
+
+    var todayK = todayKey();
+    var i, card;
+
+    for (i = 0; i < keys.length; i++) {
+      card = document.createElement("div");
+      card.className = "day-card" + (keys[i] === todayK ? " today" : "");
+      card.setAttribute("data-key", keys[i]);
+
+      var dEl = document.createElement("span");
+      dEl.className = "date";
+      dEl.textContent = dateFromKey(keys[i]).toLocaleDateString(locale(), {
+        weekday: "short", day: "numeric", month: "short"
+      });
+
+      var sEl = document.createElement("div");
+      sEl.className = "sentence";
+      sEl.textContent = diary[keys[i]];
+
+      card.appendChild(dEl);
+      card.appendChild(sEl);
+
+      (function (key) {
+        card.addEventListener("click", function () { openEditor(key); });
+      })(keys[i]);
+
+      timelineEl.appendChild(card);
+    }
+
+    if (!keys.length) {
+      emptyNote.hidden = false;
+    } else {
+      emptyNote.hidden = true;
+      timelineEl.scrollLeft = timelineEl.scrollWidth; // σκρολ στο πιο πρόσφατο
+    }
+  }
+
+  // ===== MONTH NAVIGATION (χωρίς μέλλον) =====
+  prevMonthBtn.addEventListener("click", function () {
+    viewMonth--;
+    if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+    renderMonthLabel();
+    renderTimeline();
+  });
+
+  nextMonthBtn.addEventListener("click", function () {
+    var now = new Date();
+    if (viewYear === now.getFullYear() && viewMonth === now.getMonth()) return;
+    viewMonth++;
+    if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+    renderMonthLabel();
+    renderTimeline();
+  });
+
+  // ===== EDIT IN PLACE (click σε παλιό card) =====
+  var editingKey = null;
+  var editorTA = null;
+  var editorCard = null;
+  var editorOrig = null;
+
+  function openEditor(key) {
+    closeEditor(true); // αν υπάρχει ανοιχτό, αποθήκευσε και κλείσε
+    var card = timelineEl.querySelector('[data-key="' + key + '"]');
+    if (!card) return;
+
+    editingKey = key;
+    editorCard = card;
+    editorOrig = diary[key];
+
+    var sEl = card.querySelector(".sentence");
+    var ta = document.createElement("textarea");
+    ta.value = editorOrig;
+    ta.maxLength = 200;
+    ta.rows = 4;
+    ta.style.cssText = "background:none;border:none;color:inherit;font:inherit;"
+      + "outline:none;resize:none;margin-top:8px;width:100%;min-height:64px;line-height:1.6;";
+    ta.className = "sentence";
+    card.replaceChild(ta, sEl);
+    editorTA = ta;
+
+    var ctr = document.createElement("div");
+    ctr.style.cssText = "display:flex;gap:6px;margin-top:10px;justify-content:flex-end;";
+    var ok = document.createElement("button");
+    ok.className = "primary";
+    ok.textContent = "✓";
+    ok.style.padding = "4px 9px";
+    ok.title = currentLang === "el" ? "Αποθήκευση" : "Save";
+    var cancel = document.createElement("button");
+    cancel.textContent = "✕";
+    cancel.style.padding = "4px 9px";
+    cancel.title = currentLang === "el" ? "Ακύρωση" : "Cancel";
+    cancel.addEventListener("click", function (e) {
+      e.stopPropagation();
+      closeEditor(false);
+    });
+    ok.addEventListener("click", function (e) {
+      e.stopPropagation();
+      closeEditor(true);
+    });
+    ctr.appendChild(cancel);
+    ctr.appendChild(ok);
+    card.appendChild(ctr);
+    editorCard._ctr = ctr;
+
+    card.removeEventListener("click", card._editHandler || function () {}); // no-op safety
+
+    ta.addEventListener("click", function (e) { e.stopPropagation(); });
+    ta.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); closeEditor(true); }
+      if (e.key === "Escape") { e.preventDefault(); closeEditor(false); }
+    });
+
+    ta.focus();
+    ta.select();
+  }
+
+  function closeEditor(save) {
+    if (editingKey === null) return;
+    var key = editingKey;
+
+    // Καθαρισμός UI — ξαναχτίζουμε όλο το timeline (απλούστερο και σίγουρο)
+    editingKey = null;
+    editorTA = null;
+
+    if (save) {
+      var v = (editorTA ? editorTA.value : "").trim();
+      if (v && v !== editorOrig) {
+        diary[key] = v;
+        saveStore();
+      } else if (!v) {
+        // αδειασμένο = διαγραφή της καταχώρησης
+        delete diary[key];
+        saveStore();
+      }
+    }
+
+    editorCard = null;
+    updateStreak();
+    renderTimeline();
+  }
+
+  // ===== ΕΞΑΓΩΓΗ .txt (αύξουσα, BOM για ελληνικά σε Windows) =====
+  exportBtn.addEventListener("click", function () {
+    var keys = [];
+    for (var k in diary) {
+      if (Object.prototype.hasOwnProperty.call(diary, k)) keys.push(k);
+    }
+    if (!keys.length) return;
+    keys.sort();
+
+    var lines = ["One-Sentence Diary — soffitta.site", ""];
+    for (var i = 0; i < keys.length; i++) {
+      lines.push(keys[i] + " — " + diary[keys[i]]);
+    }
+
+    var blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "soffitta_diary.txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+  });
+
+  // ===== INIT =====
+  (function init() {
+    loadStore();
+    applyStatic();   // i18n + date line + streak + timeline
+
+    // Αν η σημερινή μέρα είναι ήδη γραμμένη, φόρτωσέ την στο input
+    var tk = todayKey();
+    if (diary[tk]) {
+      sentenceInput.value = diary[tk];
+      charNum.textContent = String(sentenceInput.value.length);
+      autosize();
+    }
+  })();
+
+  // ===== ΕΓΚΑΤΑΣΤΑΣΗ (PWA) =====
+  var deferredPrompt = null;
+
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.hidden = false;
+  });
+
+  installBtn.addEventListener("click", function () {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  window.addEventListener("appinstalled", function () {
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  // ===== SERVICE WORKER (offline — κοινός SW της σουίτας στη ρίζα) =====
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("../sw.js").catch(function (err) {
+        console.warn("SW registration failed:", err);
+      });
+    });
+  }
+
+})();
+</script>
+
+</body>
+</html>

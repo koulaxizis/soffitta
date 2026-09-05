@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tree Sketcher — Soffitta</title>
+<meta name="description" content="A tiny node tree sketcher — map ideas, sitemaps and family trees, then export PNG or SVG. Free, open source, no cookies, no tracking.">
+<link rel="canonical" href="https://soffitta.site/tree/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://soffitta.site/tree/">
+<meta property="og:title" content="Tree Sketcher — Soffitta">
+<meta property="og:description" content="Sketch node trees — ideas, sitemaps, anything. Export PNG or SVG.">
+<!-- TODO (αργότερα): og-cover.png 1200×630 στον φάκελο tree/ -->
+<meta property="og:image" content="https://soffitta.site/tree/og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0d1420">
+<link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d1420'/%3E%3Cpath d='M10 35L32 11L54 35' fill='none' stroke='%23e6ce9a' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='25' y='40' width='14' height='13' rx='3' fill='%2379c0ff'/%3E%3C/svg%3E">
+<link rel="manifest" href="../manifest.webmanifest">
+<style>
+  :root {
+    --bg: #0d1420;
+    --surface: #131d2c;
+    --surface-2: #1a2739;
+    --border: #28374c;
+    --text: #e2eaf4;
+    --text-muted: #8a9bb0;
+    --accent: #79c0ff;
+    --accent-soft: rgba(121, 192, 255, 0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  header h1 { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.01em; }
+  header h1 span { color: var(--accent); }
+  header .hint { font-size: 0.8rem; color: var(--text-muted); }
+
+  /* ===== ΕΡΓΑΛΕΙΑ (γλώσσα + εγκατάσταση) ===== */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .lang-switch {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .lang-switch button {
+    background: none;
+    border: none;
+    padding: 6px 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+    letter-spacing: 0.04em;
+  }
+
+  .lang-switch button.active {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  #installBtn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+  }
+  #installBtn:hover { border-color: var(--accent); }
+
+  /* ===== MODE BAR ===== */
+  .modebar {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .modebar .spacer { flex: 1; }
+
+  .modebar .help {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .mode-btn {
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 7px 12px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .mode-btn:hover { background: var(--surface-2); border-color: var(--accent); }
+  .mode-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0d1826;
+  }
+
+  button.action {
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 7px 12px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  }
+  button.action:hover { background: var(--surface-2); border-color: var(--accent); }
+  button.action:active { transform: translateY(1px); }
+
+  /* ===== CANVAS AREA ===== */
+  .board-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 60vh;
+    overflow: hidden;
+  }
+
+  #board {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    background:
+      radial-gradient(circle, rgba(121, 192, 255, 0.07) 1px, transparent 1px)
+      0 0 / 28px 28px,
+      var(--bg);
+    cursor: default;
+  }
+
+  #board.mode-link { cursor: crosshair; }
+
+  /* Επεξεργασία ετικέτας κόμβου (floating input) */
+  #nodeEditor {
+    position: absolute;
+    display: none;
+    z-index: 5;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 4px 8px;
+    font: 700 0.85rem "Segoe UI", system-ui, sans-serif;
+    color: var(--text);
+    outline: none;
+    min-width: 120px;
+    max-width: 220px;
+    text-align: center;
+  }
+
+  /* Status overlay (κάτω αριστερά) */
+  .board-status {
+    position: absolute;
+    left: 14px;
+    bottom: 12px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    background: rgba(13, 20, 32, 0.85);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    pointer-events: none;
+  }
+
+  footer {
+    padding: 18px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.7;
+  }
+
+  footer a { color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--text-muted); }
+  footer a:hover { border-bottom-style: solid; }
+</style>
+</head>
+
+<body>
+
+<header>
+  <div>
+    <h1>🌳 Tree <span>Sketcher</span></h1>
+    <p class="hint" data-en="Sketch node trees — ideas, sitemaps, anything. Export PNG or SVG."
+       data-el="Σχεδίασε δέντρα κόμβων — ιδέες, sitemaps, ό,τι θες. Εξαγωγή PNG ή SVG.">Sketch node trees — ideas, sitemaps, anything. Export PNG or SVG.</p>
+  </div>
+  <div class="toolbar">
+    <button id="installBtn" hidden data-en="⬇ Install app" data-el="⬇ Εγκατάσταση">⬇ Install app</button>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button id="langEn" class="active">EN</button>
+      <button id="langEl">ΕΛ</button>
+    </div>
+  </div>
+</header>
+
+<div class="modebar">
+
+  <button class="mode-btn active" id="modeMove" data-en="✥ Move" data-el="✥ Μετακίνηση">✥ Move</button>
+  <button class="mode-btn" id="modeAdd" data-en="＋ Add node" data-el="＋ Νέος κόμβος">＋ Add node</button>
+  <button class="mode-btn" id="modeLink" data-en="⟶ Link" data-el="⟿ Σύνδεση">⟶ Link</button>
+
+  <span class="spacer"></span>
+
+  <span class="help" id="helpText"
+        data-en="Drag to move · double-click to rename · Del key deletes selected"
+        data-el="Σύρε για μετακίνηση · διπλό κλικ για μετονομασία · πλήκτρο Del σβήνει τον επιλεγμένο"></span>
+
+  <span class="spacer"></span>
+
+  <button class="action" id="exportPngBtn">💾 PNG</button>
+  <button class="action" id="exportSvgBtn">💾 SVG</button>
+  <button class="action" id="clearBtn" data-en="✕ Clear all" data-el="✕ Καθαρισμός">✕ Clear all</button>
+
+</div>
+
+<div class="board-wrap">
+  <canvas id="board"></canvas>
+  <input type="text" id="nodeEditor" maxlength="24" autocomplete="off" spellcheck="false">
+  <div class="board-status" id="boardStatus">0 + 0</div>
+</div>
+
+<footer>
+  <span data-en="Designed by" data-el="Σχεδιασμένο από τον">Designed by</span>
+  <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="../" data-en="All apps" data-el="Όλα τα apps">All apps</a><br>
+  <span data-en="No cookies · No tracking · Open source"
+        data-el="Χωρίς cookies · Χωρίς tracking · Ανοιχτού κώδικα">No cookies · No tracking · Open source</span>
+</footer>
+
+<script>
+"use strict";
+(function () {
+
+  // ===== DOM =====
+  var boardWrap = document.querySelector(".board-wrap");
+  var canvas = document.getElementById("board");
+  var ctx = canvas.getContext("2d");
+  var nodeEditor = document.getElementById("nodeEditor");
+  var boardStatus = document.getElementById("boardStatus");
+  var modeMoveBtn = document.getElementById("modeMove");
+  var modeAddBtn = document.getElementById("modeAdd");
+  var modeLinkBtn = document.getElementById("modeLink");
+  var exportPngBtn = document.getElementById("exportPngBtn");
+  var exportSvgBtn = document.getElementById("exportSvgBtn");
+  var clearBtn = document.getElementById("clearBtn");
+  var langEnBtn = document.getElementById("langEn");
+  var langElBtn = document.getElementById("langEl");
+  var installBtn = document.getElementById("installBtn");
+
+  // ===== i18n (κοινό μοτίβο σε όλη τη σουίτα) =====
+  var LANG_KEY = "soffitta.lang";
+
+  var T = {
+    title: {
+      en: "Tree Sketcher — Soffitta",
+      el: "Σχεδιαστής Δέντρων — Soffitta"
+    },
+    metaDesc: {
+      en: "A tiny node tree sketcher — map ideas, sitemaps and family trees, then export PNG or SVG. Free, open source, no cookies, no tracking.",
+      el: "Ένας μικρός σχεδιαστής δέντρων κόμβων — ιδέες, sitemaps και γενεαλογικά, με εξαγωγή PNG ή SVG. Χωρίς cookies, χωρίς tracking."
+    },
+    nodes: { en: "nodes", el: "κόμβοι" },
+    links: { en: "links", el: "συνδέσεις" },
+    helpMove: {
+      en: "Drag nodes to move · double-click to rename · Del deletes selected",
+      el: "Σύρε τους κόμβους · διπλό κλικ για μετονομασία · Del σβήνει τον επιλεγμένο"
+    },
+    helpAdd: {
+      en: "Click on the board to place a node",
+      el: "Κάνε κλικ στον πίνακα για νέο κόμβο"
+    },
+    helpLink: {
+      en: "Click two nodes to connect them · click empty space to cancel",
+      el: "Κλικ σε δύο κόμβους για σύνδεση · κλικ σε κενό για ακύρωση"
+    },
+    nodeDefault: { en: "idea", el: "ιδέα" },
+    clearConfirm: {
+      en: "Delete the whole sketch?",
+      el: "Διαγραφή όλου του σχεδίου;"
+    },
+    savedPng: { en: "Saved PNG ✓", el: "Το PNG αποθηκεύτηκε ✓" },
+    savedSvg: { en: "Saved SVG ✓", el: "Το SVG αποθηκεύτηκε ✓" }
+  };
+
+  var currentLang = detectLang();
+
+  function detectLang() {
+    try {
+      var saved = localStorage.getItem(LANG_KEY);
+      if (saved === "en" || saved === "el") return saved;
+    } catch (e) {}
+    var nav = (navigator.language || "en").slice(0, 2).toLowerCase();
+    return nav === "el" ? "el" : "en";
+  }
+
+  function applyStatic() {
+    document.documentElement.setAttribute("lang", currentLang);
+    document.title = T.title[currentLang];
+    var metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute("content", T.metaDesc[currentLang]);
+    var nodes = document.querySelectorAll("[data-en]");
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].textContent = currentLang === "el"
+        ? nodes[i].getAttribute("data-el")
+        : nodes[i].getAttribute("data-en");
+    }
+    langEnBtn.classList.toggle("active", currentLang === "en");
+    langElBtn.classList.toggle("active", currentLang === "el");
+    updateHelp();
+    renderStatus();
+  }
+
+  function setLang(lang) {
+    currentLang = lang;
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    applyStatic();
+  }
+
+  langEnBtn.addEventListener("click", function () { setLang("en"); });
+  langElBtn.addEventListener("click", function () { setLang("el"); });
+
+  // ===== STATE (stores nothing — καθαρό scratch) =====
+  var nodesArr = [];  // { id, x, y, label }
+  var linksArr = [];  // { a, b } — ids κόμβων
+  var nextId = 1;
+
+  var mode = "move";          // move | add | link
+  var selectedId = null;      // επιλεγμένος κόμβος
+  var draggingId = null;      // κόμβος που σέρνεται
+  var dragDX = 0, dragDY = 0;
+  var linkFromId = null;      // πηγή σε link mode
+  var mouse = { x: 0, y: 0 };
+  var editingId = null;       // κόμβος σε rename
+
+  var pendingRender = false;
+
+  function requestRender() {
+    if (pendingRender) return;
+    pendingRender = true;
+    window.requestAnimationFrame(function () {
+      pendingRender = false;
+      render();
+    });
+  }
+
+  // ===== NODE METRICS =====
+  function nodeFont() {
+    return "700 13px 'Segoe UI', system-ui, sans-serif";
+  }
+
+  function nodeSize(label) {
+    ctx.font = nodeFont();
+    var tw = ctx.measureText(label).width;
+    var w = Math.max(74, tw + 26);
+    return { w: w, h: 32 };
+  }
+
+  function nodeById(id) {
+    for (var i = 0; i < nodesArr.length; i++) {
+      if (nodesArr[i].id === id) return nodesArr[i];
+    }
+    return null;
+  }
+
+  function hitNode(x, y) {
+    for (var i = nodesArr.length - 1; i >= 0; i--) {
+      var n = nodesArr[i];
+      var s = nodeSize(n.label);
+      if (x >= n.x && x <= n.x + s.w && y >= n.y && y <= n.y + s.h) return n;
+    }
+    return null;
+  }
+
+  function nodesCenter(n) {
+    var s = nodeSize(n.label);
+    return { x: n.x + s.w / 2, y: n.y + s.h / 2 };
+  }
+
+  function removeNode(id) {
+    for (var i = nodesArr.length - 1; i >= 0; i--) {
+      if (nodesArr[i].id === id) nodesArr.splice(i, 1);
+    }
+    for (var j = linksArr.length - 1; j >= 0; j--) {
+      if (linksArr[j].a === id || linksArr[j].b === id) linksArr.splice(j, 1);
+    }
+  }
+
+  // ===== ΒΟΗΘΗΤΙΚΑ =====
+  function roundRect(c, x, y, w, h, r) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.arcTo(x + w, y, x + w, y + h, r);
+    c.lineTo(x + w, y + h - r);
+    c.arcTo(x + w, y + h, x, y + h, r);
+    c.lineTo(x, y + h);
+    c.arcTo(x, y + h, x, y, r);
+    c.lineTo(x, y);
+    c.arcTo(x, y, x + w, y, r);
+    c.closePath();
+  }
+
+  // ===== RENDER =====
+  function render() {
+    var W = canvas.width;
+    var H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    var i;
+
+    // Συνδέσεις — κατακόρυφες καμπύλες (παιδί κάτω από γονέα)
+    ctx.lineWidth = 2;
+    for (i = 0; i < linksArr.length; i++) {
+      var na = nodeById(linksArr[i].a);
+      var nb = nodeById(linksArr[i].b);
+      if (!na || !nb) continue;
+      var ca = nodesCenter(na);
+      var cb = nodesCenter(nb);
+      var dy = Math.abs(cb.y - ca.y);
+      ctx.strokeStyle = "rgba(121, 192, 255, 0.5)";
+      ctx.beginPath();
+      ctx.moveTo(ca.x, ca.y);
+      ctx.bezierCurveTo(ca.x, ca.y + dy * 0.5, cb.x, cb.y - dy * 0.5, cb.x, cb.y);
+      ctx.stroke();
+    }
+
+    // Προσωρινή γραμμή σε link mode
+    if (mode === "link" && linkFromId !== null && editingId === null) {
+      var from = nodeById(linkFromId);
+      if (from) {
+        var cf = nodesCenter(from);
+        ctx.strokeStyle = "rgba(230, 206, 154, 0.8)";
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(cf.x, cf.y);
+        ctx.lineTo(mouse.x, mouse.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // Κόμβοι
+    ctx.font = nodeFont();
+    ctx.textBaseline = "middle";
+    for (i = 0; i < nodesArr.length; i++) {
+      var n = nodesArr[i];
+      var s = nodeSize(n.label);
+      var isSel = n.id === selectedId;
+      var isFrom = n.id === linkFromId;
+
+      // Σκιά
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      roundRect(ctx, n.x + 2, n.y + 3, s.w, s.h, 9);
+      ctx.fill();
+
+      // Κορμός
+      ctx.fillStyle = isSel || isFrom ? "#79c0ff" : "#1a2739";
+      roundRect(ctx, n.x, n.y, s.w, s.h, 9);
+      ctx.fill();
+      ctx.strokeStyle = isSel || isFrom ? "#a5d6ff" : "#28374c";
+      ctx.lineWidth = isSel || isFrom ? 2 : 1;
+      roundRect(ctx, n.x, n.y, s.w, s.h, 9);
+      ctx.stroke();
+
+      ctx.fillStyle = isSel || isFrom ? "#0d1826" : "#e2eaf4";
+      ctx.fillText(n.label, n.x + s.w / 2 - ctx.measureText(n.label).width / 2, n.y + s.h / 2 + 1);
+    }
+
+    renderStatus();
+  }
+
+  function renderStatus() {
+    boardStatus.textContent =
+      nodesArr.length + " " + T.nodes[currentLang] + " · "
+      + linksArr.length + " " + T.links[currentLang];
+  }
+
+  function updateHelp() {
+    var helpEl = document.getElementById("helpText");
+    if (mode === "add") helpEl.textContent = T.helpAdd[currentLang];
+    else if (mode === "link") helpEl.textContent = T.helpLink[currentLang];
+    else helpEl.textContent = T.helpMove[currentLang];
+  }
+
+  // ===== SIZE / RESIZE =====
+  function resize() {
+    canvas.width = boardWrap.clientWidth;
+    canvas.height = boardWrap.clientHeight;
+    requestRender();
+  }
+
+  window.addEventListener("resize", resize);
+
+  // ===== MOUSE =====
+  function canvasPos(e) {
+    var r = canvas.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+
+  function setMode(m) {
+    mode = m;
+    linkFromId = null;
+    selectedId = null;
+    draggingId = null;
+    modeMoveBtn.classList.toggle("active", m === "move");
+    modeAddBtn.classList.toggle("active", m === "add");
+    modeLinkBtn.classList.toggle("active", m === "link");
+    canvas.classList.toggle("mode-link", m === "link");
+    updateHelp();
+    requestRender();
+  }
+
+  modeMoveBtn.addEventListener("click", function () { setMode("move"); });
+  modeAddBtn.addEventListener("click", function () { setMode("add"); });
+  modeLinkBtn.addEventListener("click", function () { setMode("link"); });
+
+  canvas.addEventListener("mousedown", function (e) {
+    var p = canvasPos(e);
+    mouse = p;
+
+    if (mode === "add") {
+      var n = { id: nextId++, x: p.x - 37, y: p.y - 16, label: T.nodeDefault[currentLang] };
+      nodesArr.push(n);
+      selectedId = n.id;
+      openEditor(n);
+      requestRender();
+      return;
+    }
+
+    if (mode === "link") {
+      var hit = hitNode(p.x, p.y);
+      if (!hit) {
+        linkFromId = null;
+        requestRender();
+        return;
+      }
+      if (linkFromId === null) {
+        linkFromId = hit.id;
+      } else if (linkFromId !== hit.id) {
+        // όχι διπλές συνδέσεις
+        var dup = false;
+        for (var i = 0; i < linksArr.length; i++) {
+          if ((linksArr[i].a === linkFromId && linksArr[i].b === hit.id) ||
+              (linksArr[i].a === hit.id && linksArr[i].b === linkFromId)) dup = true;
+        }
+        if (!dup) linksArr.push({ a: linkFromId, b: hit.id });
+        linkFromId = null;
+      }
+      requestRender();
+      return;
+    }
+
+    // move mode
+    var hitM = hitNode(p.x, p.y);
+    if (hitM) {
+      selectedId = hitM.id;
+      draggingId = hitM.id;
+      var s = nodeSize(hitM.label);
+      dragDX = p.x - hitM.x;
+      dragDY = p.y - hitM.y;
+    } else {
+      selectedId = null;
+    }
+    requestRender();
+  });
+
+  canvas.addEventListener("mousemove", function (e) {
+    var p = canvasPos(e);
+    mouse = p;
+    if (draggingId !== null) {
+      var n = nodeById(draggingId);
+      if (n) {
+        n.x = p.x - dragDX;
+        n.y = p.y - dragDY;
+      }
+    }
+    if (draggingId !== null || (mode === "link" && linkFromId !== null)) requestRender();
+  });
+
+  canvas.addEventListener("mouseup", function () {
+    draggingId = null;
+  });
+
+  canvas.addEventListener("mouseleave", function () {
+    draggingId = null;
+  });
+
+  // Διπλό κλικ: rename (move mode)
+  canvas.addEventListener("dblclick", function (e) {
+    if (mode !== "move") return;
+    var p = canvasPos(e);
+    var hit = hitNode(p.x, p.y);
+    if (hit) {
+      selectedId = hit.id;
+      openEditor(hit);
+      requestRender();
+    }
+  });
+
+  // ===== FLOATING EDITOR (rename) =====
+  function openEditor(n) {
+    editingId = n.id;
+    nodeEditor.value = n.label;
+    var s = nodeSize(n.label);
+    nodeEditor.style.display = "block";
+    nodeEditor.style.left = n.x + "px";
+    nodeEditor.style.top = (n.y - 38) + "px";
+    nodeEditor.focus();
+    nodeEditor.select();
+  }
+
+  function closeEditor(save) {
+    if (editingId === null) return;
+    var n = nodeById(editingId);
+    if (n && save) {
+      var v = nodeEditor.value.trim();
+      if (v) n.label = v;
+    }
+    editingId = null;
+    nodeEditor.style.display = "none";
+    nodeEditor.value = "";
+    requestRender();
+  }
+
+  nodeEditor.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); closeEditor(true); }
+    else if (e.key === "Escape") { e.preventDefault(); closeEditor(false); }
+  });
+  nodeEditor.addEventListener("blur", function () { closeEditor(true); });
+
+  // ===== KEYBOARD (Del σβήνει επιλεγμένο) =====
+  document.addEventListener("keydown", function (e) {
+    if (editingId !== null) return; // πληκτρολογούμε στο editor
+    if (e.key !== "Delete" && e.key !== "Backspace") return;
+    if (selectedId === null) return;
+    e.preventDefault();
+    removeNode(selectedId);
+    selectedId = null;
+    requestRender();
+  });
+
+  // ===== CLEAR =====
+  clearBtn.addEventListener("click", function () {
+    if (!nodesArr.length) return;
+    if (!window.confirm(T.clearConfirm[currentLang])) return;
+    nodesArr = [];
+    linksArr = [];
+    selectedId = null;
+    linkFromId = null;
+    requestRender();
+  });
+
+  // ===== EXPORT =====
+  // Bounding box όλων των κόμβων (+padding)
+  function contentBox() {
+    if (!nodesArr.length) return null;
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (var i = 0; i < nodesArr.length; i++) {
+      var n = nodesArr[i];
+      var s = nodeSize(n.label);
+      if (n.x < minX) minX = n.x;
+      if (n.y < minY) minY = n.y;
+      if (n.x + s.w > maxX) maxX = n.x + s.w;
+      if (n.y + s.h > maxY) maxY = n.y + s.h;
+    }
+    return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+  }
+
+  var savedTimer = null;
+
+  function flashStatus(msg) {
+    boardStatus.textContent = msg;
+    clearTimeout(savedTimer);
+    savedTimer = setTimeout(renderStatus, 2200);
+  }
+
+  function downloadBlob(blob, fname) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+  }
+
+  exportPngBtn.addEventListener("click", function () {
+    var box = contentBox();
+    if (!box) return;
+    var pad = 30;
+    var EX = 2; // export scale
+    var off = document.createElement("canvas");
+    off.width = Math.ceil((box.w + pad * 2) * EX);
+    off.height = Math.ceil((box.h + pad * 2) * EX);
+    var oc = off.getContext("2d");
+
+    oc.scale(EX, EX);
+    oc.translate(pad - box.x, pad - box.y);
+
+    // Ίδιο painting με το render(), offscreen
+    oc.fillStyle = "#0d1420";
+    oc.fillRect(box.x - pad, box.y - pad, box.w + pad * 2, box.h + pad * 2);
+
+    oc.lineWidth = 2;
+    var i;
+    for (i = 0; i < linksArr.length; i++) {
+      var na = nodeById(linksArr[i].a);
+      var nb = nodeById(linksArr[i].b);
+      if (!na || !nb) continue;
+      var ca = nodesCenter(na), cb = nodesCenter(nb);
+      var dy = Math.abs(cb.y - ca.y);
+      oc.strokeStyle = "rgba(121, 192, 255, 0.5)";
+      oc.beginPath();
+      oc.moveTo(ca.x, ca.y);
+      oc.bezierCurveTo(ca.x, ca.y + dy * 0.5, cb.x, cb.y - dy * 0.5, cb.x, cb.y);
+      oc.stroke();
+    }
+
+    oc.font = nodeFont();
+    oc.textBaseline = "middle";
+    for (i = 0; i < nodesArr.length; i++) {
+      var n = nodesArr[i];
+      var s = nodeSize(n.label);
+      oc.fillStyle = "#1a2739";
+      roundRect(oc, n.x, n.y, s.w, s.h, 9);
+      oc.fill();
+      oc.strokeStyle = "#28374c";
+      oc.lineWidth = 1;
+      roundRect(oc, n.x, n.y, s.w, s.h, 9);
+      oc.stroke();
+      oc.fillStyle = "#e2eaf4";
+      oc.fillText(n.label, n.x + s.w / 2 - oc.measureText(n.label).width / 2, n.y + s.h / 2 + 1);
+    }
+
+    off.toBlob(function (blob) {
+      if (!blob) return;
+      downloadBlob(blob, "tree_sketch_" + off.width + "x" + off.height + ".png");
+      flashStatus(T.savedPng[currentLang]);
+    }, "image/png");
+  });
+
+  exportSvgBtn.addEventListener("click", function () {
+    var box = contentBox();
+    if (!box) return;
+    var pad = 30;
+    var W = Math.ceil(box.w + pad * 2);
+    var H = Math.ceil(box.h + pad * 2);
+    var tx = pad - box.x, ty = pad - box.y;
+
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + " " + H + '">\n';
+    svg += '<rect width="100%" height="100%" fill="#0d1420"/>\n';
+
+    // Node metrics για SVG (measureText χρειάζεται ctx font — ίδιο ερώτημα)
+    ctx.font = nodeFont();
+    var parts = [];
+    var i;
+
+    function esc(s) {
+      return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    for (i = 0; i < linksArr.length; i++) {
+      var na = nodeById(linksArr[i].a);
+      var nb = nodeById(linksArr[i].b);
+      if (!na || !nb) continue;
+      var ca = nodesCenter(na), cb = nodesCenter(nb);
+      var dy = Math.abs(cb.y - ca.y);
+      var d = "M " + (ca.x + tx) + " " + (ca.y + ty)
+        + " C " + (ca.x + tx) + " " + (ca.y + ty + dy * 0.5)
+        + " " + (cb.x + tx) + " " + (cb.y + ty - dy * 0.5)
+        + " " + (cb.x + tx) + " " + (cb.y + ty);
+      parts.push('<path d="' + d + '" fill="none" stroke="rgba(121,192,255,0.5)" stroke-width="2"/>');
+    }
+
+    for (i = 0; i < nodesArr.length; i++) {
+      var n = nodesArr[i];
+      var s = nodeSize(n.label);
+      var x = n.x + tx, y = n.y + ty;
+      parts.push('<rect x="' + x + '" y="' + y + '" width="' + s.w + '" height="' + s.h + '" rx="9" fill="#1a2739" stroke="#28374c"/>');
+      parts.push('<text x="' + (x + s.w / 2) + '" y="' + (y + s.h / 2) + '" fill="#e2eaf4" '
+        + 'font-family="Segoe UI, system-ui, sans-serif" font-size="13" font-weight="700" '
+        + 'text-anchor="middle" dominant-baseline="central">' + esc(n.label) + '</text>');
+    }
+
+    svg += parts.join("\n") + "\n</svg>";
+
+    downloadBlob(new Blob([svg], { type: "image/svg+xml" }), "tree_sketch_" + W + "x" + H + ".svg");
+    flashStatus(T.savedSvg[currentLang]);
+  });
+
+  // ===== UI SETUP =====
+  (function init() {
+    resize();
+    applyStatic();   // i18n πριν το πρώτο render
+    render();
+  })();
+
+  // ===== ΕΓΚΑΤΑΣΤΑΣΗ (PWA) =====
+  var deferredPrompt = null;
+
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.hidden = false;
+  });
+
+  installBtn.addEventListener("click", function () {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  window.addEventListener("appinstalled", function () {
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  // ===== SERVICE WORKER (offline — κοινός SW της σουίτας στη ρίζα) =====
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("../sw.js").catch(function (err) {
+        console.warn("SW registration failed:", err);
+      });
+    });
+  }
+
+})();
+</script>
+
+</body>
+</html>

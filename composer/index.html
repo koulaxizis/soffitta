@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ringtone Composer — Soffitta</title>
+<meta name="description" content="Compose retro monophonic ringtones like it's 1999 — type notes, play them, export WAV. Free, open source, no cookies, no tracking.">
+<link rel="canonical" href="https://soffitta.site/composer/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://soffitta.site/composer/">
+<meta property="og:title" content="Ringtone Composer — Soffitta">
+<meta property="og:description" content="Compose retro monophonic ringtones — play and export WAV.">
+<!-- TODO (αργότερα): og-cover.png 1200×630 στον φάκελο composer/ -->
+<meta property="og:image" content="https://soffitta.site/composer/og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0a1410">
+<link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a1410'/%3E%3Cpath d='M10 35L32 11L54 35' fill='none' stroke='%23e6ce9a' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='25' y='40' width='14' height='13' rx='3' fill='%237ee8a2'/%3E%3C/svg%3E">
+<link rel="manifest" href="../manifest.webmanifest">
+<style>
+  :root {
+    --bg: #0a1410;
+    --surface: #101c16;
+    --surface-2: #16261e;
+    --border: #24382e;
+    --text: #e2f2e9;
+    --text-muted: #8aa89b;
+    --accent: #7ee8a2;
+    --accent-soft: rgba(126, 232, 162, 0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  header h1 { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.01em; }
+  header h1 span { color: var(--accent); }
+  header .hint { font-size: 0.8rem; color: var(--text-muted); }
+
+  /* ===== ΕΡΓΑΛΕΙΑ (γλώσσα + εγκατάσταση) ===== */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .lang-switch {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .lang-switch button {
+    background: none;
+    border: none;
+    padding: 6px 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+    letter-spacing: 0.04em;
+  }
+
+  .lang-switch button.active {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  #installBtn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+  }
+  #installBtn:hover { border-color: var(--accent); }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 0;
+    flex: 1;
+  }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  /* ===== CONTROLS ===== */
+  aside {
+    border-right: 1px solid var(--border);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+  }
+
+  @media (max-width: 860px) { aside { border-right: none; border-bottom: 1px solid var(--border); } }
+
+  .group { display: flex; flex-direction: column; gap: 8px; }
+
+  .group label {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+
+  select, input[type="text"], textarea {
+    width: 100%;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    outline: none;
+  }
+
+  select:focus, input:focus, textarea:focus { border-color: var(--accent); }
+
+  textarea {
+    min-height: 120px;
+    resize: vertical;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 0.92rem;
+    line-height: 1.7;
+    letter-spacing: 0.04em;
+  }
+  
+     aside .hint {
+     font-size: 0.72rem;
+     color: var(--text-muted);
+     line-height: 1.6;
+   }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--surface-2);
+    outline: none;
+    border: 1px solid var(--border);
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 16px; height: 16px;
+    border: none;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+
+  .range-val { font-size: 0.78rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+  button {
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  }
+
+  button:hover { background: var(--surface-2); border-color: var(--accent); }
+  button:active { transform: translateY(1px); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #0a1810; }
+  button.primary:hover { filter: brightness(1.08); background: var(--accent); }
+
+  .btn-row { display: flex; gap: 8px; }
+  .btn-row button { flex: 1; }
+
+  /* ===== NOTE KEYPAD ===== */
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+  }
+
+  .keypad button {
+    padding: 8px 4px;
+    font-size: 0.82rem;
+    font-family: "Consolas", "Courier New", monospace;
+  }
+
+  .presets {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .presets button { text-align: left; }
+
+  footer {
+    margin-top: auto;
+    padding: 18px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.7;
+  }
+
+  footer a { color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--text-muted); }
+  footer a:hover { border-bottom-style: solid; }
+
+  /* ===== MAIN: LCD & PIANO ROLL ===== */
+  main {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    min-height: 50vh;
+  }
+
+  .lcd-frame {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.45);
+    max-width: 100%;
+    width: min(720px, 100%);
+  }
+
+  /* Ρετρό LCD οθόνη */
+  .lcd {
+    background: #9fc08f;
+    border: 3px solid #33452f;
+    border-radius: 6px;
+    padding: 14px 16px;
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 1.05rem;
+    letter-spacing: 0.12em;
+    color: #26331f;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.25);
+    word-break: break-all;
+    line-height: 1.8;
+  }
+
+  .lcd .cursor {
+    display: inline-block;
+    width: 0.55em;
+    height: 1.1em;
+    vertical-align: middle;
+    background: #26331f;
+    animation: blink 1s steps(1) infinite;
+  }
+
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .lcd-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+
+  /* Piano roll */
+  .roll-frame {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.45);
+    width: min(720px, 100%);
+    max-width: 100%;
+  }
+
+  #roll {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    background: var(--bg);
+  }
+
+  .status {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+</style>
+</head>
+
+<body>
+
+<header>
+  <div>
+    <h1>🎵 Ringtone <span>Composer</span></h1>
+    <p class="hint" data-en="Retro monophonic tones — type notes, play, export WAV."
+       data-el="Ρετρό μονοφωνικά ringtone — γράψε νότες, παίξε, εξήγαγε WAV.">Compose retro monophonic ringtones — play and export WAV.</p>
+  </div>
+  <div class="toolbar">
+    <button id="installBtn" hidden data-en="⬇ Install app" data-el="⬇ Εγκατάσταση">⬇ Install app</button>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button id="langEn" class="active">EN</button>
+      <button id="langEl">ΕΛ</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside>
+
+    <div class="group">
+      <label for="melodyInput" data-en="Melody (Nokia syntax)" data-el="Μελωδία (σύνταξη Nokia)">Melody (Nokia syntax)</label>
+   <textarea id="melodyInput" spellcheck="false" autocomplete="off">e2 e2 f2 g2 g2 f2 e2 d2 c2 c2 d2 e2 e2 d2 d2 - - </textarea>
+      <p class="hint" id="syntaxHint" data-en="Notes: c d e f g a b · # sharp · octaves 1–3 · duration prefix 1/2/4/8/16, dot = half longer · '‑' pause"
+         data-el="Νότες σε σύνταξη Nokia: c d e f g a b · # διαίρεση · 1/2/4/8/16 διάρκεια, τελεία = μισή ακόμα · ‑ παύση"></p>
+    </div>
+
+    <div class="group">
+      <label data-en="Keypad" data-el="Πληκτρολόγιο">Keypad</label>
+      <div class="keypad" id="keypad">
+        <button data-note="4c1">c1</button>
+        <button data-note="4d1">d1</button>
+        <button data-note="4e1">e1</button>
+        <button data-note="4f1">f1</button>
+        <button data-note="4g1">g1</button>
+        <button data-note="4a1">a1</button>
+        <button data-note="4b1">b1</button>
+        <button data-note="4#c2">#c2</button>
+        <button data-note="4c2">c2</button>
+        <button data-note="4d2">d2</button>
+        <button data-note="4e2">e2</button>
+        <button data-note="4f2">f2</button>
+        <button data-note="4g2">g2</button>
+        <button data-note="4a2">a2</button>
+        <button data-note="4b2">b2</button>
+        <button data-note="4c3">c3</button>
+       <button data-note="4d3">d3</button>
+        <button data-note="-">‑</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="presets">
+        <button id="presetGrande" data-en="▶ Preset: Ode to Joy" data-el="▶ Preset: Ωδή στη Χαρά">▶ Preset: Ode to Joy</button>
+        <button id="presetAllouete" data-en="▶ Preset: Alle Vögel (folk)" data-el="▶ Preset: Πουλιά (λαϊκό)">▶ Preset: Birdsong (folk)</button>
+        <button id="presetRondo" data-en="▶ Preset: Nokia tune" data-el="▶ Preset: Μελωδία Nokia">▶ Preset: Nokia tune</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <label for="bpmRange"><span data-en="Tempo" data-el="Τέμπο">Tempo</span> <span class="range-val" id="bpmVal">180 bpm</span></label>
+      <input type="range" id="bpmRange" min="60" max="220" value="112">
+    </div>
+
+    <div class="group">
+      <label for="waveSel" data-en="Timbre" data-el="Ηχος">Timbre</label>
+      <select id="waveSel">
+        <option value="square" data-en="Square (Nokia)" data-el="Square (Nokia)">Square (Nokia)</option>
+        <option value="triangle" data-en="Triangle (soft)" data-el="Τρίγωνο (απαλά)">Triangle (soft)</option>
+        <option value="sine" data-en="Sine (pure)" data-el="Ημιτονοειδές (καθαρό)">Sine (pure)</option>
+      </select>
+    </div>
+
+    <div class="group">
+      <button class="primary" id="playBtn" data-en="▶ Play" data-el="▶ Αναπαραγωγή">▶ Play</button>
+      <div class="btn-row">
+        <button id="wavBtn">💾 WAV</button>
+        <button id="clearBtn" data-en="✕ Clear" data-el="✕ Καθαρισμός">✕ Clear</button>
+      </div>
+    </div>
+
+  </aside>
+
+  <main>
+    <div class="lcd-frame">
+      <div class="lcd" id="lcd"></div>
+      <div class="lcd-controls">
+        <button id="demoBtn" data-en="▷ Demo (rendered)" data-el="▷ Demo (αποδιδόμενο)">▷ Demo</button>
+      </div>
+    </div>
+    <div class="roll-frame">
+      <canvas id="roll" width="680" height="220"></canvas>
+      <div class="status" id="statusLine"></div>
+    </div>
+  </main>
+
+</div>
+
+<footer>
+  <span data-en="Designed by" data-el="Σχεδιασμένο από τον">Designed by</span>
+  <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="../" data-en="All apps" data-el="Όλα τα apps">All apps</a><br>
+  <span data-en="No cookies · No tracking · Open source"
+        data-el="Χωρίς cookies · Χωρίς tracking · Ανοιχτού κώδικα">No cookies · No tracking · Open source</span>
+</footer>
+
+  // ===== MEASURE (init/resize μόνο — όχι ανά keystroke) =====
+  function measure() {
+    var probe = document.createElement("span");
+    probe.style.visibility = "hidden";
+    probe.style.whiteSpace = "pre";
+    probe.style.font = "inherit";
+    probe.textContent = "0000000000";
+    paper.appendChild(probe);
+    var w10 = probe.getBoundingClientRect().width;
+    probe.remove();
+    if (w10 > 0) charsPerLine = Math.max(20, Math.floor((paper.clientWidth - 88) / (w10 / 10)));
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function makeLine(i) {
+    var div = document.createElement("div");
+    div.className = "line";
+    if (i === curLine) {
+      div.setAttribute("data-cur", "1");
+      div.innerHTML = escapeHtml(lines[i]) + '<span class="caret">&nbsp;</span>';
+    } else {
+      div.innerHTML = escapeHtml(lines[i]) || "&nbsp;";
+    }
+    return div;
+  }
+
+  // ===== RENDER (clean: sync children, ενημέρωση μόνο της τρέχουσας γραμμής) =====
+  function render(full) {
+    if (full) {
+      // Πλήρης επανακατασκευή: αλλαγή δομής (νέα γραμμή, backspace στην αρχή, Esc, resize)
+      paper.innerHTML = "";
+      for (var i = 0; i < lines.length; i++) {
+        var div = makeLine(i);
+        if (i === curLine) renderLine = div;
+        paper.appendChild(div);
+      }
+    } else {
+      // Ταχεία διαδρομή: μόνο η τρέχουσα γραμμή ξαναγράφεται
+      renderLine.innerHTML = escapeHtml(lines[curLine]) + '<span class="caret">&nbsp;</span>';
+    }
+    renderLine.id = "renderLine";
+
+    renderCounters();
+
+    // Scroll: κράτα την τρέχουσα γραμμή ορατή
+    var cur = paper.querySelector('.line[data-cur="1"]');
+    if (cur) {
+      var offset = cur.offsetTop - 40;
+      paperInner.style.top = Math.max(0, offset - 60) * -1 + "px";
+    }
+
+    // Κουδούνι πλησίον άκρης γραμμής: 12 γράμματα πριν το τέλος (>=, flag ανά γραμμή)
+    if (lines[curLine].length >= charsPerLine - 12 && !lineBelled) {
+      lineBelled = true;
+      if (soundChk.checked) bellSound();
+    }
+  }
+
+  function renderCounters() {
+    var all = lines.join("\n");
+    var wordCount = all.trim() ? all.trim().split(/\s+/).length : 0;
+    var charCount = all.replace(/\n/g, "").length;
+    keysHint.textContent = wordCount + " " + T.words[currentLang] + " · " + charCount + " " + T.chars[currentLang];
+  }
+
+  // ===== INPUT =====
+  function typeChar(ch) {
+    if (lines[curLine].length >= charsPerLine) {
+      newLine();
+    } else {
+      lineBelled = false;
+    }
+
+    // «Κολλημένα πλήκτρα»: 4% — παροδική οριζόντια μετατόπιση του χαρτιού
+    if (misalignChk.checked && Math.random() < 0.04) {
+      paper.classList.remove("stuck");
+      void paper.offsetWidth;
+      paper.classList.add("stuck");
+    }
+
+    lines[curLine] += ch;
+
+    render(false);
+    paper.classList.remove("keyed");
+    void paper.offsetWidth;
+    paper.classList.add("keyed");
+
+    if (soundChk.checked) {
+      if (ch === " ") spaceSound();
+      else keySound();
+    }
+  }
+
+  function newLine() {
+    lines.push("");
+    curLine++;
+    lineBelled = false;
+    render(true);
+    if (soundChk.checked) returnSound();
+  }
+
+  function backspace() {
+    if (lines[curLine].length > 0) {
+      lines[curLine] = lines[curLine].slice(0, -1);
+      lineBelled = false;
+    } else if (curLine > 0) {
+      lines.pop();
+      curLine--;
+    } else {
+      return;
+    }
+    render(true);
+    if (soundChk.checked) keySound(); // «ξε-πάτημα» — μικρό κλικ
+  }
+
+  function newSheet() {
+    lines = [""];
+    curLine = 0;
+    lineBelled = false;
+    render(true);
+    if (soundChk.checked) sheetSound();
+  }
+
+  // ===== KEYBOARD (desktop) =====
+  document.addEventListener("keydown", function (e) {
+    // Μηδέν παρεμβολή σε πραγματικά controls (και κουμπιά — το Space κάνει κλικ εκεί)
+    var tag = (e.target && e.target.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "select" || tag === "textarea" || tag === "button") return;
+
+    if (e.key === "Escape") { newSheet(); return; }
+    if (e.key === "Enter") { e.preventDefault(); newLine(); return; }
+    if (e.key === "Backspace") { e.preventDefault(); backspace(); return; }
+
+    // Εκτυπώσιμοι χαρακτήρες μόνο
+    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      typeChar(e.key);
+    }
+  });
+
+  // ===== MOBILE: κρυφό textarea για εγγενές πληκτρολόγιο =====
+  var bridge = document.createElement("textarea");
+  bridge.setAttribute("aria-hidden", "true");
+  bridge.style.position = "fixed";
+  bridge.style.opacity = "0";
+  bridge.style.pointerEvents = "none";
+  bridge.style.left = "-9999px";
+  document.body.appendChild(bridge);
+
+  paper.addEventListener("click", function () {
+    bridge.focus({ preventScroll: true });
+  });
+
+  bridge.addEventListener("input", function () {
+    var v = bridge.value;
+    if (v) {
+      for (var i = 0; i < v.length; i++) typeChar(v[i]);
+      bridge.value = "";
+    }
+  });
+
+  bridge.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); newLine(); }
+    else if (e.key === "Backspace") { e.preventDefault(); backspace(); }
+  });
+
+  // ===== BUTTONS =====
+  bellBtn.addEventListener("click", function () {
+    if (soundChk.checked) bellSound();
+  });
+
+  returnBtn.addEventListener("click", function () {
+    newLine();
+  });
+
+  clearBtn.addEventListener("click", function () {
+    newSheet();
+  });
+
+  // Πρώτο user gesture ενεργοποιεί το AudioContext
+  document.addEventListener("pointerdown", function once() {
+    ac();
+    document.removeEventListener("pointerdown", once);
+  }, { once: true });
+
+  window.addEventListener("resize", function () {
+    measure();
+    render(true);
+  });
+
+  // ===== INIT =====
+  applyStatic();
+  measure();
+  render(true);
+
+  // ===== ΕΓΚΑΤΑΣΤΑΣΗ (PWA) =====
+  var deferredPrompt = null;
+
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.hidden = false;
+  });
+
+  installBtn.addEventListener("click", function () {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  window.addEventListener("appinstalled", function () {
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  // ===== SERVICE WORKER (offline — κοινός SW της σουίτας στη ρίζα) =====
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("../sw.js").catch(function (err) {
+        console.warn("SW registration failed:", err);
+      });
+    });
+  }
+
+})();
+</script>
+
+</body>
+</html>

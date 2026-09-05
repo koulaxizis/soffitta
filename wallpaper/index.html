@@ -838,6 +838,19 @@
       render();
     });
   }
+  
+    // ===== DEBOUNCED RENDER =====
+  // Για controls που εκπέμπουν συνεχώς (sliders). Το label ενημερώνεται αμέσως,
+  // το βαρύ render τρέχει μία φορά, 120ms μετά την τελευταία κίνηση.
+  var renderTimer = null;
+
+  function scheduleRender() {
+    if (renderTimer) clearTimeout(renderTimer);
+    renderTimer = setTimeout(function () {
+      renderTimer = null;
+      requestRender();
+    }, 120);
+  }
 
   // ===== SEED =====
   function randomSeed() {
@@ -901,13 +914,13 @@
     densityRange.addEventListener("input", function () {
       state.density = densityRange.value / 100;
       densityVal.textContent = densityRange.value + "%";
-      requestRender();
+      scheduleRender();
     });
 
     chaosRange.addEventListener("input", function () {
       state.chaos = chaosRange.value / 100;
       chaosVal.textContent = chaosRange.value + "%";
-      requestRender();
+      scheduleRender();
     });
 
     grainChk.addEventListener("change", function () {
@@ -933,7 +946,7 @@
       var ch = parseInt(customH.value, 10) || 1080;
       state.w = Math.max(256, Math.min(8192, cw));
       state.h = Math.max(256, Math.min(8192, ch));
-      requestRender();
+      scheduleRender();
     }
 
     customW.addEventListener("change", applyCustomDims);

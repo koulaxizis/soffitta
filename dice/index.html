@@ -1,10 +1,22 @@
 <!DOCTYPE html>
-<html lang="el">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dice &amp; Coin</title> <!-- SUITE NAME prefix όταν επιλεγεί το όνομα -->
-<meta name="description" content="Online ζάρια d4–d100 με modifiers, ρίψη κέρματος, ιστορικό και κοινοποίηση αποτελέσματος με link. Χωρίς cookies, χωρίς tracking.">
+<title>Dice &amp; Coin — Soffitta</title>
+<meta name="description" content="Online dice d4–d100 with modifiers, advantage/disadvantage, drop-lowest, coin flips, history and shareable result links. Free, open source, no cookies, no tracking.">
+<link rel="canonical" href="https://soffitta.site/dice/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://soffitta.site/dice/">
+<meta property="og:title" content="Dice &amp; Coin — Soffitta">
+<meta property="og:description" content="d4 to d100 with modifiers, advantage, coin flips and shareable results.">
+<!-- TODO (αργότερα): og-cover.png 1200×630 στον φάκελο dice/ -->
+<meta property="og:image" content="https://soffitta.site/dice/og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#17130a">
+<link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317130a'/%3E%3Cpath d='M10 35L32 11L54 35' fill='none' stroke='%23e6ce9a' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='25' y='40' width='14' height='13' rx='3' fill='%23ffd166'/%3E%3C/svg%3E">
+<link rel="manifest" href="../manifest.webmanifest">
 <style>
   :root {
     --bg: #17130a;
@@ -41,6 +53,46 @@
   header h1 { font-size: 1.25rem; font-weight: 800; }
   header h1 span { color: var(--accent); }
   header .hint { font-size: 0.8rem; color: var(--text-muted); }
+
+  /* ===== ΕΡΓΑΛΕΙΑ (γλώσσα + εγκατάσταση) ===== */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .lang-switch {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .lang-switch button {
+    background: none;
+    border: none;
+    padding: 6px 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+    letter-spacing: 0.04em;
+  }
+
+  .lang-switch button.active {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  #installBtn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+  }
+  #installBtn:hover { border-color: var(--accent); }
 
   .cols {
     display: grid;
@@ -309,27 +361,44 @@
   }
 </style>
 </head>
+
 <body>
 
 <header>
-  <h1>🎲 Dice &amp; <span>Coin</span></h1>
-  <p class="hint"><span class="kbd">Space</span> ρίψη ζαριών · <span class="kbd">C</span> κέρμα · <span class="kbd">Ctrl+C</span> share</p>
+  <div>
+    <h1>🎲 Dice &amp; <span>Coin</span></h1>
+    <p class="hint">
+      <span class="kbd">Space</span>
+      <span data-en="roll dice" data-el="ρίψη ζαριών">roll dice</span> ·
+      <span class="kbd">C</span>
+      <span data-en="coin" data-el="κέρμα">coin</span> ·
+      <span class="kbd">Ctrl+C</span>
+      <span data-en="share" data-el="κοινοποίηση">share</span>
+    </p>
+  </div>
+  <div class="toolbar">
+    <button id="installBtn" hidden data-en="⬇ Install app" data-el="⬇ Εγκατάσταση">⬇ Install app</button>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button id="langEn" class="active">EN</button>
+      <button id="langEl">ΕΛ</button>
+    </div>
+  </div>
 </header>
 
 <div class="cols">
 
   <section class="col left">
 
-    <h2 class="section">Ζάρια</h2>
+    <h2 class="section" data-en="Dice" data-el="Ζάρια">Dice</h2>
 
     <div class="builder">
       <div class="row">
         <div class="field">
-          <label for="cnt">Πόσα</label>
+          <label for="cnt" data-en="How many" data-el="Πόσα">How many</label>
           <input type="number" id="cnt" class="num" value="2" min="1" max="30">
         </div>
         <div class="field">
-          <label for="sides">Τύπος</label>
+          <label for="sides" data-en="Type" data-el="Τύπος">Type</label>
           <select id="sides">
             <option value="4">d4</option>
             <option value="6" selected>d6</option>
@@ -341,16 +410,16 @@
           </select>
         </div>
         <div class="field">
-          <label for="mod">Modifier</label>
+          <label for="mod" data-en="Modifier" data-el="Modifier">Modifier</label>
           <input type="number" id="mod" class="num" value="0" min="-99" max="99">
         </div>
-        <button id="rollBtn" class="primary">⚡ Ρίξε</button>
+        <button id="rollBtn" class="primary" data-en="⚡ Roll" data-el="⚡ Ρίξε">⚡ Roll</button>
       </div>
 
       <div class="mode-row" id="modeRow">
-        <button data-mode="normal" class="active">Κανονικά</button>
-        <button data-mode="adv">Προνόμιο (keep高)</button>
-        <button data-mode="dis">Μειονέκτημα (keep低)</button>
+        <button data-mode="normal" class="active" data-en="Normal" data-el="Κανονικά">Normal</button>
+        <button data-mode="adv" data-en="Advantage (keep highest)" data-el="Προνόμιο (κρατάμε το υψηλότερο)">Advantage (keep highest)</button>
+        <button data-mode="dis" data-en="Disadvantage (keep lowest)" data-el="Μειονέκτημα (κρατάμε το χαμηλότερο)">Disadvantage (keep lowest)</button>
       </div>
     </div>
 
@@ -358,12 +427,13 @@
       <div class="notation" id="notation">2d6</div>
       <div class="total" id="total">–</div>
       <div class="dice-row" id="diceRow"></div>
-      <div class="sum-line" id="sumLine">Έτοιμο — πάτησε «Ρίξε» ή Space.</div>
-      <span class="flag crit" id="critFlag" style="display:none;">MAX!</span>
-      <span class="flag fumble" id="fumbleFlag" style="display:none;">1 — Άτσα</span>
+      <div class="sum-line" id="sumLine" data-en="Ready — hit “Roll” or Space."
+           data-el="Έτοιμο — πάτησε «Ρίξε» ή Space.">Ready — hit “Roll” or Space.</div>
+      <span class="flag crit" id="critFlag" style="display:none;" data-en="Max!" data-el="Μέγιστο!">Max!</span>
+      <span class="flag fumble" id="fumbleFlag" style="display:none;" data-en="1 — Fumble" data-el="1 — Άτσα">1 — Fumble</span>
 
       <div class="actions">
-        <button id="shareBtn">🔗 Κοινοποίησε το αποτέλεσμα</button>
+        <button id="shareBtn" data-en="🔗 Share result" data-el="🔗 Κοινοποίησε το αποτέλεσμα">🔗 Share result</button>
       </div>
 
       <div class="replay-note" id="replayNote"></div>
@@ -371,9 +441,9 @@
 
     <div class="presets" id="presets">
       <span class="preset" data-cnt="1" data-sides="20" data-mod="0">1d20</span>
-      <span class="preset" data-cnt="1" data-sides="20" data-mod="0" data-mode="adv">1d20 Προνόμιο</span>
+      <span class="preset" data-cnt="1" data-sides="20" data-mod="0" data-mode="adv" data-en="1d20 Advantage" data-el="1d20 Προνόμιο">1d20 Advantage</span>
       <span class="preset" data-cnt="2" data-sides="6" data-mod="0">2d6</span>
-      <span class="preset" data-cnt="4" data-sides="6" data-mod="0" data-drop-lowest="1">4d6 drop低</span>
+      <span class="preset" data-cnt="4" data-sides="6" data-mod="0" data-drop-lowest="1" data-en="4d6 drop lowest" data-el="4d6 χωρίς το χαμηλότερο">4d6 drop lowest</span>
       <span class="preset" data-cnt="8" data-sides="8" data-mod="0">8d8</span>
       <span class="preset" data-cnt="1" data-sides="100" data-mod="0">d100</span>
     </div>
@@ -382,27 +452,34 @@
 
   <aside class="col">
 
-    <h2 class="section">Κέρμα</h2>
+    <h2 class="section" data-en="Coin" data-el="Κέρμα">Coin</h2>
     <div class="coin-zone">
       <div class="coin-stage">
-        <div class="coin" id="coin" title="Κλικ για στρίψιμο">;</div>
+        <div class="coin" id="coin" data-title-en="Click to flip" data-title-el="Κλικ για στρίψιμο">?</div>
       </div>
-      <p class="coin-count">Κορώνα <b id="headsCount">0</b> · Γράμματα <b id="tailsCount">0</b></p>
+      <p class="coin-count">
+        <span data-en="Heads" data-el="Κορώνα">Heads</span>
+        <b id="headsCount">0</b> ·
+        <span data-en="Tails" data-el="Γράμματα">Tails</span>
+        <b id="tailsCount">0</b>
+      </p>
     </div>
 
-    <h2 class="section" style="margin-top:28px;">Ιστορικό</h2>
+    <h2 class="section" style="margin-top:28px;" data-en="History" data-el="Ιστορικό">History</h2>
     <ul class="history" id="historyList"></ul>
-    <div class="empty" id="historyEmpty">Καμία ρίψη ακόμα.</div>
-    <button id="clearBtn" style="margin-top:14px;">🧹 Καθάρισμα</button>
+    <div class="empty" id="historyEmpty" data-en="No rolls yet." data-el="Καμία ρίψη ακόμα.">No rolls yet.</div>
+    <button id="clearBtn" style="margin-top:14px;" data-en="🧹 Clear" data-el="🧹 Καθάρισμα">🧹 Clear</button>
 
   </aside>
 
 </div>
 
 <footer>
-  Designed by <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
-  <a href="../">Όλα τα apps</a><br>
-  Χωρίς cookies · Χωρίς tracking · Open source
+  <span data-en="Designed by" data-el="Σχεδιασμένο από τον">Designed by</span>
+  <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="../" data-en="All apps" data-el="Όλα τα apps">All apps</a><br>
+  <span data-en="No cookies · No tracking · Open source"
+        data-el="Χωρίς cookies · Χωρίς tracking · Ανοιχτού κώδικα">No cookies · No tracking · Open source</span>
 </footer>
 
 <script>
@@ -443,14 +520,86 @@
   var historyListEl = document.getElementById("historyList");
   var historyEmptyEl = document.getElementById("historyEmpty");
   var clearBtn = document.getElementById("clearBtn");
+  var langEnBtn = document.getElementById("langEn");
+  var langElBtn = document.getElementById("langEl");
+  var installBtn = document.getElementById("installBtn");
 
+  // ===== i18n (κοινό μοτίβο σε όλη τη σουίτα) =====
+  var LANG_KEY = "soffitta.lang";
+
+  var T = {
+    title: {
+      en: "Dice & Coin — Soffitta",
+      el: "Ζάρια & Νόμισμα — Soffitta"
+    },
+    metaDesc: {
+      en: "Online dice d4–d100 with modifiers, advantage/disadvantage, drop-lowest, coin flips, history and shareable result links. Free, open source, no cookies, no tracking.",
+      el: "Online ζάρια d4–d100 με modifiers, ρίψη κέρματος, ιστορικό και κοινοποίηση αποτελέσματος με link. Χωρίς cookies, χωρίς tracking."
+    },
+    coinTitle: { en: "Click to flip", el: "Κλικ για στρίψιμο" },
+    ready: { en: "Ready — hit “Roll” or Space.", el: "Έτοιμο — πάτησε «Ρίξε» ή Space." },
+    crit: { en: "Max!", el: "Μέγιστο!" },
+    fumble: { en: "1 — Fumble", el: "1 — Άτσα" },
+    shareBtn: { en: "🔗 Share result", el: "🔗 Κοινοποίησε το αποτέλεσμα" },
+    copied: { en: "✓ Copied!", el: "✓ Αντιγράφηκε!" },
+    copyPrompt: { en: "Copy this link:", el: "Αντίγραψε το link:" },
+    replayIntro: { en: "Replaying a shared result:", el: "Αναπαραγωγή κοινοποιημένου αποτελέσματος:" },
+    fellOut: { en: "(dropped the ", el: "(έπεσε το " },
+    closeParen: { en: ")", el: ")" },
+    coin: { en: "Coin", el: "Κέρμα" },
+    heads: { en: "Heads", el: "Κορώνα" },
+    tails: { en: "Tails", el: "Γράμματα" },
+    headsShort: { en: "H", el: "Κ" },
+    tailsShort: { en: "T", el: "Γ" },
+    noRolls: { en: "No rolls yet.", el: "Καμία ρίψη ακόμα." },
+    dropLabel: { en: " (drop lowest)", el: " (χωρίς το χαμηλότερο)" }
+  };
+
+  var currentLang = detectLang();
+
+  function detectLang() {
+    try {
+      var saved = localStorage.getItem(LANG_KEY);
+      if (saved === "en" || saved === "el") return saved;
+    } catch (e) {}
+    var nav = (navigator.language || "en").slice(0, 2).toLowerCase();
+    return nav === "el" ? "el" : "en";
+  }
+
+  function applyStatic() {
+    document.documentElement.setAttribute("lang", currentLang);
+    document.title = T.title[currentLang];
+    var metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute("content", T.metaDesc[currentLang]);
+    var nodes = document.querySelectorAll("[data-en]");
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].textContent = currentLang === "el"
+        ? nodes[i].getAttribute("data-el")
+        : nodes[i].getAttribute("data-en");
+    }
+    langEnBtn.classList.toggle("active", currentLang === "en");
+    langElBtn.classList.toggle("active", currentLang === "el");
+    coinEl.setAttribute("title", T.coinTitle[currentLang]);
+    // Το ζωντανό κείμενο του κερμάτων επανεμφανίζεται αν έχει ήδη γίνει ρίψη
+    if (lastFlip !== null) coinEl.textContent = lastFlip === "heads" ? T.headsShort[currentLang] : T.tailsShort[currentLang];
+    renderHistory();
+    renderCoinCounts();
+    if (defaultSumShown) sumLineEl.textContent = T.ready[currentLang];
+  }
+
+  function setLang(lang) {
+    currentLang = lang;
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    applyStatic();
+  }
+
+  langEnBtn.addEventListener("click", function () { setLang("en"); });
+  langElBtn.addEventListener("click", function () { setLang("el"); });
+
+  // ===== HISTORY =====
   var LS_HISTORY = "dicecoin.history.v1";
   var LS_COIN = "dicecoin.coincounts.v1";
 
-  var mode = "normal";
-  var droppingLowest = false;
-
-  // ===== HISTORY =====
   var history = [];
   try { history = JSON.parse(localStorage.getItem(LS_HISTORY) || "[]"); } catch (e) { history = []; }
   if (!Array.isArray(history)) history = [];
@@ -464,21 +613,33 @@
     return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
   }
 
+  function historyEntryText(h) {
+    // Νέες coin entries: { coin: true, heads: bool } → μεταφράζονται live.
+    // Παλιές (συμβατές με πίσω δρομολόγηση): έχουν ήδη notation string.
+    if (h.coin) {
+      var label = h.heads ? T.heads[currentLang] : T.tails[currentLang];
+      return { notation: T.coin[currentLang], detail: label, display: h.heads ? T.headsShort[currentLang] : T.tailsShort[currentLang] };
+    }
+    return { notation: h.notation, detail: h.detail, display: h.display !== undefined ? h.display : String(h.total) };
+  }
+
   function renderHistory() {
     historyListEl.innerHTML = "";
     historyEmptyEl.style.display = history.length ? "none" : "block";
+    historyEmptyEl.textContent = T.noRolls[currentLang];
     for (var i = 0; i < history.length; i++) {
       var h = history[i];
+      var info = historyEntryText(h);
       var li = document.createElement("li");
       li.className = "entry";
 
       var val = document.createElement("span");
       val.className = "val";
-      val.textContent = h.total;
+      val.textContent = info.display;
 
       var det = document.createElement("span");
       det.className = "det";
-      det.textContent = h.notation + (h.detail ? " (" + h.detail + ")" : "");
+      det.textContent = info.notation + (info.detail ? " (" + info.detail + ")" : "");
 
       var time = document.createElement("span");
       time.className = "time";
@@ -491,21 +652,24 @@
     }
   }
 
-  function pushHistory(notation, detail, total) {
-    history.unshift({ notation: notation, detail: detail, total: total, ts: Date.now() });
+  function pushHistory(entry) {
+    entry.ts = Date.now();
+    history.unshift(entry);
     if (history.length > 40) history = history.slice(0, 40);
     saveHistory();
     renderHistory();
   }
 
   // ===== MODE =====
+  var mode = "normal";
+  var droppingLowest = false;
+  var lastFlip = null;
+  var defaultSumShown = true;
+
   modeRow.addEventListener("click", function (e) {
     var btn = e.target.closest("button[data-mode]");
     if (!btn) return;
-    mode = btn.getAttribute("data-mode");
-    var btns = modeRow.querySelectorAll("button[data-mode]");
-    for (var i = 0; i < btns.length; i++) btns[i].classList.remove("active");
-    btn.classList.add("active");
+    setMode(btn.getAttribute("data-mode"));
   });
 
   function setMode(m) {
@@ -516,7 +680,23 @@
     }
   }
 
-  // ===== ROLL =====
+  // ===== COIN (state — η λογική ρίψης στο Part 4) =====
+  var coinCounts = { heads: 0, tails: 0 };
+  try {
+    var savedCoin = JSON.parse(localStorage.getItem(LS_COIN) || "{}");
+    if (savedCoin && typeof savedCoin.heads === "number") coinCounts = savedCoin;
+  } catch (e) {}
+
+  function saveCoin() {
+    try { localStorage.setItem(LS_COIN, JSON.stringify(coinCounts)); } catch (e) {}
+  }
+
+  function renderCoinCounts() {
+    headsCountEl.textContent = coinCounts.heads;
+    tailsCountEl.textContent = coinCounts.tails;
+  }
+  
+    // ===== ROLL =====
   var rolling = false;
 
   function roll() {
@@ -528,7 +708,7 @@
 
     cntEl.value = count;
 
-    // Προνόμιο/Μειονέκτημα: μόνο σε μονό d20 — γίνονται 2 ζάρια, κρατάμε το βέλτιστο
+    // Advantage/Disadvantage: μόνο σε μονό d20 — γίνονται 2 ζάρια, κρατάμε το βέλτιστο
     var advActive = (mode === "adv" || mode === "dis") && sides === 20 && count === 1;
 
     var dice = [];
@@ -556,11 +736,12 @@
 
     var modStr = mod > 0 ? "+" + mod : (mod < 0 ? String(mod) : "");
     var notation = (advActive ? "2d20kh" + (mode === "adv" ? "H" : "L")
-                    : kept.length + "d" + sides + (dropped !== null && !advActive ? " (drop低)" : ""))
+                    : kept.length + "d" + sides + (dropped !== null && !advActive ? T.dropLabel[currentLang] : ""))
                   + modStr;
 
     // UI
     rolling = true;
+    defaultSumShown = false;
     replayNote.classList.remove("visible");
     critFlag.style.display = "none";
     fumbleFlag.style.display = "none";
@@ -590,7 +771,7 @@
     // Sum line
     var parts = [];
     parts.push(kept.join(" + "));
-    if (dropped !== null) parts.push("(έπεσε το " + dropped + ")");
+    if (dropped !== null) parts.push(T.fellOut[currentLang] + dropped + T.closeParen[currentLang]);
     if (mod !== 0) parts.push(modStr);
     sumLineEl.innerHTML = "<b>" + total + "</b> = " + parts.join(" ");
 
@@ -600,10 +781,12 @@
       if (kept[0] === 1) fumbleFlag.style.display = "inline-block";
     }
 
-    pushHistory(notation, kept.join(", "), total);
+    pushHistory({ notation: notation, detail: kept.join(", "), total: total, display: String(total) });
 
     window.setTimeout(function () { rolling = false; }, 500);
   }
+
+  rollBtn.addEventListener("click", roll);
 
   // ===== SHARE (hash στο URL, τίποτα δεν αποθηκεύεται) =====
   function makeShareLink(notation, detail, total) {
@@ -613,26 +796,26 @@
 
   shareBtn.addEventListener("click", function () {
     var notation = notationEl.textContent;
-    if (notation === "2d6" && totalEl.textContent === "–") return; // τίποτα δεν έχει ριχτεί
+    if (defaultSumShown) return; // τίποτα δεν έχει ριχτεί ακόμα
     var link = makeShareLink(notation, sumLineEl.textContent.replace(/\s+/g, " ").trim(), totalEl.textContent);
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(link).then(function () {
-        shareBtn.textContent = "✓ Αντιγράφηκε!";
-        window.setTimeout(function () { shareBtn.textContent = "🔗 Κοινοποίησε το αποτέλεσμα"; }, 1600);
-      }).catch(function () { window.prompt("Αντίγραψε το link:", link); });
+        shareBtn.textContent = T.copied[currentLang];
+        window.setTimeout(function () { shareBtn.textContent = T.shareBtn[currentLang]; }, 1600);
+      }).catch(function () { window.prompt(T.copyPrompt[currentLang], link); });
     } else {
-      window.prompt("Αντίγραψε το link:", link);
+      window.prompt(T.copyPrompt[currentLang], link);
     }
   });
 
   function showReplay(data) {
-    replayNote.innerHTML = "Αναπαραγωγή κοινοποιημένου αποτελέσματος:<br><b>" +
+    replayNote.innerHTML = T.replayIntro[currentLang] + "<br><b>" +
       escapeHtml(data.n) + "</b> → <b>" + escapeHtml(String(data.t)) + "</b>" +
       (data.d ? " <span style=\"color:var(--text-muted)\">(" + escapeHtml(data.d) + ")</span>" : "");
     replayNote.classList.add("visible");
     notationEl.textContent = data.n;
     totalEl.textContent = data.t;
-    sumLineEl.innerHTML = "<b>" + data.t + "</b>";
+    sumLineEl.innerHTML = "<b>" + escapeHtml(String(data.t)) + "</b>";
   }
 
   function escapeHtml(s) {
@@ -650,22 +833,7 @@
     } catch (e) { /* άκυρο hash — αγνόησέ το */ }
   })();
 
-  // ===== COIN =====
-  var coinCounts = { heads: 0, tails: 0 };
-  try {
-    var saved = JSON.parse(localStorage.getItem(LS_COIN) || "{}");
-    if (saved && typeof saved.heads === "number") coinCounts = saved;
-  } catch (e) {}
-
-  function saveCoin() {
-    try { localStorage.setItem(LS_COIN, JSON.stringify(coinCounts)); } catch (e) {}
-  }
-
-  function renderCoinCounts() {
-    headsCountEl.textContent = coinCounts.heads;
-    tailsCountEl.textContent = coinCounts.tails;
-  }
-
+  // ===== COIN FLIP =====
   var flipping = false;
 
   function flipCoin() {
@@ -677,11 +845,12 @@
 
     window.setTimeout(function () {
       var heads = randInt(0, 1) === 0;
-      coinEl.textContent = heads ? "Κ" : "Γ";
+      lastFlip = heads ? "heads" : "tails";
+      coinEl.textContent = heads ? T.headsShort[currentLang] : T.tailsShort[currentLang];
       if (heads) coinCounts.heads++; else coinCounts.tails++;
       saveCoin();
       renderCoinCounts();
-      pushHistory(heads ? "Κέρμα" : "Κέρμα", heads ? "Κορώνα" : "Γράμματα", heads ? "Κ" : "Γ");
+      pushHistory({ coin: true, heads: heads });
       flipping = false;
     }, 850);
   }
@@ -716,11 +885,38 @@
     else if (e.key === "c" || e.key === "C") flipCoin();
   });
 
-  rollBtn.addEventListener("click", roll);
-
   // ===== INIT =====
-  renderHistory();
-  renderCoinCounts();
+  applyStatic();  // i18n + renderHistory + renderCoinCounts σε μία κίνηση
+
+  // ===== ΕΓΚΑΤΑΣΤΑΣΗ (PWA) =====
+  var deferredPrompt = null;
+
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.hidden = false;
+  });
+
+  installBtn.addEventListener("click", function () {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  window.addEventListener("appinstalled", function () {
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  // ===== SERVICE WORKER (offline — κοινός SW της σουίτας στη ρίζα) =====
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("../sw.js").catch(function (err) {
+        console.warn("SW registration failed:", err);
+      });
+    });
+  }
 
 })();
 </script>

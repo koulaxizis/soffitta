@@ -1,10 +1,22 @@
 <!DOCTYPE html>
-<html lang="el">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sound Mixer Toy</title> <!-- SUITE NAME prefix όταν επιλεγεί το όνομα -->
-<meta name="description" content="Βροχή, καφετέρια, τζάκι, άνεμος — ανακάτεψε τους ήχους σου. Όλοι οι ήχοι συντίθενται τοπικά, χωρίς αρχεία. Χωρίς cookies, χωρίς tracking.">
+<title>Sound Mixer Toy — Soffitta</title>
+<meta name="description" content="Rain, café, fireplace, wind — blend your own ambient soundscape. All sounds synthesized locally, no audio files. Free, open source, no cookies, no tracking.">
+<link rel="canonical" href="https://soffitta.site/mixer/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://soffitta.site/mixer/">
+<meta property="og:title" content="Sound Mixer Toy — Soffitta">
+<meta property="og:description" content="Rain, café, fireplace, crickets — blend ambient soundscapes, synthesized live in your browser.">
+<!-- TODO (αργότερα): og-cover.png 1200×630 στον φάκελο mixer/ -->
+<meta property="og:image" content="https://soffitta.site/mixer/og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0b1220">
+<link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b1220'/%3E%3Cpath d='M10 35L32 11L54 35' fill='none' stroke='%23e6ce9a' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='25' y='40' width='14' height='13' rx='3' fill='%238ecfff'/%3E%3C/svg%3E">
+<link rel="manifest" href="../manifest.webmanifest">
 <style>
   :root {
     --bg: #0b1220;
@@ -269,24 +281,38 @@
   }
 </style>
 </head>
+
 <body>
 
 <header>
-  <h1>🎧 Sound Mixer <span>Toy</span></h1>
-  <p class="hint"><span class="kbd">Space</span> έναρξη/παύση · Οι ήχοι συντίθενται live, δεν αναπαράγονται</p>
+  <div>
+    <h1>🎧 Sound Mixer <span>Toy</span></h1>
+    <p class="hint">
+      <span class="kbd">Space</span>
+      <span data-en="play / pause · sounds are synthesized live, not played back"
+            data-el="έναρξη/παύση · οι ήχοι συντίθενται live, δεν αναπαράγονται">play / pause · sounds are synthesized live, not played back</span>
+    </p>
+  </div>
+  <div class="toolbar">
+    <button id="installBtn" hidden data-en="⬇ Install app" data-el="⬇ Εγκατάσταση">⬇ Install app</button>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button id="langEn" class="active">EN</button>
+      <button id="langEl">ΕΛ</button>
+    </div>
+  </div>
 </header>
 
 <div class="layout">
 
   <section class="mixer" id="mixer">
-    <!-- Τα κανάλια δημιουργούνται δυναμικά -->
+    <!-- Τα κανάλια δημιουργούνται δυναμικά από το JS (bilingual) -->
   </section>
 
   <aside class="side">
 
     <div>
       <h2 class="section">Master</h2>
-      <button id="playBtn" class="primary">▶ Έναρξη</button>
+      <button id="playBtn" class="primary">▶ Play</button>
       <div class="master" style="margin-top:12px;">
         <div class="row">
           <label for="masterVol">Volume</label>
@@ -296,30 +322,31 @@
     </div>
 
     <div>
-      <h2 class="section">Presets</h2>
+      <h2 class="section" data-en="Presets" data-el="Έτοιμοι συνδυασμοί">Presets</h2>
       <div class="presets" id="presets"></div>
     </div>
 
     <div>
-      <h2 class="section">Συνδυασμός μου</h2>
-      <button id="savePresetBtn" style="width:100%;">💾 Αποθήκευση preset</button>
-      <button id="deletePresetBtn" style="width:100%; margin-top:8px;" title="Διαγραφή αποθηκευμένου">🗑️ Διαγραφή «Συνδυασμός μου»</button>
+      <h2 class="section" data-en="My mix" data-el="Ο συνδυασμός μου">My mix</h2>
+      <button id="savePresetBtn" style="width:100%;" data-en="💾 Save preset" data-el="💾 Αποθήκευση συνδυασμού">💾 Save preset</button>
+      <button id="deletePresetBtn" style="width:100%; margin-top:8px;"
+              data-title-en="Delete saved mix" data-title-el="Διαγραφή αποθηκευμένου συνδυασμού"
+              data-en="🗑️ Delete “My mix”" data-el="🗑️ Διαγραφή «Ο συνδυασμός μου»">🗑️ Delete “My mix”</button>
     </div>
 
     <div>
-      <h2 class="section">Χρονοδιακόπτης ύπνου</h2>
+      <h2 class="section" data-en="Sleep timer" data-el="Χρονοδιακόπτης ύπνου">Sleep timer</h2>
       <select id="timerSel">
-        <option value="0">Ανενεργός</option>
-        <option value="15">15 λεπτά</option>
-        <option value="30">30 λεπτά</option>
-        <option value="60">60 λεπτά</option>
+        <option value="0" data-en="Off" data-el="Ανενεργός">Off</option>
+        <option value="15" data-en="15 minutes" data-el="15 λεπτά">15 minutes</option>
+        <option value="30" data-en="30 minutes" data-el="30 λεπτά">30 minutes</option>
+        <option value="60" data-en="60 minutes" data-el="60 λεπτά">60 minutes</option>
       </select>
     </div>
 
     <p class="note">
-      Κανένα ηχητικό αρχείο δεν κατεβαίνει — όλα τα ηχεία σας δημιουργούνται στιγμιαία
-      από καθαρά μαθηματικά. Η.mix εσωτερικά μπορεί να φτάσει σε διαφορετικό ψηφιακό θόρυβο
-      κάθε φορά — μικρές τυχαιότητες, όπως η ζωντανή ηχογράφηση.
+      <span data-en="No audio files are downloaded — every sound is created on the spot from pure math. Small random variations keep it alive, like a real recording."
+            data-el="Κανένα ηχητικό αρχείο δεν κατεβαίνει — κάθε ήχος δημιουργείται στιγμιαία από καθαρά μαθηματικά. Μικρές τυχαιότητες τον κρατούν ζωντανό, σαν αληθινή ηχογράφηση.">No audio files are downloaded — every sound is created on the spot from pure math. Small random variations keep it alive, like a real recording.</span>
     </p>
 
   </aside>
@@ -327,9 +354,11 @@
 </div>
 
 <footer>
-  Designed by <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
-  <a href="../">Όλα τα apps</a><br>
-  Χωρίς cookies · Χωρίς tracking · Open source · Σύνθεση ήχου 100% τοπική
+  <span data-en="Designed by" data-el="Σχεδιασμένο από τον">Designed by</span>
+  <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="../" data-en="All apps" data-el="Όλα τα apps">All apps</a><br>
+  <span data-en="No cookies · No tracking · Open source · 100% local sound synthesis"
+        data-el="Χωρίς cookies · Χωρίς tracking · Ανοιχτού κώδικα · Σύνθεση ήχου 100% τοπική">No cookies · No tracking · Open source · 100% local sound synthesis</span>
 </footer>
 
 <script>
@@ -344,29 +373,99 @@
   var savePresetBtn = document.getElementById("savePresetBtn");
   var deletePresetBtn = document.getElementById("deletePresetBtn");
   var timerSel = document.getElementById("timerSel");
+  var langEnBtn = document.getElementById("langEn");
+  var langElBtn = document.getElementById("langEl");
+  var installBtn = document.getElementById("installBtn");
 
   var LS_PRESET = "soundmixer.preset.v1";
 
-  // ===== ΚΑΝΑΛΙΑ =====
-  // Κάθε κανάλι: id, όνομα, υποστιέα, emoji, volume 0..100
+  // ===== i18n (κοινό μοτίβο σε όλη τη σουίτα) =====
+  var LANG_KEY = "soffitta.lang";
+
+  var T = {
+    title: {
+      en: "Sound Mixer Toy — Soffitta",
+      el: "Παιχνίδι Ηχομιξέρ — Soffitta"
+    },
+    metaDesc: {
+      en: "Rain, café, fireplace, wind — blend your own ambient soundscape. All sounds synthesized locally, no audio files. Free, open source, no cookies, no tracking.",
+      el: "Βροχή, καφετέρια, τζάκι, άνεμος — ανακάτεψε τους ήχους σου. Όλοι οι ήχοι συντίθενται τοπικά, χωρίς αρχεία. Χωρίς cookies, χωρίς tracking."
+    },
+    play: { en: "▶ Play", el: "▶ Έναρξη" },
+    pause: { en: "⏸ Pause", el: "⏸ Παύση" },
+    myMixName: { en: "My mix", el: "Ο συνδυασμός μου" },
+    promptLabel: { en: "Mix name:", el: "Όνομα συνδυασμού:" },
+    savedLabel: { en: "Saved", el: "Αποθηκευμένος" },
+    deleteTitle: { en: "Delete saved mix", el: "Διαγραφή αποθηκευμένου συνδυασμού" }
+  };
+
+  var currentLang = detectLang();
+
+  function detectLang() {
+    try {
+      var saved = localStorage.getItem(LANG_KEY);
+      if (saved === "en" || saved === "el") return saved;
+    } catch (e) {}
+    var nav = (navigator.language || "en").slice(0, 2).toLowerCase();
+    return nav === "el" ? "el" : "en";
+  }
+
+  // ===== ΚΑΝΑΛΙΑ (bilingual — JS-generated όπως οι παλέτες) =====
   var CHANNELS = [
-    { id: "rain",   name: "Βροχή",     sub: "Σταγόνες σε τέντα",  icon: "🌧️", vol: 70 },
-    { id: "wind",   name: "Άνεμος",    sub: "Λειτουργικό μπουρίνι", icon: "🍃", vol: 0 },
-    { id: "cafe",   name: "Καφετέρια", sub: "Θρόισμα παρέας",     icon: "☕", vol: 0 },
-    { id: "fire",   name: "Τζάκι",     sub: "Καυστήρα και στάχτη", icon: "🔥", vol: 0 },
-    { id: "noise",  name: "White Noise", sub: "Γεμάτη συχνότητα",  icon: "📻", vol: 0 },
-    { id: "cricket",name: "Τζίτζικες", sub: "Νυχτερινό χωράφι",   icon: "🦗", vol: 0 }
+    { id: "rain",    icon: "🌧️", vol: 70, name_en: "Rain",        sub_en: "Drops on a canopy",  name_el: "Βροχή",     sub_el: "Σταγόνες σε τέντα" },
+    { id: "wind",    icon: "🍃", vol: 0,  name_en: "Wind",        sub_en: "A gentle draft",     name_el: "Άνεμος",    sub_el: "Λειτουργικό μπουρίνι" },
+    { id: "cafe",    icon: "☕", vol: 0,  name_en: "Café",         sub_en: "Companion murmur",   name_el: "Καφετέρια", sub_el: "Θρόισμα παρέας" },
+    { id: "fire",    icon: "🔥", vol: 0,  name_en: "Fireplace",    sub_en: "Embers and ash",     name_el: "Τζάκι",     sub_el: "Καυστήρας και στάχτη" },
+    { id: "noise",   icon: "📻", vol: 0,  name_en: "White Noise", sub_en: "Full spectrum",      name_el: "White Noise", sub_el: "Γεμάτη συχνότητα" },
+    { id: "cricket", icon: "🦗", vol: 0,  name_en: "Crickets",     sub_en: "Night field",        name_el: "Τζίτζικες", sub_el: "Νυχτερινό χωράφι" }
   ];
 
   var state = {};
   CHANNELS.forEach(function (c) { state[c.id] = c.vol; });
   var masterVol = 80;
+  var playing = false;
 
-  // ===== AUDIO ENGINE =====
+  // ===== PRESETS (bilingual) =====
+  var PRESETS = [
+    { name_en: "🌧️ Warm shower",     name_el: "🌧️ Ζεστή μπόρα",      v: { rain: 75, wind: 45, cafe: 0, fire: 0, noise: 0, cricket: 0 } },
+    { name_en: "☕ Coffee afternoon", name_el: "☕ Απόγευμα καφέ",     v: { rain: 20, wind: 0, cafe: 65, fire: 0, noise: 0, cricket: 0 } },
+    { name_en: "🔥 Winter night",    name_el: "🔥 Χειμωνιάτικο",      v: { rain: 45, wind: 30, cafe: 0, fire: 65, noise: 0, cricket: 0 } },
+    { name_en: "🌌 Summer night",     name_el: "🌌 Καλοκαιρινή νύχτα", v: { rain: 0, wind: 25, cafe: 0, fire: 0, noise: 0, cricket: 60 } },
+    { name_en: "🌊 Focus",           name_el: "🌊 Εστία",             v: { rain: 0, wind: 0, cafe: 0, fire: 0, noise: 55, cricket: 0 } }
+  ];
+
+  function applyStatic() {
+    document.documentElement.setAttribute("lang", currentLang);
+    document.title = T.title[currentLang];
+    var metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute("content", T.metaDesc[currentLang]);
+    var nodes = document.querySelectorAll("[data-en]");
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].textContent = currentLang === "el"
+        ? nodes[i].getAttribute("data-el")
+        : nodes[i].getAttribute("data-en");
+    }
+    deletePresetBtn.setAttribute("title", T.deleteTitle[currentLang]);
+    langEnBtn.classList.toggle("active", currentLang === "en");
+    langElBtn.classList.toggle("active", currentLang === "el");
+    playBtn.textContent = playing ? T.pause[currentLang] : T.play[currentLang];
+    buildMixerUI();
+    renderPresets();
+  }
+
+  function setLang(lang) {
+    currentLang = lang;
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    applyStatic();
+  }
+
+  langEnBtn.addEventListener("click", function () { setLang("en"); });
+  langElBtn.addEventListener("click", function () { setLang("el"); });
+
+  // ===== AUDIO ENGINE (πανομοιότυπο — μόνο τα loops πήραν gate) =====
   var AC = null;
   var master = null;
-  var nodes = {};      // id -> {gain, ...}
-  var playing = false;
+  var nodes = {};      // id -> { gain, ... }
   var noiseBuf = null;
 
   function ac() {
@@ -384,7 +483,6 @@
   }
 
   function makeNoiseBuffer() {
-    // 4 δευτ. λευκού θορύβου — επαναχρησιμοποιείται από όλα τα κανάλια
     var len = AC.sampleRate * 4;
     noiseBuf = AC.createBuffer(1, len, AC.sampleRate);
     var d = noiseBuf.getChannelData(0);
@@ -399,17 +497,15 @@
     return src;
   }
 
-  // --- Κτίσιμο κάθε καναλιού ---
+  // --- Κτίσιμο κάθε καναλιού (αμετάβλητο) ---
 
   function buildRain() {
     var g = AC.createGain();
     g.gain.value = 0;
-    // Κυρίως σώμα βροχής: noise σε highpass
     var hp = AC.createBiquadFilter();
     hp.type = "highpass";
     hp.frequency.value = 500;
     noiseSource().connect(hp).connect(g);
-    // Απαλό λούστρο: lowpass πέρασμα
     var lp = AC.createBiquadFilter();
     lp.type = "lowpass";
     lp.frequency.value = 1400;
@@ -417,8 +513,7 @@
     soft.gain.value = 0.35;
     hp.connect(lp).connect(soft).connect(g);
     g.connect(master);
-    // Σταγονίτσες: τυχαία «πλατάγια» (κοντά bursts highpass noise)
-    dripLoop(g, 2400, 0.05, 0.10);
+    dripLoop("rain", g, 2400, 0.05, 0.10);
     return { gain: g };
   }
 
@@ -430,7 +525,6 @@
     lp.frequency.value = 400;
     lp.Q.value = 1.4;
     noiseSource().connect(lp).connect(g);
-    // LFO στην συχνότητα φίλτρου — «αναπνοή» ανέμου
     var lfo = AC.createOscillator();
     lfo.type = "sine";
     lfo.frequency.value = 0.13;
@@ -445,13 +539,11 @@
   function buildCafe() {
     var g = AC.createGain();
     g.gain.value = 0;
-    // Murmur: brown-ish noise σε bandpass
     var bp = AC.createBiquadFilter();
     bp.type = "bandpass";
     bp.frequency.value = 320;
     bp.Q.value = 0.8;
-    noiseSource().connect(bp).connect(g);
-    // Αργή διακύμανση — «κύματα» συζήτησης
+    noiseSource().connect(bp);
     var lfo = AC.createOscillator();
     lfo.type = "sine";
     lfo.frequency.value = 0.31;
@@ -461,18 +553,15 @@
     trem.gain.value = 1;
     lfo.connect(lfoGain).connect(trem.gain);
     lfo.start();
-    bp.disconnect();
     bp.connect(trem).connect(g);
     g.connect(master);
-    // Περιφερειακά: κουταλάκια και πιατικά
-    dripLoop(g, 3600, 0.02, 0.05);
+    dripLoop("cafe", g, 3600, 0.02, 0.05);
     return { gain: g };
   }
 
   function buildFire() {
     var g = AC.createGain();
     g.gain.value = 0;
-    // Βαθύς ψίθυρος φωτιάς
     var lp = AC.createBiquadFilter();
     lp.type = "lowpass";
     lp.frequency.value = 700;
@@ -480,7 +569,6 @@
     roar.gain.value = 0.5;
     noiseSource().connect(lp).connect(roar).connect(g);
     g.connect(master);
-    // Τρίξιμο: τυχαία «κρατσαλίσματα» (short noise bursts)
     crackleLoop(g);
     return { gain: g };
   }
@@ -497,12 +585,17 @@
     var g = AC.createGain();
     g.gain.value = 0;
     g.connect(master);
-    // Τζίτζικα: περιοδικά chirp πακέτα (3-5 pulses στα ~4.3kHz)
     cricketLoop(g);
     return { gain: g };
   }
 
-  // --- Τυχαία events helpers ---
+  // --- Τυχαία events — ΠΛΕΟΝ με gate (bug #1) ---
+  // Το loop συνεχίζει να «κοιμάται», αλλά δεν παράγει bursts όταν
+  // το κανάλι είναι σε παύση ή στο 0. Idle sleep = 2s.
+
+  function channelAudible(id) {
+    return playing && state[id] > 0;
+  }
 
   function burst(dest, freq, dur, amp) {
     var ctx = AC;
@@ -523,45 +616,48 @@
     src.start();
   }
 
-  function dripLoop(dest, freq, minGap, amp) {
+  function dripLoop(id, dest, freq, minGap, amp) {
     (function next() {
       if (!AC) return;
-      burst(dest, freq * (0.8 + Math.random() * 0.4), 0.02, amp);
-      setTimeout(next, minGap * 1000 + Math.random() * 1200);
+      if (channelAudible(id)) burst(dest, freq * (0.8 + Math.random() * 0.4), 0.02, amp);
+      setTimeout(next, channelAudible(id) ? minGap * 1000 + Math.random() * 1200 : 2000);
     })();
   }
 
   function crackleLoop(dest) {
     (function next() {
       if (!AC) return;
-      var n = 1 + Math.floor(Math.random() * 3);
-      for (var i = 0; i < n; i++) {
-        setTimeout(function () {
-          burst(dest, 900 + Math.random() * 1800, 0.015, 0.22);
-        }, i * (30 + Math.random() * 80));
+      if (channelAudible("fire")) {
+        var n = 1 + Math.floor(Math.random() * 3);
+        for (var i = 0; i < n; i++) {
+          setTimeout(function () {
+            if (channelAudible("fire")) burst(dest, 900 + Math.random() * 1800, 0.015, 0.22);
+          }, i * (30 + Math.random() * 80));
+        }
       }
-      setTimeout(next, 300 + Math.random() * 900);
+      setTimeout(next, channelAudible("fire") ? 300 + Math.random() * 900 : 2000);
     })();
   }
 
   function cricketLoop(dest) {
     (function cycle() {
       if (!AC) return;
-      // Ένα «τζιρτζιρτζιρ» = 5 pulses
-      var t0 = AC.currentTime + 0.05;
-      for (var i = 0; i < 5; i++) {
-        var osc = AC.createOscillator();
-        osc.type = "sine";
-        osc.frequency.value = 4300 + Math.random() * 300;
-        var gn = AC.createGain();
-        gn.gain.setValueAtTime(0, t0 + i * 0.045);
-        gn.gain.linearRampToValueAtTime(0.5, t0 + i * 0.045 + 0.006);
-        gn.gain.exponentialRampToValueAtTime(0.001, t0 + i * 0.045 + 0.04);
-        osc.connect(gn).connect(dest);
-        osc.start(t0 + i * 0.045);
-        osc.stop(t0 + i * 0.045 + 0.05);
+      if (channelAudible("cricket")) {
+        var t0 = AC.currentTime + 0.05;
+        for (var i = 0; i < 5; i++) {
+          var osc = AC.createOscillator();
+          osc.type = "sine";
+          osc.frequency.value = 4300 + Math.random() * 300;
+          var gn = AC.createGain();
+          gn.gain.setValueAtTime(0, t0 + i * 0.045);
+          gn.gain.linearRampToValueAtTime(0.5, t0 + i * 0.045 + 0.006);
+          gn.gain.exponentialRampToValueAtTime(0.001, t0 + i * 0.045 + 0.04);
+          osc.connect(gn).connect(dest);
+          osc.start(t0 + i * 0.045);
+          osc.stop(t0 + i * 0.045 + 0.05);
+        }
       }
-      setTimeout(cycle, 500 + Math.random() * 1100);
+      setTimeout(cycle, channelAudible("cricket") ? 500 + Math.random() * 1100 : 2000);
     })();
   }
 
@@ -582,30 +678,16 @@
   function stopAll() {
     playing = false;
     applyVolumes(true);
+    clearTimer(); // bug #5 — manual stop σκοτώνει και το pending sleep timer
   }
-
-  function applyVolumes(ramp) {
-    if (!AC) return;
-    var now = AC.currentTime;
-    var glide = ramp ? 0.6 : 0;
-    CHANNELS.forEach(function (c) {
-      if (!nodes[c.id]) return;
-      var target = (playing ? (state[c.id] / 100) : 0) * 0.55;
-      nodes[c.id].gain.gain.cancelScheduledValues(now);
-      if (glide) {
-        nodes[c.id].gain.gain.setTargetAtTime(target, now, 0.25);
-      } else {
-        nodes[c.id].gain.gain.setValueAtTime(target, now);
-      }
-    });
-    master.gain.setTargetAtTime(masterVol / 100 * 0.9, now, 0.1);
-  }
-
-  // ===== UI =====
+  
+    // ===== UI =====
   function buildMixerUI() {
+    // Καθαρή αναδόμηση σε γλωσσική αλλαγή — η κατάσταση (state) δεν πειράζεται
+    mixerEl.innerHTML = "";
     CHANNELS.forEach(function (c) {
       var div = document.createElement("div");
-      div.className = "channel";
+      div.className = "channel" + (playing && state[c.id] > 0 ? " active" : "");
       div.dataset.id = c.id;
 
       var icon = document.createElement("div");
@@ -614,14 +696,19 @@
 
       var name = document.createElement("div");
       name.className = "name";
-      name.innerHTML = c.name + "<small>" + c.sub + "</small>";
+      var nm = document.createElement("span");
+      nm.textContent = currentLang === "el" ? c.name_el : c.name_en;
+      var sm = document.createElement("small");
+      sm.textContent = currentLang === "el" ? c.sub_el : c.sub_en;
+      name.appendChild(nm);
+      name.appendChild(sm);
 
       var range = document.createElement("input");
       range.type = "range";
       range.min = "0";
       range.max = "100";
       range.value = String(state[c.id]);
-      range.setAttribute("aria-label", c.name);
+      range.setAttribute("aria-label", (currentLang === "el" ? c.name_el : c.name_en));
 
       var val = document.createElement("div");
       val.className = "val";
@@ -630,11 +717,11 @@
       range.addEventListener("input", function () {
         state[c.id] = parseInt(range.value, 10);
         val.textContent = state[c.id] > 0 ? state[c.id] + "%" : "—";
-        div.classList.toggle("active", state[c.id] > 0 && playing);
-        if (!playing && state[c.id] > 0 && AC) {
-          // Ευγενικό: αν κινήσεις fader και έχει ξεκινήσει κάποτε ο ήχος, ξεκινά
-          playing = true;
-          playBtn.textContent = "⏸ Παύση";
+        // bug #2: το input event είναι user gesture — επιτρέπεται το AudioContext.
+        // Αν κινήσεις fader πάνω από 0 ενώ είναι σε παύση, ξεκινάει αυτόματα.
+        if (!playing && state[c.id] > 0) {
+          startAll();
+          playBtn.textContent = T.pause[currentLang];
         }
         applyVolumes(false);
         highlightChannels();
@@ -654,15 +741,24 @@
     });
   }
 
-  // ===== PRESETS =====
-  var PRESETS = [
-    { name: "🌧️ Ζεστή μπόρα",   v: { rain: 75, wind: 45, cafe: 0, fire: 0, noise: 0, cricket: 0 } },
-    { name: "☕ Απόγευμα καφέ",  v: { rain: 20, wind: 0, cafe: 65, fire: 0, noise: 0, cricket: 0 } },
-    { name: "🔥 Χειμωνιάτικο",   v: { rain: 45, wind: 30, cafe: 0, fire: 65, noise: 0, cricket: 0 } },
-    { name: "🌌 Καλοκαιρινή νύχτα", v: { rain: 0, wind: 25, cafe: 0, fire: 0, noise: 0, cricket: 60 } },
-    { name: "🌊 Εστία",          v: { rain: 0, wind: 0, cafe: 0, fire: 0, noise: 55, cricket: 0 } }
-  ];
+  function applyVolumes(ramp) {
+    if (!AC) return;
+    var now = AC.currentTime;
+    var glide = ramp ? 0.6 : 0;
+    CHANNELS.forEach(function (c) {
+      if (!nodes[c.id]) return;
+      var target = (playing ? (state[c.id] / 100) : 0) * 0.55;
+      nodes[c.id].gain.gain.cancelScheduledValues(now);
+      if (glide) {
+        nodes[c.id].gain.gain.setTargetAtTime(target, now, 0.25);
+      } else {
+        nodes[c.id].gain.gain.setValueAtTime(target, now);
+      }
+    });
+    master.gain.setTargetAtTime(masterVol / 100 * 0.9, now, 0.1);
+  }
 
+  // ===== PRESETS =====
   function applyPreset(vals) {
     CHANNELS.forEach(function (c) {
       state[c.id] = vals[c.id] || 0;
@@ -682,28 +778,29 @@
     PRESETS.forEach(function (p) {
       var el = document.createElement("span");
       el.className = "preset";
-      el.textContent = p.name;
+      el.textContent = currentLang === "el" ? p.name_el : p.name_en;
       el.addEventListener("click", function () { applyPreset(p.v); });
       presetsEl.appendChild(el);
     });
-    // Προσωπικό preset (αν υπάρχει)
+    // Προσωπικό preset (αν υπάρχει) — back-compat με το παλιό schema
     try {
       var saved = JSON.parse(localStorage.getItem(LS_PRESET) || "null");
       if (saved) {
-        var el = document.createElement("span");
-        el.className = "preset user";
-        el.textContent = "💾 " + (saved.name || "Ο συνδυασμός μου");
-        el.addEventListener("click", function () { applyPreset(saved.v); });
-        presetsEl.appendChild(el);
+        var uel = document.createElement("span");
+        uel.className = "preset user";
+        uel.textContent = "💾 " + saved.name;
+        uel.addEventListener("click", function () { applyPreset(saved.v); });
+        presetsEl.appendChild(uel);
       }
     } catch (e) {}
   }
 
   savePresetBtn.addEventListener("click", function () {
-    var name = window.prompt("Όνομα συνδυασμού:", "Ο συνδυασμός μου");
+    var defName = T.myMixName[currentLang];
+    var name = window.prompt(T.promptLabel[currentLang], defName);
     if (name === null) return;
     try {
-      localStorage.setItem(LS_PRESET, JSON.stringify({ name: name || "Ο συνδυασμός μου", v: state }));
+      localStorage.setItem(LS_PRESET, JSON.stringify({ name: name || defName, v: state }));
     } catch (e) {}
     renderPresets();
   });
@@ -717,10 +814,10 @@
   playBtn.addEventListener("click", function () {
     if (playing) {
       stopAll();
-      playBtn.textContent = "▶ Έναρξη";
+      playBtn.textContent = T.play[currentLang];
     } else {
       startAll();
-      playBtn.textContent = "⏸ Παύση";
+      playBtn.textContent = T.pause[currentLang];
     }
     highlightChannels();
   });
@@ -733,13 +830,17 @@
   // ===== ΧΡΟΝΟΔΙΑΚΟΠΤΗΣ =====
   var timerId = null;
 
-  timerSel.addEventListener("change", function () {
+  function clearTimer() {
     if (timerId) { clearTimeout(timerId); timerId = null; }
+  }
+
+  timerSel.addEventListener("change", function () {
+    clearTimer();
     var mins = parseInt(timerSel.value, 10);
     if (mins > 0 && playing) {
       timerId = setTimeout(function () {
         stopAll();
-        playBtn.textContent = "▶ Έναρξη";
+        playBtn.textContent = T.play[currentLang];
         timerSel.value = "0";
         highlightChannels();
       }, mins * 60000);
@@ -756,8 +857,37 @@
   });
 
   // ===== INIT =====
-  buildMixerUI();
-  renderPresets();
+  applyStatic(); // i18n + buildMixerUI + renderPresets + playBtn label σε μία κίνηση
+
+  // ===== ΕΓΚΑΤΑΣΤΑΣΗ (PWA) =====
+  var deferredPrompt = null;
+
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.hidden = false;
+  });
+
+  installBtn.addEventListener("click", function () {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  window.addEventListener("appinstalled", function () {
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  // ===== SERVICE WORKER (offline — κοινός SW της σουίτας στη ρίζα) =====
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("../sw.js").catch(function (err) {
+        console.warn("SW registration failed:", err);
+      });
+    });
+  }
 
 })();
 </script>

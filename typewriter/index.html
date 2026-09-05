@@ -1,10 +1,22 @@
 <!DOCTYPE html>
-<html lang="el">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Typewriter</title> <!-- SUITE NAME prefix όταν επιλεγεί το όνομα -->
-<meta name="description" content="Μια γραφομηχανή με ήχους και ρολό χαρτί. Γράφεις για πλάκα — τίποτα δεν σώζεται. Χωρίς cookies, χωρίς tracking.">
+<title>Typewriter — Soffitta</title>
+<meta name="description" content="A typewriter with sounds, a bell and a paper roll. Type for fun — nothing is ever saved. Free, open source, no cookies, no tracking.">
+<link rel="canonical" href="https://soffitta.site/typewriter/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://soffitta.site/typewriter/">
+<meta property="og:title" content="Typewriter — Soffitta">
+<meta property="og:description" content="A typewriter with sounds, a bell and a paper roll. Nothing is ever saved.">
+<!-- TODO (αργότερα): og-cover.png 1200×630 στον φάκελο typewriter/ -->
+<meta property="og:image" content="https://soffitta.site/typewriter/og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1a1512">
+<link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231a1512'/%3E%3Cpath d='M10 35L32 11L54 35' fill='none' stroke='%23e6ce9a' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='25' y='40' width='14' height='13' rx='3' fill='%23d7ccc8'/%3E%3C/svg%3E">
+<link rel="manifest" href="../manifest.webmanifest">
 <style>
   :root {
     --bg: #1a1512;
@@ -43,6 +55,46 @@
   header h1 { font-size: 1.2rem; font-weight: 800; }
   header h1 span { color: var(--accent); }
   header .hint { font-size: 0.78rem; color: var(--text-muted); }
+
+  /* ===== ΕΡΓΑΛΕΙΑ (γλώσσα + εγκατάσταση) ===== */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .lang-switch {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .lang-switch button {
+    background: none;
+    border: none;
+    padding: 6px 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+    letter-spacing: 0.04em;
+  }
+
+  .lang-switch button.active {
+    background: var(--machine);
+    color: var(--text);
+  }
+
+  #installBtn {
+    border: 1px solid var(--border);
+    background: var(--machine);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+  }
+  #installBtn:hover { border-color: var(--accent); }
 
   /* ===== DESK / STAGE ===== */
   #stage {
@@ -119,7 +171,7 @@
   }
   @keyframes caretBlink { 50% { opacity: 0; } }
 
-  /* Πάτημα μπάρας: микρό jitter σε όλο το χαρτί */
+  /* Πάτημα μπάρας: μικρό jitter σε όλο το χαρτί */
   .paper.keyed { animation: keyJolt 0.08s ease; }
   @keyframes keyJolt {
     0% { transform: translateY(0); }
@@ -127,7 +179,15 @@
     100% { transform: translateY(0); }
   }
 
-  /* Το χαρτί «σηκώνεται» καθώς πληροί */
+  /* Κολλημένος τροχός: παροδική μικρή οριζόντια μετατόπιση */
+  .paper.stuck { animation: stickJolt 0.1s ease; }
+  @keyframes stickJolt {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(1.2px); }
+    100% { transform: translateX(0); }
+  }
+
+  /* Το χαρτί «σηκώνεται» καθώς γεμίζει */
   .paper-wrap { position: relative; overflow: hidden; max-height: 62vh; }
   .paper-inner {
     position: relative;
@@ -220,11 +280,26 @@
   }
 </style>
 </head>
+
 <body>
 
 <header>
-  <h1>⌨️ Type<span>writer</span></h1>
-  <p class="hint">Γράψε ό,τι θες — τίποτα δεν σώζεται πουθενά. <span class="kbd">Esc</span> ξεκαθάρισμα</p>
+  <div>
+    <h1>⌨️ Type<span>writer</span></h1>
+    <p class="hint">
+      <span data-en="Type whatever you like — nothing is saved anywhere."
+            data-el="Γράψε ό,τι θες — τίποτα δεν σώζεται πουθενά.">Type whatever you like — nothing is saved anywhere.</span>
+      <span class="kbd">Esc</span>
+      <span data-en="new sheet" data-el="νέο φύλλο">new sheet</span>
+    </p>
+  </div>
+  <div class="toolbar">
+    <button id="installBtn" hidden data-en="⬇ Install app" data-el="⬇ Εγκατάσταση">⬇ Install app</button>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button id="langEn" class="active">EN</button>
+      <button id="langEl">ΕΛ</button>
+    </div>
+  </div>
 </header>
 
 <div id="stage">
@@ -243,28 +318,32 @@
     <div class="cut-edge"></div>
 
     <div class="machine">
-      <span class="model">ΘΕΡΜΟΣ&nbsp;&amp;&nbsp;ΣΙΑ&nbsp;—&nbsp;Μοντέλο&nbsp;Κ‑7</span>
+      <span class="model" id="modelLabel" data-en="THERMOS &amp; CO — MODEL K-7" data-el="ΘΕΡΜΟΣ &amp; ΣΙΑ — ΜΟΝΤΕΛΟ Κ‑7">THERMOS &amp; CO — MODEL K-7</span>
       <div class="dials">
-        <label class="switch" title="Ήχοι πλήκτρων">
-          <input type="checkbox" id="soundChk" checked> Ήχος
+        <label class="switch" id="soundLbl">
+          <input type="checkbox" id="soundChk" checked>
+          <span data-en="Sound" data-el="Ήχος">Sound</span>
         </label>
-        <label class="switch" title="Περιστασιακά αvraία γράμματα — γνησιότητα!">
-          <input type="checkbox" id="misalignChk" checked> Κοκκαλιάσματα
+        <label class="switch" id="misalignLbl">
+          <input type="checkbox" id="misalignChk" checked>
+          <span data-en="Sticky keys" data-el="Κολλημένα πλήκτρα">Sticky keys</span>
         </label>
-        <button id="bellBtn" title="Κουδούνισμα">🔔</button>
-        <button id="returnBtn" title="Αλλαγή γραμμής — καρότσι">↵</button>
-        <button id="clearBtn" class="danger" title="Νέο φύλλο">🧻 Νέο φύλλο</button>
+        <button id="bellBtn">🔔</button>
+        <button id="returnBtn">↵</button>
+        <button id="clearBtn" class="danger">🧻 <span data-en="New sheet" data-el="Νέο φύλλο">New sheet</span></button>
       </div>
-      <span class="keys-hint">0 λέξεις · 0 γράμματα</span>
+      <span class="keys-hint" id="keysHint">0 words · 0 characters</span>
     </div>
 
   </div>
 </div>
 
 <footer>
-  Designed by <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
-  <a href="../">Όλα τα apps</a><br>
-  Χωρίς cookies · Χωρίς tracking · Open source · Τίποτα δεν αποθηκεύεται
+  <span data-en="Designed by" data-el="Σχεδιασμένο από τον">Designed by</span>
+  <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="../" data-en="All apps" data-el="Όλα τα apps">All apps</a><br>
+  <span data-en="No cookies · No tracking · Open source · Nothing is ever saved"
+        data-el="Χωρίς cookies · Χωρίς tracking · Ανοιχτού κώδικα · Τίποτα δεν αποθηκεύεται">No cookies · No tracking · Open source · Nothing is ever saved</span>
 </footer>
 
 <script>
@@ -280,13 +359,78 @@
   var bellBtn = document.getElementById("bellBtn");
   var returnBtn = document.getElementById("returnBtn");
   var clearBtn = document.getElementById("clearBtn");
-  var keysHint = document.querySelector(".keys-hint");
+  var keysHint = document.getElementById("keysHint");
+  var soundLbl = document.getElementById("soundLbl");
+  var misalignLbl = document.getElementById("misalignLbl");
+  var langEnBtn = document.getElementById("langEn");
+  var langElBtn = document.getElementById("langEl");
+  var installBtn = document.getElementById("installBtn");
 
-  // ===== STATE (μόνο στη μνήμη!) =====
+  // ===== i18n (κοινό μοτίβο σε όλη τη σουίτα) =====
+  var LANG_KEY = "soffitta.lang";
+
+  var T = {
+    title: {
+      en: "Typewriter — Soffitta",
+      el: "Γραφομηχανή — Soffitta"
+    },
+    metaDesc: {
+      en: "A typewriter with sounds, a bell and a paper roll. Type for fun — nothing is ever saved. Free, open source, no cookies, no tracking.",
+      el: "Μια γραφομηχανή με ήχους και ρολό χαρτί. Γράφεις για πλάκα — τίποτα δεν σώζεται. Χωρίς cookies, χωρίς tracking."
+    },
+    soundTitle: { en: "Key sounds", el: "Ήχοι πλήκτρων" },
+    stickyTitle: { en: "Occasional sticky keys — for authenticity!", el: "Περιστασιακά κολλημένα πλήκτρα — για γνησιότητα!" },
+    bellTitle: { en: "Ring the bell", el: "Κουδούνισμα" },
+    returnTitle: { en: "Carriage return", el: "Αλλαγή γραμμής — καρότσι" },
+    words: { en: "words", el: "λέξεις" },
+    chars: { en: "characters", el: "γράμματα" }
+  };
+
+  var currentLang = detectLang();
+
+  function detectLang() {
+    try {
+      var saved = localStorage.getItem(LANG_KEY);
+      if (saved === "en" || saved === "el") return saved;
+    } catch (e) {}
+    var nav = (navigator.language || "en").slice(0, 2).toLowerCase();
+    return nav === "el" ? "el" : "en";
+  }
+
+  function applyStatic() {
+    document.documentElement.setAttribute("lang", currentLang);
+    document.title = T.title[currentLang];
+    var metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute("content", T.metaDesc[currentLang]);
+    var nodes = document.querySelectorAll("[data-en]");
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].textContent = currentLang === "el"
+        ? nodes[i].getAttribute("data-el")
+        : nodes[i].getAttribute("data-en");
+    }
+    langEnBtn.classList.toggle("active", currentLang === "en");
+    langElBtn.classList.toggle("active", currentLang === "el");
+    soundLbl.setAttribute("title", T.soundTitle[currentLang]);
+    misalignLbl.setAttribute("title", T.misalignTitle[currentLang]);
+    bellBtn.setAttribute("title", T.bellTitle[currentLang]);
+    returnBtn.setAttribute("title", T.returnTitle[currentLang]);
+    renderCounters(); // ο μετρητής σε λειτουργική γλώσσα
+  }
+
+  function setLang(lang) {
+    currentLang = lang;
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    applyStatic();
+  }
+
+  langEnBtn.addEventListener("click", function () { setLang("en"); });
+  langElBtn.addEventListener("click", function () { setLang("el"); });
+
+  // ===== STATE (μόνο στη μνήμη — ποτέ αποθήκευση) =====
   var lines = [""];
   var curLine = 0;
-  var charsPerLine = 46;   // ενημερώνεται από το πλάτος
-  var lineFeedPx = 0;
+  var charsPerLine = 46;      // μετράται από το πλάτος στο measure()
+  var lineBelled = false;     // flag κουδουνιού ανά γραμμή
 
   // ===== ΉΧΟΣ (Web Audio, 100% procedural) =====
   var AC = null;
@@ -301,7 +445,7 @@
     return AC;
   }
 
-  // Θόρυβος πλήκτρου: κοντό κλικ με ντετέρμινισμο... όχι — απλά filtered noise burst
+  // Θόρυβος πλήκτρου: κοντό filtered noise burst
   function keySound() {
     var ctx = ac();
     if (!ctx) return;
@@ -387,85 +531,112 @@
     src.start();
   }
 
-  // ===== RENDering =====
+  // Νέο φύλλο: «σέρσιμο» χαρτιού
+  function sheetSound() {
+    var ctx = ac();
+    if (!ctx) return;
+    var dur = 0.35;
+    var buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < d.length; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 1.5) * 0.6;
+    }
+    var src = ctx.createBufferSource();
+    src.buffer = buf;
+    var filt = ctx.createBiquadFilter();
+    filt.type = "highpass";
+    filt.frequency.value = 1800;
+    var gain = ctx.createGain();
+    gain.gain.value = 0.12;
+    src.connect(filt).connect(gain).connect(ctx.destination);
+    src.start();
+  }
+  
+    // ===== MEASURE (init/resize μόνο — όχι ανά keystroke) =====
   function measure() {
-    // Μέτρηση πόσους μονοχρονικούς χαρακτήρες χωράει το χαρτί
     var probe = document.createElement("span");
     probe.style.visibility = "hidden";
     probe.style.whiteSpace = "pre";
     probe.style.font = "inherit";
     probe.textContent = "0000000000";
-    renderLine.appendChild(probe);
+    paper.appendChild(probe);
     var w10 = probe.getBoundingClientRect().width;
     probe.remove();
     if (w10 > 0) charsPerLine = Math.max(20, Math.floor((paper.clientWidth - 88) / (w10 / 10)));
   }
 
   function escapeHtml(s) {
-    return s.replace(/[&<>"']/g, function (c) {
+    return String(s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   }
 
-  function render(full) {
-    measure();
-
-    // Τρέχουσα γραμμή με κέρσορα
-    var html = "";
-    for (var i = 0; i < lines.length; i++) {
-      var txt = lines[i];
-      if (i === curLine) {
-        txt = escapeHtml(txt) + '<span class="caret">&nbsp;</span>';
-      } else {
-        txt = escapeHtml(txt) || "&nbsp;";
-      }
-      if (i !== lines.length - 1 || true) {
-        html += '<div class="line"' + (i === curLine ? ' data-cur="1"' : '') + '>' + txt + "</div>";
-      }
+  function makeLine(i) {
+    var div = document.createElement("div");
+    div.className = "line";
+    if (i === curLine) {
+      div.setAttribute("data-cur", "1");
+      div.innerHTML = escapeHtml(lines[i]) + '<span class="caret">&nbsp;</span>';
+    } else {
+      div.innerHTML = escapeHtml(lines[i]) || "&nbsp;";
     }
-    renderLine.outerHTML = '<div class="line" id="renderLine">' + escapeHtml(lines[curLine]) + '<span class="caret">&nbsp;</span></div>';
-    renderLine = document.getElementById("renderLine");
+    return div;
+  }
 
-    // Άλλες γραμμές: πλήρης επανακατασκευή μόνο όταν αλλάζει δομή
+  // ===== RENDER (clean: sync children, ενημέρωση μόνο της τρέχουσας γραμμής) =====
+  function render(full) {
     if (full) {
-      paper.querySelectorAll(".line").forEach(function (n) { n.remove(); });
+      // Πλήρης επανακατασκευή: αλλαγή δομής (νέα γραμμή, backspace στην αρχή, Esc, resize)
+      paper.innerHTML = "";
       for (var i = 0; i < lines.length; i++) {
-        var div = document.createElement("div");
-        div.className = "line";
-        if (i === curLine) {
-          div.id = "renderLine";
-          div.innerHTML = escapeHtml(lines[i]) + '<span class="caret">&nbsp;</span>';
-        } else {
-          div.innerHTML = escapeHtml(lines[i]) || "&nbsp;";
-        }
+        var div = makeLine(i);
+        if (i === curLine) renderLine = div;
         paper.appendChild(div);
       }
-      renderLine = document.getElementById("renderLine");
     } else {
+      // Ταχεία διαδρομή: μόνο η τρέχουσα γραμμή ξαναγράφεται
       renderLine.innerHTML = escapeHtml(lines[curLine]) + '<span class="caret">&nbsp;</span>';
     }
+    renderLine.id = "renderLine";
 
-    // Σύνολο λέξεων/χαρακτήρων
-    var all = lines.join("\n");
-    var words = all.trim() ? all.trim().split(/\s+/).length : 0;
-    keysHint.textContent = words + " λέξεις · " + all.replace(/\n/g, "").length + " γράμματα";
+    renderCounters();
 
     // Scroll: κράτα την τρέχουσα γραμμή ορατή
-    var cur = paper.querySelector('.line[data-cur="1"]') || renderLine;
-    var offset = cur.offsetTop - 40;
-    paperInner.style.top = Math.max(0, offset - 60) * -1 + "px";
+    var cur = paper.querySelector('.line[data-cur="1"]');
+    if (cur) {
+      var offset = cur.offsetTop - 40;
+      paperInner.style.top = Math.max(0, offset - 60) * -1 + "px";
+    }
 
-    // Κουδούνι πλησιέστηριας: 12 γράμματα πριν το τέλος γραμμής
-    var pos = lines[curLine].length;
-    if (pos === charsPerLine - 12 && soundChk.checked) bellSound();
+    // Κουδούνι πλησίον άκρης γραμμής: 12 γράμματα πριν το τέλος (>=, flag ανά γραμμή)
+    if (lines[curLine].length >= charsPerLine - 12 && !lineBelled) {
+      lineBelled = true;
+      if (soundChk.checked) bellSound();
+    }
+  }
+
+  function renderCounters() {
+    var all = lines.join("\n");
+    var wordCount = all.trim() ? all.trim().split(/\s+/).length : 0;
+    var charCount = all.replace(/\n/g, "").length;
+    keysHint.textContent = wordCount + " " + T.words[currentLang] + " · " + charCount + " " + T.chars[currentLang];
   }
 
   // ===== INPUT =====
   function typeChar(ch) {
-    if (lines[curLine].length >= charsPerLine) newLine();
+    if (lines[curLine].length >= charsPerLine) {
+      newLine();
+    } else {
+      lineBelled = false;
+    }
 
-    // «Κοκκαλιάσματα»: 4% πιθανότητα το γράμμα να χαλαρώσει οριζόντια (όχι αλλάζει χαρακτήρα)
-    var glitch = misalignChk.checked && Math.random() < 0.04;
+    // «Κολλημένα πλήκτρα»: 4% — παροδική οριζόντια μετατόπιση του χαρτιού
+    if (misalignChk.checked && Math.random() < 0.04) {
+      paper.classList.remove("stuck");
+      void paper.offsetWidth;
+      paper.classList.add("stuck");
+    }
+
     lines[curLine] += ch;
 
     render(false);
@@ -477,12 +648,12 @@
       if (ch === " ") spaceSound();
       else keySound();
     }
-    void glitch;
   }
 
   function newLine() {
     lines.push("");
     curLine++;
+    lineBelled = false;
     render(true);
     if (soundChk.checked) returnSound();
   }
@@ -490,63 +661,43 @@
   function backspace() {
     if (lines[curLine].length > 0) {
       lines[curLine] = lines[curLine].slice(0, -1);
+      lineBelled = false;
     } else if (curLine > 0) {
       lines.pop();
       curLine--;
     } else {
       return;
     }
-    render(false);
+    render(true);
     if (soundChk.checked) keySound(); // «ξε-πάτημα» — μικρό κλικ
   }
 
   function newSheet() {
     lines = [""];
     curLine = 0;
+    lineBelled = false;
     render(true);
-    if (soundChk.checked) {
-      // «σέρσιμο» νέου φύλλου
-      var ctx = ac();
-      if (ctx) {
-        var dur = 0.35;
-        var buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
-        var d = buf.getChannelData(0);
-        for (var i = 0; i < d.length; i++) {
-          d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 1.5) * 0.6;
-        }
-        var src = ctx.createBufferSource();
-        src.buffer = buf;
-        var filt = ctx.createBiquadFilter();
-        filt.type = "highpass";
-        filt.frequency.value = 1800;
-        var gain = ctx.createGain();
-        gain.gain.value = 0.12;
-        src.connect(filt).connect(gain).connect(ctx.destination);
-        src.start();
-      }
-    }
+    if (soundChk.checked) sheetSound();
   }
 
-  // ===== ΓΡΑΦΟΜΗΧΑΝΗ: ο 马 κέρσορας δουλεύει παντού στο paper =====
-  paper.addEventListener("click", function () { /* εστίαση — τίποτα για τώρα */ });
-
+  // ===== KEYBOARD (desktop) =====
   document.addEventListener("keydown", function (e) {
-    // Μηδέν παρεμβολή σε πραγματικά inputs
+    // Μηδέν παρεμβολή σε πραγματικά controls (και κουμπιά — το Space κάνει κλικ εκεί)
     var tag = (e.target && e.target.tagName || "").toLowerCase();
-    if (tag === "input" || tag === "select" || tag === "textarea") return;
+    if (tag === "input" || tag === "select" || tag === "textarea" || tag === "button") return;
 
     if (e.key === "Escape") { newSheet(); return; }
     if (e.key === "Enter") { e.preventDefault(); newLine(); return; }
     if (e.key === "Backspace") { e.preventDefault(); backspace(); return; }
 
-    // Εκτυπώσιμοι χαρακτήρες μόνο (μία «格拉φική» γραφομηχανή)
+    // Εκτυπώσιμοι χαρακτήρες μόνο
     if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
       e.preventDefault();
       typeChar(e.key);
     }
   });
 
-  // Mobile: κρυφό textarea για εγγενές πληκτρολόγιο
+  // ===== MOBILE: κρυφό textarea για εγγενές πληκτρολόγιο =====
   var bridge = document.createElement("textarea");
   bridge.setAttribute("aria-hidden", "true");
   bridge.style.position = "fixed";
@@ -585,16 +736,51 @@
     newSheet();
   });
 
-  // First user gesture ενεργοποιεί το AudioContext
+  // Πρώτο user gesture ενεργοποιεί το AudioContext
   document.addEventListener("pointerdown", function once() {
     ac();
     document.removeEventListener("pointerdown", once);
   }, { once: true });
 
-  window.addEventListener("resize", function () { render(true); });
+  window.addEventListener("resize", function () {
+    measure();
+    render(true);
+  });
 
   // ===== INIT =====
+  applyStatic();
+  measure();
   render(true);
+
+  // ===== ΕΓΚΑΤΑΣΤΑΣΗ (PWA) =====
+  var deferredPrompt = null;
+
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.hidden = false;
+  });
+
+  installBtn.addEventListener("click", function () {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  window.addEventListener("appinstalled", function () {
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  // ===== SERVICE WORKER (offline — κοινός SW της σουίτας στη ρίζα) =====
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("../sw.js").catch(function (err) {
+        console.warn("SW registration failed:", err);
+      });
+    });
+  }
 
 })();
 </script>

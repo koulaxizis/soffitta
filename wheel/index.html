@@ -1,10 +1,22 @@
 <!DOCTYPE html>
-<html lang="el">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wheel of Fate</title> <!-- SUITE NAME prefix όταν επιλεγεί το όνομα -->
-<meta name="description" content="Ο τροχός της απόφασης: πρόσθεσε επιλογές, γύρνα και άφησε την τύχη να αποφασίσει. Χωρίς cookies, χωρίς tracking.">
+<title>Wheel of Fate — Soffitta</title>
+<meta name="description" content="The wheel of decisions: add options, spin, and let fate decide. Winners history, quick sets, colorful confetti. Free, open source, no cookies, no tracking.">
+<link rel="canonical" href="https://soffitta.site/wheel/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://soffitta.site/wheel/">
+<meta property="og:title" content="Wheel of Fate — Soffitta">
+<meta property="og:description" content="The decision wheel — add options, spin, and let luck be the only judge.">
+<!-- TODO (αργότερα): og-cover.png 1200×630 στον φάκελο wheel/ -->
+<meta property="og:image" content="https://soffitta.site/wheel/og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1a120a">
+<link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231a120a'/%3E%3Cpath d='M10 35L32 11L54 35' fill='none' stroke='%23e6ce9a' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='25' y='40' width='14' height='13' rx='3' fill='%23ffb35c'/%3E%3C/svg%3E">
+<link rel="manifest" href="../manifest.webmanifest">
 <style>
   :root {
     --bg: #1a120a;
@@ -41,6 +53,46 @@
   header h1 span { color: var(--accent); }
   header .hint { font-size: 0.78rem; color: var(--text-muted); }
 
+  /* ===== ΕΡΓΑΛΕΙΑ (γλώσσα + εγκατάσταση) ===== */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .lang-switch {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .lang-switch button {
+    background: none;
+    border: none;
+    padding: 6px 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+    letter-spacing: 0.04em;
+  }
+
+  .lang-switch button.active {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  #installBtn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+  }
+  #installBtn:hover { border-color: var(--accent); }
+
   .layout {
     flex: 1;
     display: grid;
@@ -75,6 +127,7 @@
     display: block;
     width: min(78vw, 440px);
     height: auto;
+    cursor: pointer;
     filter: drop-shadow(0 12px 42px rgba(0,0,0,0.55));
   }
 
@@ -195,40 +248,56 @@
   }
 </style>
 </head>
+
 <body>
 
 <header>
-  <h1>🎡 Wheel of <span>Fate</span></h1>
-  <p class="hint"><span class="kbd">Space</span> γύρισμα — η τύχη είναι ο μοναδικός κριτής</p>
+  <div>
+    <h1>🎡 Wheel of <span>Fate</span></h1>
+    <p class="hint">
+      <span class="kbd">Space</span>
+      <span data-en="spin — luck is the only judge" data-el="γύρισμα — η τύχη είναι ο μοναδικός κριτής">spin — luck is the only judge</span>
+    </p>
+  </div>
+  <div class="toolbar">
+    <button id="installBtn" hidden data-en="⬇ Install app" data-el="⬇ Εγκατάσταση">⬇ Install app</button>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button id="langEn" class="active">EN</button>
+      <button id="langEl">ΕΛ</button>
+    </div>
+  </div>
 </header>
 
 <div class="layout">
 
   <section class="left">
     <canvas id="wheel" width="480" height="480"></canvas>
-    <button id="spinBtn" class="primary">🎯 Γύρνα τον τροχό!</button>
+    <button id="spinBtn" class="primary">🎯 Spin!</button>
     <div class="result" id="resultEl"></div>
   </section>
 
   <aside class="right">
 
     <div>
-      <h2 class="section">Επιλογές</h2>
-      <textarea id="itemsArea" spellcheck="false" aria-label="Επιλογές τροχού"></textarea>
-      <p class="hint">Μία επιλογή ανά γραμμή · 2 έως 20</p>
-      <button id="applyBtn" style="width:100%; margin-top:8px;">✓ Εφαρμογή στον τροχό</button>
+      <h2 class="section" data-en="Options" data-el="Επιλογές">Options</h2>
+      <textarea id="itemsArea" spellcheck="false" aria-label="Wheel options"></textarea>
+      <p class="hint">
+        <span data-en="One option per line · 2 to 20" data-el="Μία επιλογή ανά γραμμή · 2 έως 20">One option per line · 2 to 20</span>
+      </p>
+      <button id="applyBtn" style="width:100%; margin-top:8px;" data-en="✓ Apply to wheel" data-el="✓ Εφαρμογή στον τροχό">✓ Apply to wheel</button>
     </div>
 
     <div>
-      <h2 class="section">Έτοιμα σετ</h2>
+      <h2 class="section" data-en="Quick sets" data-el="Έτοιμα σετ">Quick sets</h2>
       <div class="quick" id="quickSets"></div>
     </div>
 
     <div>
-      <h2 class="section">Νικητές</h2>
+      <h2 class="section" data-en="Winners" data-el="Νικητές">Winners</h2>
       <ul class="winners" id="winList"></ul>
-      <p class="empty" id="winEmpty">Κανείς νικητής ακόμα.</p>
-      <button id="clearWinBtn" style="width:100%; margin-top:8px;">🧹 Καθάρισμα νικητών</button>
+      <p class="empty" id="winEmpty" data-en="No winners yet." data-el="Κανείς νικητής ακόμα.">No winners yet.</p>
+      <button id="clearWinBtn" style="width:100%; margin-top:8px;"
+              data-en="🧹 Clear winners" data-el="🧹 Καθάρισμα νικητών">🧹 Clear winners</button>
     </div>
 
   </aside>
@@ -236,9 +305,11 @@
 </div>
 
 <footer>
-  Designed by <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
-  <a href="../">Όλα τα apps</a><br>
-  Χωρίς cookies · Χωρίς tracking · Open source
+  <span data-en="Designed by" data-el="Σχεδιασμένο από τον">Designed by</span>
+  <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="../" data-en="All apps" data-el="Όλα τα apps">All apps</a><br>
+  <span data-en="No cookies · No tracking · Open source"
+        data-el="Χωρίς cookies · Χωρίς tracking · Ανοιχτού κώδικα">No cookies · No tracking · Open source</span>
 </footer>
 
 <script>
@@ -256,6 +327,9 @@
   var winListEl = document.getElementById("winList");
   var winEmptyEl = document.getElementById("winEmpty");
   var clearWinBtn = document.getElementById("clearWinBtn");
+  var langEnBtn = document.getElementById("langEn");
+  var langElBtn = document.getElementById("langEl");
+  var installBtn = document.getElementById("installBtn");
 
   var TAU = Math.PI * 2;
   var CX = 240, CY = 240, R = 218;
@@ -271,16 +345,70 @@
     "#dcc98c", "#9fd8a2", "#f4b183", "#b8a8e8"
   ];
 
+  // ===== i18n (κοινό μοτίβο σε όλη τη σουίτα) =====
+  var LANG_KEY = "soffitta.lang";
+
+  var T = {
+    title: {
+      en: "Wheel of Fate — Soffitta",
+      el: "Τροχός της Μοίρας — Soffitta"
+    },
+    metaDesc: {
+      en: "The wheel of decisions: add options, spin, and let fate decide. Without cookies, without tracking.",
+      el: "Ο τροχός της απόφασης: πρόσθεσε επιλογές, γύρνα και άφησε την τύχη να αποφασίσει. Χωρίς cookies, χωρίς tracking."
+    },
+    celebrate: { en: "🎉 ", el: "🎉 " },
+    excl: { en: "!", el: "!" },
+    needTwo: {
+      en: "At least 2 options are needed!",
+      el: "Χρειάζονται τουλάχιστον 2 επιλογές!"
+    },
+    winnersList: { en: "Winners", el: "Νικητές" }
+  };
+
+  var currentLang = detectLang();
+
+  function detectLang() {
+    try {
+      var saved = localStorage.getItem(LANG_KEY);
+      if (saved === "en" || saved === "el") return saved;
+    } catch (e) {}
+    var nav = (navigator.language || "en").slice(0, 2).toLowerCase();
+    return nav === "el" ? "el" : "en";
+  }
+
+  // ===== ΕΤΟΙΜΑ ΣΕΤ (bilingual — JS-rendered) =====
   var QUICK_SETS = [
-    { name: "🍕 Τι θα φάμε;",  items: ["Πίτσα", "Σουβλάκι", "Μπέργκερ", "Πάστα", "Ψητό", "Σαλάτα"] },
-    { name: "🎲 Ποιος αρχίζει;", items: ["Ο πρώτος", "Ο δεύτερος", "Ο τρίτος", "Ο τέταρτος"] },
-    { name: "❓ Ναι ή όχι;",     items: ["ΝΑΙ", "ΟΧΙ", "Σίγουρα ναι", "Καθόλου", "Ρώτα ξανά"] },
-    { name: "🎬 Ταινία απόψε;",  items: ["Δράμα", "Κωμωδία", "Θρίλερ", "Sci-Fi", "Ντοκιμαντέρ", "Animation"] }
+    {
+      name_en: "🍕 What to eat?", name_el: "🍕 Τι θα φάμε;",
+      items_en: ["Pizza", "Souvlaki", "Burger", "Pasta", "Roast", "Salad"],
+      items_el: ["Πίτσα", "Σουβλάκι", "Μπέργκερ", "Πάστα", "Ψητό", "Σαλάτα"]
+    },
+    {
+      name_en: "🎲 Who starts?",   name_el: "🎲 Ποιος αρχίζει;",
+      items_en: ["Player one", "Player two", "Player three", "Player four"],
+      items_el: ["Ο πρώτος", "Ο δεύτερος", "Ο τρίτος", "Ο τέταρτος"]
+    },
+    {
+      name_en: "❓ Yes or no?",      name_el: "❓ Ναι ή όχι;",
+      items_en: ["YES", "NO", "Definitely yes", "Absolutely not", "Ask again"],
+      items_el: ["ΝΑΙ", "ΟΧΙ", "Σίγουρα ναι", "Καθόλου", "Ρώτα ξανά"]
+    },
+    {
+      name_en: "🎬 Movie tonight?",  name_el: "🎬 Ταινία απόψε;",
+      items_en: ["Drama", "Comedy", "Thriller", "Sci-Fi", "Documentary", "Animation"],
+      items_el: ["Δράμα", "Κωμωδία", "Θρίλερ", "Sci-Fi", "Ντοκιμαντέρ", "Animation"]
+    }
   ];
 
-  // ===== STATE =====
-  var items = ["Πίτσα", "Σουβλάκι", "Μπέργκερ", "Πάστα", "Ψητό", "Σαλάτα"];
+  var DEFAULT_ITEMS_EN = ["Pizza", "Souvlaki", "Burger", "Pasta", "Roast", "Salad"];
+  var DEFAULT_ITEMS_EL = ["Πίτσα", "Σουβλάκι", "Μπέργκερ", "Πάστα", "Ψητό", "Σαλάτα"];
+
+    // ===== STATE =====
+  var items = [];              // πάντα plain strings — αποθηκεύονται ως έχουν
   var winners = [];
+  var activeSet = null;        // { kind: "default" } | { kind: "quick", idx: n } | null = custom
+  var dirtyArea = false;       // ο χρήστης πείραξε το textarea
 
   var angle = 0;        // τρέχουσα γωνία τροχού (rad)
   var velocity = 0;      // rad/s
@@ -298,6 +426,11 @@
     if (Array.isArray(savedWinners)) winners = savedWinners.slice(0, 20);
   } catch (e) {}
 
+  if (!items.length) {
+    items = (currentLang === "el" ? DEFAULT_ITEMS_EL : DEFAULT_ITEMS_EN).slice();
+    activeSet = { kind: "default" };
+  }
+
   function saveItems() {
     try { localStorage.setItem(LS_ITEMS, JSON.stringify(items)); } catch (e) {}
   }
@@ -306,12 +439,36 @@
     try { localStorage.setItem(LS_WINNERS, JSON.stringify(winners)); } catch (e) {}
   }
 
-  // ===== ΣΧΕΔΙΑΣΜΟΣ =====
+  // Ξαναχτίζει items + textarea από την πηγή (default / quick set) στη νέα γλώσσα.
+  // Επιστρέφει false όταν τα items είναι custom — εκείνη την ώρα δεν πειράζουμε τίποτα.
+  function setFromSource() {
+    if (!activeSet) return false;
+    if (activeSet.kind === "default") {
+      items = (currentLang === "el" ? DEFAULT_ITEMS_EL : DEFAULT_ITEMS_EN).slice();
+    } else {
+      var q = QUICK_SETS[activeSet.idx];
+      items = (currentLang === "el" ? q.items_el : q.items_en).slice();
+    }
+    itemsArea.value = items.join("\n");
+    return true;
+  }
+
+  // ===== ΣΧΕΔΙΑΣΜΟΣ (αμετάβλητος, unicode-aware truncation — bug #1) =====
   function fontSz(n) {
     if (n <= 6) return 17;
     if (n <= 8) return 15;
     if (n <= 12) return 13;
     return 11;
+  }
+
+  // Unicode-aware truncate — δεν σπάει emoji/surrogate pairs
+  function truncateLabel(label, maxWidth) {
+    if (label.length <= 3) return { text: label, truncated: false };
+    var chars = Array.from(label);
+    while (chars.length > 3 && ctx.measureText(chars.join("")).width > R * 0.62) {
+      chars.pop();
+    }
+    return { text: chars.join(""), truncated: (label !== chars.join("")) };
   }
 
   function drawWheel() {
@@ -340,7 +497,7 @@
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Ετικέτα
+            // Ετικέτα
       var mid = a0 + step / 2;
       ctx.save();
       ctx.translate(CX, CY);
@@ -349,12 +506,17 @@
       ctx.textBaseline = "middle";
       ctx.font = "700 " + fs + "px 'Segoe UI', sans-serif";
       ctx.fillStyle = "#2b1a06";
+
+      // Unicode-aware truncation (bug #1) — δεν σπάει emoji / surrogate pairs
       var label = items[i];
-      while (label.length > 3 && ctx.measureText(label).width > R * 0.62) {
-        label = label.slice(0, -2);
+      var cs = Array.from(label);
+      var shortened = false;
+      while (cs.length > 3 && ctx.measureText(cs.join("")).width > R * 0.62) {
+        cs.pop();
+        shortened = true;
       }
-      if (label !== items[i]) label += "…";
-      ctx.fillText(label, R - 22, 0);
+      if (shortened) cs.push("…");
+      ctx.fillText(cs.join(""), R - 22, 0);
       ctx.restore();
     }
 
@@ -399,14 +561,80 @@
     ctx.stroke();
   }
 
-  // ===== ΓΥΡΙΣΜΑ (physics με εκθετική τριβή) =====
+  // itemText: κείμενο φέτας — δίγλωσσα objects μένουν objects αποθηκευμένα
+  function itemText(it) {
+    return (item && typeof item === "object")
+      ? (currentLang === "el" ? item.el : item.en)
+      : item;
+  }
+
+  // itemLabel: string accessor — έξυπνο παντού
+  function itemText(i) {
+    var raw = items[i];
+    if (typeof item === "object" && item !== null) {
+      return currentLang === "el" ? item.name_el : item.name_en;
+    }
+    return item;
+  }
+  
+    // ===== i18n APPLY =====
+  function applyStatic() {
+    document.documentElement.setAttribute("lang", currentLang);
+    document.title = T.title[currentLang];
+    var metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute("content", T.metaDesc[currentLang]);
+    var nodes = document.querySelectorAll("[data-en]");
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].textContent = currentLang === "el"
+        ? nodes[i].getAttribute("data-el")
+        : nodes[i].getAttribute("data-en");
+    }
+    langEnBtn.classList.toggle("active", currentLang === "en");
+    langElBtn.classList.toggle("active", currentLang === "el");
+    spinBtn.textContent = T.spin[currentLang];
+    itemsArea.setAttribute("aria-label", currentLang === "el" ? "Επιλογές τροχού" : "Wheel options");
+    if (!dirtyArea && setFromSource()) saveItems();
+    drawWheel();
+    renderQuickSets();
+    renderWinners();
+  }
+
+  function setLang(lang) {
+    currentLang = lang;
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    applyStatic();
+  }
+
+  langEnBtn.addEventListener("click", function () { setLang("en"); });
+  langElBtn.addEventListener("click", function () { setLang("el"); });
+
+  // ===== QUICK SETS =====
+  function renderQuickSets() {
+    quickSetsEl.innerHTML = "";
+    QUICK_SETS.forEach(function (set, idx) {
+      var el = document.createElement("button");
+      el.textContent = currentLang === "el" ? set.name_el : set.name_en;
+      el.addEventListener("click", function () {
+        activeSet = { kind: "quick", idx: idx };
+        dirtyArea = false;
+        items = (currentLang === "el" ? set.items_el : set.items_en).slice();
+        itemsArea.value = items.join("\n");
+        saveItems();
+        angle = 0;
+        drawWheel();
+        resultEl.textContent = "";
+      });
+      quickSetsEl.appendChild(el);
+    });
+  }
+
+  // ===== ΓΥΡΙΣΜΑ (physics με εκθετική τριβή — αμετάβλητο) =====
   function startSpin() {
     if (spinning || items.length < 2) return;
     spinning = true;
     spinBtn.disabled = true;
     resultEl.textContent = "";
 
-    // Αρχική ταχύτητα 9–15 rad/s, τυχαία φορά
     velocity = (9 + Math.random() * 6) * (Math.random() < 0.5 ? -1 : 1);
     lastTs = 0;
     requestAnimationFrame(tick);
@@ -419,7 +647,6 @@
     lastTs = ts;
 
     angle += velocity * dt;
-    // Η ταχύτητα υποδιπλασιάζεται κάθε 0.35s (ομαλό φρενάρισμα)
     velocity *= Math.pow(0.5, dt / 0.35);
 
     if (Math.abs(velocity) < 0.08) {
@@ -434,9 +661,7 @@
     requestAnimationFrame(tick);
   }
 
-  // ===== ΝΙΚΗΤΗΣ =====
-  // Η φέτα i καλύπτει γωνίες [i*step - π/2 + angle, (i+1)*step - π/2 + angle].
-  // Ο δείκτης βρίσκεται στην κορυφή: γωνία -π/2. Λύνουμε για i:
+  // ===== ΝΙΚΗΤΗΣ (επαληθευμένος μαθηματικά — αμετάβλητος) =====
   function winnerIndex() {
     var n = items.length;
     var step = TAU / n;
@@ -477,7 +702,7 @@
     }
   }
 
-  // ===== ΚΟΝΦΕΤΙ =====
+  // ===== ΚΟΝΦΕΤΙ (αμετάβλητο) =====
   function throwConfetti() {
     var palette = ["#ffb35c", "#ffd166", "#ff8a65", "#a5d6a7", "#81d4fa", "#ce93d8"];
     for (var i = 0; i < 44; i++) {
@@ -495,15 +720,21 @@
   }
 
   // ===== ΕΠΕΞΕΡΓΑΣΙΑ ΕΠΙΛΟΓΩΝ =====
+  var showingError = false;
+
   applyBtn.addEventListener("click", function () {
     var lines = itemsArea.value.split(/\n/)
       .map(function (s) { return s.trim(); })
       .filter(function (s) { return s.length > 0; })
       .slice(0, 20);
     if (lines.length < 2) {
-      resultEl.textContent = "Χρειάζονται τουλάχιστον 2 επιλογές!";
+      showingError = true;
+      resultEl.textContent = T.needTwo[currentLang];
       return;
     }
+    showingError = false;
+    activeSet = null;   // custom
+    dirtyArea = true;
     items = lines;
     saveItems();
     angle = 0;
@@ -511,19 +742,13 @@
     resultEl.textContent = "";
   });
 
-  // ===== ΕΤΟΙΜΑ ΣΕΤ =====
-  QUICK_SETS.forEach(function (set) {
-    var el = document.createElement("button");
-    el.textContent = set.name;
-    el.addEventListener("click", function () {
-      items = set.items.slice();
-      itemsArea.value = items.join("\n");
-      saveItems();
-      angle = 0;
-      drawWheel();
+  // bug #3: το error σβήνει μόλις ο χρήστης αρχίσει να πληκτρολογεί
+  itemsArea.addEventListener("input", function () {
+    dirtyArea = true;
+    if (showingError) {
+      showingError = false;
       resultEl.textContent = "";
-    });
-    quickSetsEl.appendChild(el);
+    }
   });
 
   // ===== ΚΑΘΑΡΙΣΜΑ ΝΙΚΗΤΩΝ =====
@@ -533,7 +758,7 @@
     renderWinners();
   });
 
-  // ===== ΠΛΗΚΤΡΟΛΟΓΙΟ =====
+  // ===== ΠΛΗΚΤΡΟΛΟΓΙΟ + ΚΛΙΚ ΣΤΟΝ ΤΡΟΧΟ (bug #2) =====
   document.addEventListener("keydown", function (e) {
     if (e.code !== "Space") return;
     var tag = (e.target && e.target.tagName || "").toLowerCase();
@@ -542,12 +767,45 @@
     if (!spinning) startSpin();
   });
 
+  canvas.addEventListener("click", function () {
+    if (!spinning) startSpin();
+  });
+
   spinBtn.addEventListener("click", startSpin);
 
   // ===== INIT =====
   itemsArea.value = items.join("\n");
-  renderWinners();
-  drawWheel();
+  applyStatic(); // i18n + quick sets + winners (+ setFromSource όταν δεν είναι custom)
+
+  // ===== ΕΓΚΑΤΑΣΤΑΣΗ (PWA) =====
+  var deferredPrompt = null;
+
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.hidden = false;
+  });
+
+  installBtn.addEventListener("click", function () {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  window.addEventListener("appinstalled", function () {
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  // ===== SERVICE WORKER (offline — κοινός SW της σουίτας στη ρίζα) =====
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("../sw.js").catch(function (err) {
+        console.warn("SW registration failed:", err);
+      });
+    });
+  }
 
 })();
 </script>

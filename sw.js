@@ -1,7 +1,7 @@
-/* Soffitta service worker v2 — fresh HTML, cached assets */
+/* Soffitta service worker v3 — fresh HTML, cached assets */
 "use strict";
 
-const CACHE = "soffitta-v2";
+const CACHE = "soffitta-v3";
 const CORE = ["./", "./index.html"];
 
 self.addEventListener("install", (event) => {
