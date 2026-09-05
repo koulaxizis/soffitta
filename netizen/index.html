@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Netizen ID — Create your digital identity card</title>
+<meta name="description" content="Build your netizen identity card: pixel art avatar, fully optional fields, export in 7 formats. No tracking, no accounts, no network calls.">
+<meta name="author" content="Christos Koulaxizis">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="manifest" href="manifest.json">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Netizen ID — Your digital identity card">
+<meta property="og:description" content="Pixel avatar, optional disclosure, export as PNG/JPG/GIF/WEBP/SVG/PDF/HTML.">
+<meta property="og:image" content="og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:url" content="./">
+<meta name="theme-color" content="#15121a">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Netizen ID",
+"description":"Netizen identity card generator with pixel art avatar.",
+"applicationCategory":"DesignApplication","operatingSystem":"Any",
+"offers":{"@type":"Offer","price":"0"},
+"author":{"@type":"Person","name":"Christos Koulaxizis","url":"https://koulaxizis.gr"},
+"license":"https://opensource.org/licenses/MIT"}
+</script>
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="./">
+    <span class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><rect x="2" y="2" width="12" height="12" rx="2" class="lg-bg"/><rect x="4" y="5" width="2" height="2" fill="#fff"/><rect x="9" y="5" width="2" height="2" fill="#fff"/></svg>
+    </span>
+    <span>Netizen <em>ID</em></span>
+  </a>
+  <div class="controls">
+    <select id="lang-select" aria-label="Language">
+      <option value="en">EN</option>
+      <option value="el">ΕΛ</option>
+    </select>
+    <button id="theme-toggle" class="btn icon-btn" aria-label="Toggle theme"></button>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- PREVIEW -->
+  <section class="pane pane-preview">
+    <div class="toolbar-row">
+      <h2 class="pane-title" data-i18n="app_tagline">Live preview</h2>
+      <div class="actions">
+        <button id="diceBtn" class="btn secondary" data-i18n="av_random">🎲 Avatar</button>
+        <button id="downloadPng">PNG</button>
+        <button id="downloadJpg">JPG</button>
+        <button id="downloadGif">GIF</button>
+        <button id="downloadWebp">WEBP</button>
+        <button id="downloadSvg">SVG</button>
+        <button id="downloadPdf">PDF</button>
+        <button id="downloadHtml">HTML</button>
+      </div>
+    </div>
+    <div class="card-stage">
+      <div id="cardHolder" aria-label="ID card preview"></div>
+      <p class="hint" data-i18n="note_optional">Everything is optional except the username.</p>
+    </div>
+  </section>
+
+  <!-- FORM -->
+  <section class="pane pane-form">
+    <h2 data-i18n="identity_details">🪪 Identity card details</h2>
+    <form id="identityForm" novalidate>
+      <div class="field">
+        <label for="username" data-i18n="username">Username *</label>
+        <input type="text" id="username" name="username" maxlength="60" placeholder="koulaxizis" required>
+      </div>
+	  
+	        <div class="field">
+        <label for="cardScheme" data-i18n="scheme_label">Card style</label>
+        <select id="cardScheme">
+          <option value="terminal">Terminal (dark)</option>
+          <option value="paper">Paper (light)</option>
+          <option value="mint">Mint</option>
+          <option value="rose">Rose</option>
+        </select>
+      </div>
+
+      <details open><summary data-i18n="sec_identity">Identity</summary>
+        <div class="grid2">
+          <input type="text" name="fullname" placeholder="Full name">
+          <input type="text" name="alias" placeholder="Nickname">
+          <input type="text" name="gender" list="genders" placeholder="Gender">
+          <datalist id="genders">
+            <option value="male"><option value="female"><option value="plant">
+            <option value="robot"><option value="cat"><option value="netizen">
+          </datalist>
+          <input type="date" name="birthday">
+          <input type="text" name="location" placeholder="City / country">
+          <input type="text" name="address" placeholder="Address">
+        </div>
+      </details>
+
+      <details><summary data-i18n="sec_contact">Contact</summary>
+        <textarea name="phones" rows="2" placeholder="Phones (one per line)"></textarea>
+        <textarea name="emails" rows="2" placeholder="Emails (one per line)"></textarea>
+      </details>
+
+      <details><summary data-i18n="sec_sites">Sites & Socials</summary>
+        <textarea name="websites" rows="2" placeholder="Websites"></textarea>
+        <textarea name="blogs" rows="2" placeholder="Blogs"></textarea>
+        <textarea name="socials" rows="2" placeholder="@user (platform)"></textarea>
+        <textarea name="ims" rows="2" placeholder="IMs"></textarea>
+      </details>
+
+      <details><summary data-i18n="sec_bio">Bio / Motto</summary>
+        <textarea name="bio" rows="3" placeholder="Say something memorable…"></textarea>
+      </details>
+
+            <details open id="secAvatarAnchor"><summary data-i18n="sec_avatar">🎨 Pixel Art Avatar</summary>
+        <div id="avatarControls"></div>
+        <div class="avatar-dl">
+          <span class="avatar-dl-label" data-i18n="av_dl">Download avatar:</span>
+          <button type="button" id="downloadAvatarPng" class="btn">PNG</button>
+          <button type="button" id="downloadAvatarSvg" class="btn">SVG</button>
+        </div>
+        <div class="avatar-dl">
+          <span class="avatar-dl-label" data-i18n="av_tools">Avatar tools:</span>
+          <label class="chk"><input type="checkbox" id="avatarTransparent"><span data-i18n="av_transparent">Transparent background</span></label>
+          <button type="button" id="copyAvatarClip" class="btn" data-i18n="av_copy">Copy image</button>
+          <button type="button" id="shareAvatarLink" class="btn" data-i18n="av_share">🔗 Share link</button>
+        </div>
+      </details>
+
+      <fieldset id="characteristics">
+        <legend data-i18n="tags_title">Tags & characteristics</legend>
+        <div class="tags-list"></div>
+        <div class="tag-add">
+          <input type="text" id="customTagInput" placeholder="Add your own tag…">
+          <button type="button" id="addTagBtn" data-i18n="tag_add_btn">Add</button>
+        </div>
+        <p class="note" data-i18n="note_privacy">No data leaves your browser.</p>
+      </fieldset>
+    </form>
+  </section>
+</main>
+
+<footer class="foot">
+  <span>No cookies · No tracking · No ads · No accounts · MIT</span>
+  <span>© <span id="year">2026</span> <a href="https://koulaxizis.gr">Christos Koulaxizis</a> · <a href="https://glarolykoi.net">glarolykoi.net</a> · <a href="https://noxpress.tech">noxpress.tech</a></span>
+</footer>
+
+<div id="toast" class="hidden" role="status"></div>
+
+<script src="vendor/jspdf.umd.min.js" defer></script>
+<script src="gif.js" defer></script>
+<script src="avatar.js" defer></script>
+<script src="app.js" defer></script>
+<script src="exporter.js" defer></script>
+</body>
+</html>
