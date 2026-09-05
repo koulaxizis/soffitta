@@ -413,7 +413,7 @@
   var langElBtn = document.getElementById("langEl");
   var installBtn = document.getElementById("installBtn");
 
-  // ===== i18n (μισό α共用 μοτίβο σε όλη τη σουίτα) =====
+  // ===== i18n (κοινό μοτίβο σε όλη τη σουίτα) =====
   var LANG_KEY = "soffitta.lang";
 
   var T = {
@@ -432,7 +432,7 @@
     savedAs: { en: "· seed: ", el: "· seed: " }
   };
 
-  var currentLang = "en";
+  var currentLang = detectLang();
 
   function detectLang() {
     try {

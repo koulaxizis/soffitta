@@ -1,11 +1,9 @@
-/* Soffitta service worker — progressive offline caching */
+/* Soffitta service worker v2 — fresh HTML, cached assets */
 "use strict";
 
-const CACHE = "soffitta-v1";
+const CACHE = "soffitta-v2";
 const CORE = ["./", "./index.html"];
 
-/* Εγκατάσταση: μόνο το index προ-αποθηκεύεται — τα apps μπαίνουν
-   στο cache όταν επισκεφτεί ο χρήστης (progressive, χωρίς 404 traps). */
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE)
@@ -14,7 +12,6 @@ self.addEventListener("install", (event) => {
   );
 });
 
-/* Καθαρισμός παλιών caches σε κάθε αναβάθμιση */
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
@@ -25,9 +22,6 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-/* Fetch: cache-first για same-origin GET, με ενημέρωση από το δίκτυο.
-   Cross-origin (π.χ. Wikipedia του museum, εικόνες thumbnail) αγνοούνται
-   — ποτέ caching περιεχομένου τρίτων. */
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
@@ -35,6 +29,22 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
+  // Navigations (HTML): πάντα δίκτυο πρώτα — ποτέ stale σελίδες.
+  // Cache μόνο ως offline fallback.
+  if (req.mode === "navigate") {
+    event.respondWith(
+      fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((cache) => cache.put(req, copy));
+        return res;
+      }).catch(() =>
+        caches.match(req).then((page) => page || caches.match("./"))
+      )
+    );
+    return;
+  }
+
+  // Assets: stale-while-revalidate — σερβίρει cached, ενημερώνει στο παρασκήνιο
   event.respondWith(
     caches.match(req).then((cached) => {
       const network = fetch(req).then((res) => {
@@ -43,15 +53,8 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE).then((cache) => cache.put(req, copy));
         }
         return res;
-      });
+      }).catch(() => cached);
       return cached || network;
-    }).catch(() =>
-      caches.match("./").then((page) =>
-        page || new Response("Offline", {
-          status: 503,
-          headers: { "Content-Type": "text/plain; charset=utf-8" }
-        })
-      )
-    )
+    })
   );
 });
