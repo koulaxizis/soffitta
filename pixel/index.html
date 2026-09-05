@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pixel Avatar Maker</title> <!-- SUITE NAME prefix όταν επιλεγεί το όνομα -->
+<meta name="description" content="Πυξελίδη avatar 8×8: κάθε σπόρος, ένα μοναδικό πρόσωπο. Export PNG, σώσε τα αγαπημένα σου. Χωρίς cookies, χωρίς tracking.">
+<style>
+  :root {
+    --bg: #1c1214;
+    --surface: #261a1c;
+    --surface-2: #332226;
+    --border: #4e3438;
+    --text: #f7edee;
+    --text-muted: #b99aa0;
+    --accent: #ff8a80;
+    --accent-soft: rgba(255, 138, 128, 0.13);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: radial-gradient(ellipse at 50% -20%, #2e1d21 0%, var(--bg) 65%);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  header h1 { font-size: 1.2rem; font-weight: 800; }
+  header h1 span { color: var(--accent); }
+  header .hint { font-size: 0.78rem; color: var(--text-muted); }
+
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 300px;
+  }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+    .side { border-left: none !important; border-top: 1px solid var(--border); }
+  }
+
+  .stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 20px 44px;
+    gap: 20px;
+  }
+
+  .frame {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 14px 50px rgba(0,0,0,0.45);
+  }
+
+  #avatar {
+    display: block;
+    width: min(70vw, 300px);
+    height: auto;
+    image-rendering: pixelated;
+    border-radius: 8px;
+  }
+
+  .seed-row {
+    display: flex;
+    gap: 8px;
+    width: min(80vw, 320px);
+  }
+
+  .seed-input {
+    flex: 1;
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    font-family: ui-monospace, monospace;
+    outline: none;
+  }
+  .seed-input:focus { border-color: var(--accent); }
+
+  button {
+    font-family: inherit;
+    font-size: 0.86rem;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 10px 16px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease, filter 0.15s ease;
+  }
+
+  button:hover:not([disabled]) { border-color: var(--accent); background: var(--surface-2); }
+  button:active:not([disabled]) { transform: translateY(1px); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #2e1114; }
+  button.primary:hover:not([disabled]) { filter: brightness(1.07); background: var(--accent); }
+
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+
+  #rerollBtn { min-width: 200px; font-size: 1rem; padding: 13px 28px; }
+
+  .side {
+    border-left: 1px solid var(--border);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    overflow-y: auto;
+  }
+
+  h2.section {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+
+  .palette { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+  .palette button {
+    height: 38px;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: rgba(255,255,255,0.9);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+    transition: transform 0.12s ease, border-color 0.12s ease;
+  }
+
+  .palette button:hover { transform: translateY(-2px); }
+  .palette button.active { border-color: var(--text); }
+
+  .gallery { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+
+  .gallery canvas {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    image-rendering: pixelated;
+    background: var(--surface-2);
+    transition: border-color 0.15s ease, transform 0.12s ease;
+  }
+  .gallery canvas:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+  .gal-empty { font-size: 0.76rem; color: var(--text-muted); font-style: italic; }
+
+  .note { font-size: 0.7rem; color: var(--text-muted); line-height: 1.6; }
+
+  footer {
+    margin-top: auto;
+    padding: 14px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.7;
+  }
+  footer a { color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--text-muted); }
+  footer a:hover { border-bottom-style: solid; }
+
+  .kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-family: ui-monospace, monospace;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>👨‍🎨 Pixel Avatar <span>Maker</span></h1>
+  <p class="hint"><span class="kbd">R</span> νέο πρόσωπο · <span class="kbd">P</span> επόμενη παλέτα · <span class="kbd">D</span> λήψη PNG</p>
+</header>
+
+<main>
+
+  <section class="stage">
+
+    <div class="frame">
+      <canvas id="avatar" width="320" height="320"></canvas>
+    </div>
+
+    <button id="rerollBtn" class="primary">✦ Νέο πρόσωπο</button>
+
+    <div class="seed-row">
+      <input class="seed-input" id="seedInput" maxlength="12" spellcheck="false" aria-label="Σπόρος avatar">
+      <button id="loadSeedBtn" title="Φόρτωσε τον σπόρο">↵</button>
+    </div>
+
+    <div class="btn-row">
+      <button id="dlBtn">⬇ Λήψη PNG</button>
+      <button id="copySeedBtn">⧉ Αντιγραφή σπόρου</button>
+    </div>
+
+  </section>
+
+  <aside class="side">
+
+    <div>
+      <h2 class="section">Παλέτες</h2>
+      <div class="palette" id="paletteGrid"></div>
+    </div>
+
+    <div>
+      <h2 class="section">Μουσείο</h2>
+      <div class="gallery" id="gallery"></div>
+      <p class="gal-empty" id="galEmpty" style="margin-top:8px;">Δεν έχεις σώσει πρόσωπο ακόμα.</p>
+      <button id="saveBtn" style="width:100%; margin-top:10px;">💾 Σώσε το τρέχον</button>
+      <p class="note" style="margin-top:8px;">Κλικ σε σωσμένο πρόσωπο = επαναφορά του σπόρου του.</p>
+    </div>
+
+  </aside>
+
+</main>
+
+<footer>
+  Designed by <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="../">Όλα τα apps</a><br>
+  Χωρίς cookies · Χωρίς tracking · Open source · Ο ίδιος σπόρος, πάντα το ίδιο πρόσωπο
+</footer>
+
+<script>
+"use strict";
+(function () {
+
+  // ===== ΣΤΟΙΧΕΙΑ DOM (όλα υπάρχουν στο markup της Part 1) =====
+  var canvas = document.getElementById("avatar");
+  var ctx = canvas.getContext("2d");
+  var seedInput = document.getElementById("seedInput");
+  var rerollBtn = document.getElementById("rerollBtn");
+  var loadSeedBtn = document.getElementById("loadSeedBtn");
+  var dlBtn = document.getElementById("dlBtn");
+  var copySeedBtn = document.getElementById("copySeedBtn");
+  var paletteGridEl = document.getElementById("paletteGrid");
+  var galleryEl = document.getElementById("gallery");
+  var galEmptyEl = document.getElementById("galEmpty");
+  var saveBtn = document.getElementById("saveBtn");
+
+  // ===== ΣΤΑΘΕΡΕΣ =====
+  var GRID = 8;
+  var CELL = 40;                       // 8 × 40 = 320px λογικό canvas
+  var EXPORT_SIZE = 512;               // 8 × 64
+  var LS_GALLERY = "pixelavatar.gallery.v1";
+  var LS_STATE = "pixelavatar.state.v1";
+
+  // ===== ΠΑΛΕΤΕΣ =====
+  var PAL = [
+    { name: "Coral",  bg: "#ffe0d6", skins: ["#ffd6a8","#eab684","#c48a54","#8a5a38"], hairs: ["#2b1a10","#8a4a20","#d49030","#f2e0b0"], shirts: ["#e86070","#705aa0","#3aa080","#d4a030"] },
+    { name: "Ocean",  bg: "#d8eeff", skins: ["#ffe2c4","#e0ba90","#b08050","#6e4a2e"], hairs: ["#182430","#3060a0","#60c0e0","#f2f2f2"], shirts: ["#3080c0","#305090","#40b090","#c05070"] },
+    { name: "Forest", bg: "#e4f4da", skins: ["#ffe0c2","#e8c290","#b58555","#70482e"], hairs: ["#1e2a14","#3a5a2a","#8aa050","#cabf70"], shirts: ["#4a8a50","#8a6a3a","#3a5068","#705080"] },
+    { name: "Grape",  bg: "#eee0f8", skins: ["#ffe2c8","#eabc94","#ba8456","#784c30"], hairs: ["#221430","#5a2a80","#9a60d0","#e8d0f0"], shirts: ["#8050c0","#c05080","#4090a0","#5060a0"] },
+    { name: "Sand",   bg: "#fff0d8", skins: ["#ffdec0","#eaba92","#ba8255","#74492d"], hairs: ["#26180e","#904818","#e0a040","#f6ecc0"], shirts: ["#d08a50","#508068","#805860","#a08040"] },
+    { name: "Night",  bg: "#3a3038", skins: ["#ffc898","#d89868","#a87048","#584030"], hairs: ["#101010","#382838","#784868","#d8c8e8"], shirts: ["#584868","#885868","#384858","#685848"] }
+  ];
+
+  // ===== ΚΑΤΑΣΤΑΣΗ =====
+  var currentPal = 0;
+  var currentPixels = null; // ο πίνακας 64 χρωμάτων του τρέχοντος avatar
+
+  // ===== DETERMINISTIC RNG (xmur3 + mulberry32) =====
+  function xmur3(str) {
+    var h = 1779033703 ^ str.length;
+    for (var i = 0; i < str.length; i++) {
+      h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+      h = (h << 13) | (h >>> 19);
+    }
+    return function () {
+      h = Math.imul(h ^ (h >>> 16), 2246822507);
+      h = Math.imul(h ^ (h >>> 13), 3266489909);
+      h ^= h >>> 16;
+      return h >>> 0;
+    };
+  }
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function rngFor(seedStr) {
+    return mulberry32(xmur3(seedStr || "lumo")());
+  }
+
+  function randomSeedStr() {
+    var abc = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    var s = "";
+    var buf = new Uint32Array(6);
+    (window.crypto || window.msCrypto).getRandomValues(buf);
+    for (var i = 0; i < 6; i++) s += abc[buf[i] % abc.length];
+    return s;
+  }
+
+  // ===== ΥΠΟΛΟΓΙΣΜΟΣ AVATAR =====
+  // Επιστρέφει πίνακα 64 θέσεων (χρώμα hex ή null).
+  // Σημαντικό: η σειρά κλήσεων του rng είναι ΠΑΝΤΑ σταθερή, ανεξάρτητα από
+  // το τι «διαλέγει» — γι' αυτό το αποτέλεσμα είναι καθοριστικό ανά σπόρο.
+  function computePixels(seedStr, palIdx) {
+    var rng = rngFor(seedStr);
+    var pal = PAL[palIdx];
+
+    // Επιλογές (πάντα με την ίδια σειρά)
+    var skin = pal.skins[Math.floor(rng() * pal.skins.length)];
+    var hairC = pal.hairs[Math.floor(rng() * pal.hairs.length)];
+    var shirt = pal.shirts[Math.floor(rng() * pal.shirts.length)];
+    var hairRows = 1 + Math.floor(rng() * 3);        // 1–3 σειρές μαλλιών
+    var fringeL = rng() < 0.5;
+    var fringeR = rng() < 0.5;
+    var sideLen = Math.floor(rng() * 3);             // 0–2 σειρές πλαϊνών μαλλιών
+    var bigEyes = rng() < 0.3;
+    var blushOn = rng() < 0.35;
+    var wideShoulders = rng() < 0.5;
+
+    var g = new Array(GRID * GRID).fill(null);
+
+    function put(x, y, c) {
+      if (x >= 0 && x < GRID && y >= 0 && y < GRID) g[y * GRID + x] = c;
+    }
+    function at(x, y) { return g[y * GRID + x]; }
+
+    var headTop = 1, headBot = 6, colL = 1, colR = 6;
+
+    // Πρόσωπο (πλατύ πάνω, στενό στο πηγούνι)
+    for (var y = headTop; y <= headBot; y++) {
+      var cL = (y === headBot) ? colL + 1 : colL;
+      var cR = (y === headBot) ? colR - 1 : colR;
+      for (var x = cL; x <= cR; x++) put(x, y, skin);
+    }
+
+    // Μαλλιά — κύρια ποσότητα
+    for (y = headTop; y < headTop + hairRows; y++) {
+      for (x = colL; x <= colR; x++) put(x, y, hairC);
+    }
+
+    // Ξεχωριστές τούφες (fringe) κάτω από το κύριο μπλοκ
+    if (fringeL) put(colL, Math.min(headTop + hairRows, headBot - 2), hairC);
+    if (fringeR) put(colR, Math.min(headTop + hairRows, headBot - 2), hairC);
+
+    // Πλαϊνά μαλλιά (τέντες στους κροτάφους)
+    for (y = headTop + hairRows; y < headTop + hairRows + sideLen; y++) {
+      put(colL, y, hairC);
+      put(colR, y, hairC);
+    }
+
+    // Μάτια — ποτέ κάτω από τα μαλλιά
+    var eyeRow = Math.min(Math.max(headTop + hairRows, headTop + 2), headBot - 2);
+    var eyeC = "#1c1c1e";
+    put(2, eyeRow, eyeC);
+    put(5, eyeRow, eyeC);
+    if (bigEyes) {
+      put(2, eyeRow + 1, eyeC);
+      put(5, eyeRow + 1, eyeC);
+    }
+
+    // Ξανθιές παρειές (μόνο πάνω σε δέρμα)
+    if (blushOn) {
+      if (at(1, eyeRow + 1) === skin) put(1, eyeRow + 1, "#e89090");
+      if (at(6, eyeRow + 1) === skin) put(6, eyeRow + 1, "#e89090");
+    }
+
+    // Στόμα
+    var mouthRow = Math.min(eyeRow + 2, headBot - 1);
+    put(3, mouthRow, "#8a5050");
+    put(4, mouthRow, "#8a5050");
+
+    // Ώμοι / πουκάμισο
+    for (x = colL; x <= colR; x++) put(x, 7, shirt);
+    if (wideShoulders) {
+      put(0, 7, shirt);
+      put(7, 7, shirt);
+    }
+
+    return g;
+  }
+
+  // ===== ΖΩΓΡΑΦΙΚΗ =====
+  function paintPixels(pixels, palIdx, targetCtx, cell) {
+    targetCtx.fillStyle = PAL[palIdx].bg;
+    targetCtx.fillRect(0, 0, GRID * cell, GRID * cell);
+    for (var y = 0; y < GRID; y++) {
+      for (var x = 0; x < GRID; x++) {
+        var c = pixels[y * GRID + x];
+        if (!c) continue;
+        targetCtx.fillStyle = c;
+        targetCtx.fillRect(x * cell, y * cell, cell, cell);
+      }
+    }
+  }
+
+  function render() {
+    currentPixels = computePixels(seedInput.value, currentPal);
+    paintPixels(currentPixels, currentPal, ctx, CELL);
+    saveState();
+  }
+
+  // ===== STATE (τελευταίος σπόρος + παλέτα) =====
+  function saveState() {
+    try {
+      localStorage.setItem(LS_STATE, JSON.stringify({ seed: seedInput.value, pal: currentPal }));
+    } catch (e) {}
+  }
+
+  function loadState() {
+    try {
+      var s = JSON.parse(localStorage.getItem(LS_STATE) || "null");
+      if (s && typeof s.seed === "string" && s.seed) {
+        seedInput.value = s.seed.slice(0, 12);
+        if (typeof s.pal === "number" && s.pal >= 0 && s.pal < PAL.length) currentPal = s.pal;
+        return;
+      }
+    } catch (e) {}
+    seedInput.value = randomSeedStr();
+  }
+
+  // ===== ΠΑΛΕΤΕΣ (UI) =====
+  function buildPaletteUI() {
+    paletteGridEl.innerHTML = "";
+    PAL.forEach(function (pal, idx) {
+      var b = document.createElement("button");
+      b.textContent = pal.name;
+      // Μίνι preview: 4 λωρίδες από τα βασικά χρώματα της παλέτας
+      b.style.background =
+        "linear-gradient(90deg," + pal.skins[1] + " 0 25%," +
+        pal.hairs[0] + " 25% 50%," + pal.shirts[0] + " 50% 75%," +
+        pal.bg + " 75%)";
+      if (idx === currentPal) b.classList.add("active");
+      b.addEventListener("click", function () {
+        currentPal = idx;
+        paletteGridEl.querySelectorAll("button").forEach(function (el) {
+          el.classList.remove("active");
+        });
+        b.classList.add("active");
+        render();
+      });
+      paletteGridEl.appendChild(b);
+    });
+  }
+
+  // ===== ΜΟΥΣΕΙΟ (gallery) =====
+  var gallery = [];
+  try {
+    var saved = JSON.parse(localStorage.getItem(LS_GALLERY) || "null");
+    if (Array.isArray(saved)) gallery = saved.slice(0, 8);
+  } catch (e) {}
+
+  function saveGallery() {
+    try { localStorage.setItem(LS_GALLERY, JSON.stringify(gallery)); } catch (e) {}
+  }
+
+  function renderGallery() {
+    galleryEl.innerHTML = "";
+    galEmptyEl.style.display = gallery.length ? "none" : "block";
+    gallery.forEach(function (item) {
+      var mc = document.createElement("canvas");
+      mc.width = 64;
+      mc.height = 64;
+      paintPixels(item.pixels, item.pal, mc.getContext("2d"), 8);
+      mc.title = "Σπόρος: " + item.seed;
+      mc.addEventListener("click", function () {
+        seedInput.value = item.seed;
+        currentPal = item.pal;
+        buildPaletteUI();
+        render();
+        showToast("Επαναφέρθηκε: " + item.seed);
+      });
+      galleryEl.appendChild(mc);
+    });
+  }
+
+  saveBtn.addEventListener("click", function () {
+    // Χωρίς διπλότυπα (ίδιος σπόρος + ίδια παλέτα)
+    gallery = gallery.filter(function (it) {
+      return !(it.seed === seedInput.value && it.pal === currentPal);
+    });
+    gallery.unshift({ seed: seedInput.value, pal: currentPal, pixels: currentPixels });
+    if (gallery.length > 8) gallery = gallery.slice(0, 8);
+    saveGallery();
+    renderGallery();
+    showToast("Σώθηκε στο μουσείο");
+  });
+
+  // ===== ΕΞΑΓΩΓΗ PNG =====
+  dlBtn.addEventListener("click", function () {
+    var tmp = document.createElement("canvas");
+    tmp.width = EXPORT_SIZE;
+    tmp.height = EXPORT_SIZE;
+    paintPixels(currentPixels, currentPal, tmp.getContext("2d"), EXPORT_SIZE / GRID);
+    var a = document.createElement("a");
+    a.href = tmp.toDataURL("image/png");
+    a.download = "pixel-avatar-" + (seedInput.value || "lumo") + ".png";
+    a.click();
+  });
+
+  // ===== ΣΠΟΡΟΣ =====
+  function reroll() {
+    seedInput.value = randomSeedStr();
+    render();
+  }
+
+  rerollBtn.addEventListener("click", reroll);
+  loadSeedBtn.addEventListener("click", function () {
+    if (!seedInput.value.trim()) reroll();
+    else render();
+  });
+
+  seedInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      render();
+    }
+  });
+
+  copySeedBtn.addEventListener("click", function () {
+    var txt = seedInput.value;
+    function ok() { showToast("Ο σπόρος αντιγράφηκε"); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(ok, ok);
+    } else {
+      var ta = document.createElement("textarea");
+      ta.value = txt;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); } catch (e) {}
+      ta.remove();
+      ok();
+    }
+  });
+
+  // ===== TOAST (δημιουργείται δυναμικά — δεν χρειάζεται markup) =====
+  var toastEl = null;
+  var toastTimer = null;
+
+  function showToast(msg) {
+    if (!toastEl) {
+      toastEl = document.createElement("div");
+      toastEl.style.cssText =
+        "position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(16px);" +
+        "background:#ff8a80;color:#2e1114;font:800 0.85rem 'Segoe UI',sans-serif;" +
+        "padding:10px 22px;border-radius:999px;opacity:0;pointer-events:none;z-index:50;" +
+        "transition:opacity .25s ease, transform .25s ease;";
+      document.body.appendChild(toastEl);
+    }
+    toastEl.textContent = msg;
+    toastEl.style.opacity = "1";
+    toastEl.style.transform = "translateX(-50%) translateY(0)";
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      toastEl.style.opacity = "0";
+      toastEl.style.transform = "translateX(-50%) translateY(16px)";
+    }, 1600);
+  }
+
+  // ===== ΠΛΗΚΤΡΟΛΟΓΙΟ (R / P / D) =====
+  document.addEventListener("keydown", function (e) {
+    var tag = (e.target && e.target.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea" || tag === "select") return;
+    var k = e.key.toLowerCase();
+    if (k === "r") reroll();
+    else if (k === "p") {
+      currentPal = (currentPal + 1) % PAL.length;
+      buildPaletteUI();
+      render();
+    }
+    else if (k === "d") dlBtn.click();
+  });
+
+  // ===== INIT =====
+  loadState();
+  buildPaletteUI();
+  render();
+  renderGallery();
+
+})();
+</script>
+
+</body>
+</html>

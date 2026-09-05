@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Micro-Zen</title> <!-- SUITE NAME prefix όταν επιλεγεί το όνομα -->
+<meta name="description" content="Ένας κύκλος αναπνοής και ένα λεπτό ησυχίας. Διάταξεις 4-4-4 και 4-7-8. Χωρίς cookies, χωρίς tracking.">
+<style>
+  :root {
+    --bg: #0c1410;
+    --surface: #12201a;
+    --surface-2: #182a21;
+    --border: #24402f;
+    --text: #e3f2e7;
+    --text-muted: #8fae9c;
+    --accent: #a5d6a7;
+    --accent-soft: rgba(165, 214, 167, 0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    background: radial-gradient(ellipse at 50% 110%, #16301f 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  header {
+    padding: 16px 24px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 2;
+  }
+
+  header h1 { font-size: 1.2rem; font-weight: 800; }
+  header h1 span { color: var(--accent); }
+  header .session { font-size: 0.8rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+  main {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    padding: 20px;
+  }
+
+  /* ===== ΚΥΚΛΟΣ ΑΝΑΠΝΟΗΣ ===== */
+  .breath-stage {
+    position: relative;
+    width: min(70vw, 300px);
+    height: min(70vw, 300px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .ring {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .ring.outer {
+    width: 100%;
+    height: 100%;
+    border: 1px solid var(--border);
+  }
+
+  .ring.mid {
+    width: 74%;
+    height: 74%;
+    border: 1px dashed var(--border);
+    opacity: 0.6;
+  }
+
+  .core {
+    position: relative;
+    width: 46%;
+    height: 46%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 32%, #cde9cf, var(--accent) 60%, #6aab6e);
+    box-shadow: 0 0 60px rgba(165, 214, 167, 0.45);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease-out;
+    will-change: transform;
+  }
+
+  .core .phase {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #17301a;
+  }
+
+  .core .count {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #122b14;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    margin-top: 2px;
+  }
+
+  /* Ήπια παλμική εξωτερική λάμψη στον χτυπημό */
+  .ring.pulse {
+    width: 46%;
+    height: 46%;
+    background: rgba(165, 214, 167, 0.25);
+    transition: transform 0.2s ease-out, background 1s ease;
+  }
+
+  .tap-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+
+  /* ===== ΡΥΘΜΙΣΕΙΣ ===== */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    max-width: 560px;
+  }
+
+  .pattern {
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 8px 18px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .pattern:hover { border-color: var(--accent); }
+  .pattern.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .pattern small {
+    display: block;
+    font-size: 0.62rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    letter-spacing: 0.03em;
+  }
+  .pattern.active small { color: var(--accent); opacity: 0.8; }
+
+  /* Διάρκεια */
+  .duration {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+  }
+
+  .duration button {
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .duration button.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .duration button:hover { border-color: var(--accent); }
+
+  footer {
+    position: relative;
+    z-index: 2;
+    padding: 14px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.7;
+  }
+  footer a { color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--text-muted); }
+  footer a:hover { border-bottom-style: solid; }
+
+  .kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-family: ui-monospace, monospace;
+  }
+
+  /* Παλλόμενα σωματίδια σκόνης στο παρασκήνιο */
+  .dust {
+    position: absolute;
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    background: rgba(165, 214, 167, 0.3);
+    pointer-events: none;
+    animation: dustFloat linear infinite;
+  }
+  @keyframes dustFloat {
+    0% { transform: translateY(0) translateX(0); opacity: 0; }
+    20% { opacity: 0.8; }
+    80% { opacity: 0.5; }
+    100% { transform: translateY(-90vh) translateX(20px); opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dust { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌬️ Micro-<span>Zen</span></h1>
+  <span class="session" id="sessionEl">0 αναπνοές · 00:00</span>
+</header>
+
+<main id="main">
+
+  <div class="breath-stage" id="breathStage" role="button" tabindex="0" aria-label="Έναρξη ή παύση αναπνοής">
+    <div class="ring outer"></div>
+    <div class="ring mid"></div>
+    <div class="ring pulse" id="pulseRing"></div>
+    <div class="core" id="coreCircle">
+      <span class="phase" id="phaseEl">Έτοιμο</span>
+      <span class="count" id="countEl">●</span>
+    </div>
+  </div>
+
+  <p class="tap-hint">Άγγιξε τον κύκλο για έναρξη</p>
+
+  <div class="controls">
+    <button class="pattern active" data-pattern="444">
+      Τετράγωνο
+      <small>4–4–4 · ισορροπία</small>
+    </button>
+    <button class="pattern" data-pattern="478">
+      Χαλάρωση
+      <small>4–7–8 · ύπνος</small>
+    </button>
+    <button class="pattern" data-pattern=" coherent">
+      Συνεκτικό
+      <small>5,5 συνεχόμενες</small>
+    </button>
+  </div>
+
+  <div class="duration">
+    <span>Διάρκεια:</span>
+    <button data-min="1">1′</button>
+    <button data-min="3" class="active">3′</button>
+    <button data-min="5">5′</button>
+    <button data-min="0">Ελεύθερο</button>
+  </div>
+
+</main>
+
+<footer>
+  Designed by <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="../">Όλα τα apps</a><br>
+  Χωρίς cookies · Χωρίς tracking · Open source · <span class="kbd">Space</span> έναρξη/παύση
+</footer>
+
+<script>
+"use strict";
+(function () {
+
+  var stage = document.getElementById("breathStage");
+  var core = document.getElementById("coreCircle");
+  var pulse = document.getElementById("pulseRing");
+  var phaseEl = document.getElementById("phaseEl");
+  var countEl = document.getElementById("countEl");
+  var sessionEl = document.getElementById("sessionEl");
+
+  // ===== ΠΡΟΓΡΑΜΜΑΤΑ ΑΝΑΠΝΟΗΣ =====
+  var PATTERNS = {
+    "444": { name: "Τετράγωνο", phases: [
+      { key: "in",  label: "Εισπνοή",  secs: 4 },
+      { key: "hold",label: "Κράτα",    secs: 4 },
+      { key: "out", label: "Εκπνοή",   secs: 4 }
+    ]},
+    "478": { name: "Χαλάρωση", phases: [
+      { key: "in",  label: "Εισπνοή",  secs: 4 },
+      { key: "hold",label: "Κράτα",    secs: 7 },
+      { key: "out", label: "Εκπνοή",   secs: 8 }
+    ]},
+    "coherent": { name: "Συνεκτικό", phases: [
+      { key: "in",  label: "Εισπνοή",  secs: 5.5 },
+      { key: "out", label: "Εκπνοή",   secs: 5.5 }
+    ]}
+  };
+
+  var patternKey = "444";
+  var targetMinutes = 3; // 0 = ελεύθερο
+
+  // ===== STATE =====
+  var running = false;
+  var phaseIdx = 0;
+  var phaseElapsed = 0;     // δευτ. στην τρέχουσα φάση
+  var breathCount = 0;
+  var totalSeconds = 0;
+  var lastTs = 0;
+
+  // Scale του κύκλου ανά φάση
+  var SCALE = { in: 1.6, hold: 1.6, out: 1 };
+
+  // ===== ΚΥΚΛΟΣ =====
+  function setScale(s) {
+    core.style.transform = "scale(" + s + ")";
+    pulse.style.transform = "scale(" + (s * 1.08) + ")";
+  }
+
+  function currentPhase() {
+    return PATTERNS[patternKey].phases[phaseIdx];
+  }
+
+  function nextPhase() {
+    var p = currentPhase();
+    if (p.key === "out") {
+      breathCount++;
+    }
+    phaseIdx = (phaseIdx + 1) % PATTERNS[patternKey].phases.length;
+    phaseElapsed = 0;
+    var np = currentPhase();
+    phaseEl.textContent = np.label;
+    applyPhaseScale(np.key);
+    if (np.secs % 1 !== 0) {
+      countEl.textContent = ""; // δεκαδικά — μόνο ο κύκλος μετράει
+    }
+  }
+
+  function applyPhaseScale(key) {
+    if (key === "in") {
+      // Μεγάλωμα με ομαλή μετάβαση ανάλογα με διάρκεια εισπνοής
+      core.style.transition = "transform " + currentPhase().secs + "s ease-in-out";
+      pulse.style.transition = "transform " + currentPhase().secs + "s ease-in-out";
+      setScale(SCALE.in);
+    } else if (key === "out") {
+      core.style.transition = "transform " + currentPhase().secs + "s ease-in-out";
+      pulse.style.transition = "transform " + currentPhase().secs + "s ease-in-out";
+      setScale(SCALE.out);
+    }
+    // hold: μένει στη θέση του (transition ήδη ολοκληρωμένο)
+  }
+
+  function tick(ts) {
+    if (!running) return;
+    if (!lastTs) lastTs = ts;
+    var dt = Math.min(0.1, (ts - lastTs) / 1000);
+    lastTs = ts;
+
+    phaseElapsed += dt;
+    totalSeconds += dt;
+
+    var p = currentPhase();
+    if (p.secs % 1 === 0) {
+      countEl.textContent = String(Math.max(0, Math.ceil(p.secs - phaseElapsed)));
+    }
+
+    if (phaseElapsed >= p.secs) {
+      nextPhase();
+    }
+
+    // Έλεγχος ορίου διάρκειας
+    if (targetMinutes > 0 && totalSeconds >= targetMinutes * 60) {
+      finishSession();
+      return;
+    }
+
+    updateSessionText();
+    requestAnimationFrame(tick);
+  }
+
+  function updateSessionText() {
+    var mm = Math.floor(totalSeconds / 60);
+    var ss = Math.floor(totalSeconds % 60);
+    sessionEl.textContent = breathCount + " αναπνοές · " +
+      ("0" + mm).slice(-2) + ":" + ("0" + ss).slice(-2);
+  }
+
+  function startSession() {
+    running = true;
+    phaseIdx = 0;
+    phaseElapsed = 0;
+    phaseEl.textContent = currentPhase().label;
+    if (currentPhase().secs % 1 === 0) {
+      countEl.textContent = String(currentPhase().secs);
+    }
+    applyPhaseScale(currentPhase().key);
+    lastTs = 0;
+    requestAnimationFrame(tick);
+  }
+
+  function pauseSession() {
+    running = false;
+    phaseEl.textContent = "Παύση";
+  }
+
+  function resumeSession() {
+    running = true;
+    lastTs = 0;
+    phaseEl.textContent = currentPhase().label;
+    applyPhaseScale(currentPhase().key);
+    requestAnimationFrame(tick);
+  }
+
+  function finishSession() {
+    running = false;
+    phaseEl.textContent = "Καλά τα πήγες";
+    countEl.textContent = "🙏";
+    setScale(1);
+  }
+
+  // ===== ΕΝΑΡΞΗ / ΠΑΥΣΗ =====
+  function toggle() {
+    if (!running) {
+      if (totalSeconds > 0 && phaseEl.textContent === "Παύση") {
+        resumeSession();
+      } else {
+        totalSeconds = 0;
+        breathCount = 0;
+        updateSessionText();
+        startSession();
+      }
+    } else {
+      pauseSession();
+    }
+  }
+
+  stage.addEventListener("click", toggle);
+  stage.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggle();
+    }
+  });
+
+  // ===== ΠΡΟΓΡΑΜΜΑΤΑ =====
+  var patternBtns = document.querySelectorAll(".pattern");
+  patternBtns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var key = btn.getAttribute("data-pattern").trim();
+      if (!PATTERNS[key]) return;
+      patternKey = key;
+      patternBtns.forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      // Επανεκκίνηση με νέο ρυθμό
+      running = false;
+      totalSeconds = 0;
+      breathCount = 0;
+      phaseIdx = 0;
+      phaseElapsed = 0;
+      setScale(1);
+      phaseEl.textContent = "Έτοιμο";
+      countEl.textContent = "●";
+      updateSessionText();
+    });
+  });
+
+  // ===== ΔΙΑΡΚΕΙΑ =====
+  var durationBtns = document.querySelectorAll(".duration button");
+  durationBtns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      targetMinutes = parseInt(btn.getAttribute("data-min"), 10) || 0;
+      durationBtns.forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+    });
+  });
+
+  // ===== ΠΛΗΚΤΡΟΛΟΓΙΟ =====
+  document.addEventListener("keydown", function (e) {
+    if (e.code !== "Space") return;
+    var tag = (e.target && e.target.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "select" || tag === "textarea" || tag === "button") return;
+    e.preventDefault();
+    toggle();
+  });
+
+  // ===== ΣΚΟΝΗ (ατμόσφαιρα) =====
+  (function seedDust() {
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var main = document.getElementById("main");
+    for (var i = 0; i < 14; i++) {
+      var d = document.createElement("div");
+      d.className = "dust";
+      d.style.left = (5 + Math.random() * 90) + "%";
+      d.style.top = (60 + Math.random() * 40) + "%";
+      d.style.animationDuration = (14 + Math.random() * 18) + "s";
+      d.style.animationDelay = (-Math.random() * 20) + "s";
+      main.appendChild(d);
+    }
+  })();
+
+  // ===== INIT =====
+  updateSessionText();
+
+})();
+</script>
+
+</body>
+</html>

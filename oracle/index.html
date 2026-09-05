@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Μαντείο</title> <!-- SUITE NAME prefix όταν επιλεγεί το όνομα -->
+<meta name="description" content="Ρώτα το μαντείο. Οι απαντήσεις είναι πάντα αληθινές — αλλά όχι πάντα με τον τρόπο που περιμένεις. Χωρίς cookies, χωρίς tracking.">
+<style>
+  :root {
+    --bg: #171125;
+    --surface: #201834;
+    --surface-2: #2a2044;
+    --border: #443566;
+    --text: #ede8f6;
+    --text-muted: #a394c2;
+    --accent: #b39ddb;
+    --accent-soft: rgba(179, 157, 219, 0.14);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background:
+      radial-gradient(ellipse at 50% -30%, #2c2050 0%, var(--bg) 65%);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  header h1 { font-size: 1.2rem; font-weight: 800; }
+  header h1 span { color: var(--accent); }
+  header .hint { font-size: 0.78rem; color: var(--text-muted); }
+
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 34px 20px 50px;
+    gap: 26px;
+  }
+
+  /* ===== Η ΠΕΤΡΑ ===== */
+  .oracle-eye {
+    position: relative;
+    width: min(76vw, 230px);
+    height: min(76vw, 230px);
+    border-radius: 50%;
+    background: radial-gradient(circle at 42% 36%, #3b2d5c 0%, #241a3d 55%, #1a1330 100%);
+    border: 3px solid var(--border);
+    box-shadow:
+      inset 0 0 60px rgba(0,0,0,0.55),
+      0 18px 60px rgba(20,10,45,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.25s ease, box-shadow 0.35s ease;
+  }
+
+  .oracle-eye:hover {
+    transform: scale(1.02);
+    box-shadow:
+      inset 0 0 60px rgba(0,0,0,0.55),
+      0 18px 70px rgba(120,90,200,0.35);
+  }
+
+  .oracle-eye.consulting {
+    animation: sway 2.2s ease-in-out infinite;
+  }
+
+  @keyframes sway {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    25% { transform: scale(1.03) rotate(-1.2deg); }
+    75% { transform: scale(1.03) rotate(1.2deg); }
+  }
+
+  .oracle-eye .glyph {
+    font-size: 4.6rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 22px rgba(179, 157, 219, 0.5));
+    transition: opacity 0.3s ease;
+  }
+
+  .oracle-eye.consulting .glyph { opacity: 0.35; }
+
+  /* ===== ΕΡΩΤΗΣΗ ===== */
+  .question-row {
+    display: flex;
+    gap: 8px;
+    width: min(90vw, 420px);
+  }
+
+  .question-row input {
+    flex: 1;
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    outline: none;
+  }
+  .question-row input:focus { border-color: var(--accent); }
+  .question-row input::placeholder { color: var(--text-muted); opacity: 0.75; }
+
+  button {
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 12px 20px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease, filter 0.15s ease;
+  }
+
+  button:hover:not([disabled]) { border-color: var(--accent); background: var(--surface-2); }
+  button:active:not([disabled]) { transform: translateY(1px); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #1d1430; font-size: 1rem; }
+  button.primary:hover:not([disabled]) { filter: brightness(1.07); background: var(--accent); }
+  button[disabled] { opacity: 0.4; cursor: default; }
+
+  #askBtn { min-width: 190px; font-size: 1.02rem; padding: 14px 26px; }
+
+  /* ===== ΧΡΗΣΜΟΣ ===== */
+  .response {
+    width: min(92vw, 560px);
+    min-height: 130px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 26px 28px;
+    text-align: center;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .response::before {
+    content: "❦";
+    position: absolute;
+    top: -13px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg);
+    padding: 0 12px;
+    color: var(--accent);
+    font-size: 1.1rem;
+  }
+
+  .response .omen {
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .response .verse {
+    font-size: 1.12rem;
+    font-weight: 700;
+    line-height: 1.75;
+    color: var(--text);
+    font-style: italic;
+  }
+
+  .response .faded {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--text-muted);
+    font-style: normal;
+    max-width: 46ch;
+  }
+
+  .response.reveal .verse,
+  .response.reveal .omen,
+  .response.reveal .faded {
+    animation: fadeUp 0.8s ease both;
+  }
+  .response.reveal .omen { animation-delay: 0.05s; }
+  .response.reveal .verse { animation-delay: 0.2s; }
+  .response.reveal .faded { animation-delay: 0.45s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  /* ===== ΙΣΤΟΡΙΚΟ ===== */
+  .history {
+    width: min(92vw, 560px);
+    max-height: 170px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .history .entry {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+  }
+
+  .history .entry .q { color: var(--text); flex: 1; }
+  .history .entry .q::before { content: "„"; }
+  .history .entry .q::after { content: "“"; }
+  .history .entry .a { color: var(--accent); font-style: italic; flex: 1.4; }
+
+  footer {
+    margin-top: auto;
+    padding: 14px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.7;
+  }
+  footer a { color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--text-muted); }
+  footer a:hover { border-bottom-style: solid; }
+
+  .kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-family: ui-monospace, monospace;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔮 <span>Μαντείο</span></h1>
+  <p class="hint">Ρώτα · Μελέτα · Διδαγμάτων το δώρο, το χρήσιμο</p>
+</header>
+
+<main>
+
+  <div class="oracle-eye" id="oracleEye" role="button" tabindex="0" aria-label="Ερώτησε το μαντείο">
+    <span class="glyph">👁</span>
+  </div>
+
+  <div class="question-row">
+    <input type="text" id="questionInput" maxlength="140" spellcheck="false"
+           placeholder="Γράψε την ερώτησή σου…" aria-label="Η ερώτησή σου">
+  </div>
+
+  <button id="askBtn" class="primary">✦ Ερώτησε το μαντείο</button>
+
+  <div class="response" id="responseBox">
+    <span class="omen">Το μαντείο σε περιμένει</span>
+    <span class="verse">«Σιωπή προ你看 δίνει χρόνο να μάθει»</span>
+    <span class="faded">Γράψε την ερώτησή σου και πάτα το μάτι — ή Space.</span>
+  </div>
+
+  <div class="history" id="historyList"></div>
+
+</main>
+
+<footer>
+  Designed by <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="../">Όλα τα apps</a><br>
+  Χωρίς cookies · Χωρίς tracking · Open source · Τυχαιότητα από crypto.getRandomValues, μοίρα από αλλού
+</footer>
+
+<script>
+"use strict";
+(function () {
+
+  // ===== DOM =====
+  var eyeEl = document.getElementById("oracleEye");
+  var questionInput = document.getElementById("questionInput");
+  var askBtn = document.getElementById("askBtn");
+  var responseBox = document.getElementById("responseBox");
+  var historyListEl = document.getElementById("historyList");
+
+  var LS_HISTORY = "oracle.history.v1";
+
+  // ===== ΧΡΗΣΜΟΙ =====
+  // Δομή: omen (τελικό σημάδι) + verse (ο λόγιος στίχος) + gloss («μετάφραση»)
+  var ORACLES = [
+    { omen: "Σύμφωνο YES — ίσως",       verse: "Ό,τι ζητάς έρχεται, αλλά όχι από τον δρόμο που παρακολουθείς.",    gloss: "Η απάντηση είναι ναι — με μια προϋπόθεση που δεν βλέπεις ακόμα." },
+    { omen: "Σύμφωνο NO — απόψε",       verse: "Το πράγμα που αφήνεις πίσω σου δεν σημαίνει πως σου άξιζε.",          gloss: "Όχι. Και το «όχι» σου κάνει χάρη." },
+    { omen: "Ξαναρώτα αργότερα",        verse: "Το μαντείο έχει βαρεθεί. Η μοίρα σου έχει και άλλα ραντεβού.",      gloss: "Την στιγμή δεν φέγγει· η ερώτηση δεν είναι ώριμη. Ξαναρωτήστε σε πιο κατάλληλη στιγμή." },
+    { omen: "Ναι, αλλά πλήρωσε",        verse: "Κάθε δώρο των θεών φέρνει τη δική του λογιστική.",                  gloss: "Θα το πάρεις, αλλά κάτι θα το ανταλλάξεις — χρόνο, κόπο, ή κάτι πιο μαλακό." },
+    { omen: "Αδύνατον σήμερα",          verse: "Το ποτάμι δεν πέρασε ακόμα τη γέφυρα που έχεις στο μυαλό σου.",    gloss: "Όχι μόνο όχι — το θέμα πρέπει να ξανασχεδιαστεί εντελώς." },
+    { omen: "Μάρτυρες YES",             verse: "Ένα χέρι που δεν γνωρίζεις ανοίγει την πόρτα που σπρώχνεις.",      gloss: "Ναι — και κάποιος που δεν περιμένεις θα σου την εύχεται." },
+    { omen: "Θυμήσου",                 verse: "Το ότι ξέρεις την απάντηση δεν σημαίνει ότι θέλεις να την ακούσεις.", gloss: "Η ερώτηση ήταν ρητορική. Το ξέρεις ήδη." },
+    { omen: "Πρόσεχε Τρίτη",            verse: "Αυτό που φοβάσαι περνάει από δίπλα σου, όχι μέσα από σένα.",       gloss: "Θα περάσεις το στάδιο αυτό — απλώς όχι ανώδυνα." },
+    { omen: "Σπείρε",                   verse: "Το σπέρμα ας και δεν βλέπεις — το φυτό θα έρθει για να σε βρει.",    gloss: "Ξεκίνα τώρα. Τα αποτελέσματα αργούν, αλλά θα έρθουν." },
+    { omen: "Απόφυγε τον τρίτο",        verse: "Τρεις θα σου μιλήσουν — ο τρίτος θα σου πει ψέματα.",             gloss: "Αυτό που θα σου πουν στις επόμενες τρεις μέρες, πάρ' το με ένα κόκκο αλατιού." },
+    { omen: "Ο Κρόνος γελά",            verse: "Ο χρόνος σου είναι ευρωστός· η υπομονή σου, λοιπόν, όχι.",         gloss: "Καλά νέα σε μεγάλο βάθος. Θα χρειαστεί υπομονή σε επιφάνεια." },
+    { omen: "Δύο δρόμοι",               verse: "Θα βάλεις στόχο και θα επιλέξεις — αυτός που παραλείπεις θα χαίρεται.", gloss: "Θα μείνεις με το «τι θα γινόταν αν;». Ίσως και να αξίζει." },
+    { omen: "Περίμενε δείγμα",          verse: "Η τύχη σου στέκει μπροστά σε σένα — όμως με τα χέρια στις τσέπες.", gloss: "Θα σου δοθεί μια κίνηση, δεν θα την κάνεις εσύ. Παραμόνεψέ την." },
+    { omen: "Καθαρό ΝΑΙ",               verse: "Ο δρόμος είναι ελεύθερος· το σπίτι σου έτοιμο· ο χάρτης φαντάζει.", gloss: "Ναι. Απλό, καθαρό, αληθινό ναι. Μην το αναλύεις πολύ." },
+    { omen: "Καθαρό ΟΧΙ",               verse: "Αυτό το κλειδί δεν ανήκει σε αυτή την πόρτα.",                    gloss: "Όχι. Ψάξε για άλλη πόρτα, όχι για άλλο κλειδί." },
+    { omen: "Στροφή προς βορρά",        verse: "Άλλαξε τοπίο — όχι σκέψη. Το ύψος θα σου πει αυτό που κρύβεις.",  gloss: "Αυτό που χρειάζεσαι δεν λύνεται με σκέψη. Κινήσου." },
+    { omen: "Πλοίαρχος Μνήμης",         verse: "Ό,τι αγόρασες στα νεανικά σου χρόνια θα σου κρατήσει συντροφιά.",  gloss: "Το παρελθόν σου ετοιμάζει κάτι. Δεν είναι πάντα κακό." },
+    { omen: "Νύχτα χωρίς φεγγάρι",      verse: "Αυτή η νύχτα θα έχει σκοτάδι — το πρωί έχει κληθεί.",              gloss: "Δύσκολη στιγμή, καλό τέλος. Κράτα χαμηλούς τόνους και έλα." },
+    { omen: "Ο αριθμός 7",              verse: "Επτά βήματα βόρεια της σκέψης σου βρίσκεται η λύση.",            gloss: "Η απάντηση έχει να κάνει με κάτι που έχει σημασία επτά απω远了 — ή μέρες, ή άτομα, ή επαναλήψεις." },
+    { omen: "Άγνωστος δράστης",         verse: "Δεν είσαι εσύ που θ' ανοίξεις την πόρτα — είναι κάποιος που έχει υπομονή.", gloss: "Περίμενε κάποιον. Δεν θα έρθει από εκεί που περιμένεις." }
+  ];
+
+  // ===== ΚΡΥΠΤΟΤΥΧΑΙΟΤΗΤΑ =====
+  function cryptoInt(maxExclusive) {
+    if (window.crypto && window.crypto.getRandomValues) {
+      var buf = new Uint32Array(1);
+      window.crypto.getRandomValues(buf);
+      return buf[0] % maxExclusive;
+    }
+    return Math.floor(Math.random() * maxExclusive);
+  }
+
+  // ===== ΕΡΩΤΗΣΗ =====
+  var consulting = false;
+
+  function consult() {
+    if (consulting) return;
+    consulting = true;
+    askBtn.disabled = true;
+    eyeEl.classList.add("consulting");
+
+    responseBox.classList.remove("reveal");
+    responseBox.innerHTML =
+      '<span class="omen">…</span>' +
+      '<span class="verse">Το μαντείο σκέφτεται</span>' +
+      '<span class="faded">Ο καπνός ανεβαίνει.</span>';
+
+    // Δραματική παύση — η μοίρα δεν βιάζεται
+    setTimeout(function () {
+      var idx = cryptoInt(ORACLES.length);
+      var r = ORACLES[idx];
+
+      var q = questionInput.value.trim();
+      showResponse(r, q);
+      pushHistory(q, r.omen);
+
+      eyeEl.classList.remove("consulting");
+      askBtn.disabled = false;
+      consulting = false;
+    }, 1400 + cryptoInt(900));
+  }
+
+  function showResponse(r, q) {
+    responseBox.classList.remove("reveal");
+    // re-flow για να ξαναπαίξει το animation
+    void responseBox.offsetWidth;
+    responseBox.innerHTML =
+      '<span class="omen">' + r.omen + '</span>' +
+      '<span class="verse">«' + r.verse + '»</span>' +
+      '<span class="faded">' + r.gloss + '</span>';
+    responseBox.classList.add("reveal");
+  }
+
+  // ===== ΙΣΤΟΡΙΚΟ =====
+  var history = [];
+  try {
+    var h = JSON.parse(localStorage.getItem(LS_HISTORY) || "null");
+    if (Array.isArray(h)) history = h.slice(0, 12);
+  } catch (e) {}
+
+  function saveHistory() {
+    try { localStorage.setItem(LS_HISTORY, JSON.stringify(history)); } catch (e) {}
+  }
+
+  function pushHistory(q, omen) {
+    history.unshift({ q: q || "(χωρίς ερώτηση)", omen: omen, ts: Date.now() });
+    if (history.length > 12) history = history.slice(0, 12);
+    saveHistory();
+    renderHistory();
+  }
+
+  function renderHistory() {
+    historyListEl.innerHTML = "";
+    history.forEach(function (entry) {
+      var div = document.createElement("div");
+      div.className = "entry";
+
+      var q = document.createElement("span");
+      q.className = "q";
+      q.textContent = entry.q;
+
+      var a = document.createElement("span");
+      a.className = "a";
+      a.textContent = "→ " + entry.omen;
+
+      div.appendChild(q);
+      div.appendChild(a);
+      historyListEl.appendChild(div);
+    });
+  }
+
+  // ===== EVENTS =====
+  askBtn.addEventListener("click", consult);
+
+  eyeEl.addEventListener("click", function () {
+    questionInput.focus();
+    consult();
+  });
+
+  eyeEl.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      consult();
+    }
+  });
+
+  questionInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      consult();
+    }
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.code !== "Space") return;
+    var tag = (e.target && e.target.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea" || tag === "select" || tag === "button") return;
+    e.preventDefault();
+    consult();
+  });
+
+  // ===== INIT =====
+  renderHistory();
+
+})();
+</script>
+
+</body>
+</html>

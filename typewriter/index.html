@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typewriter</title> <!-- SUITE NAME prefix όταν επιλεγεί το όνομα -->
+<meta name="description" content="Μια γραφομηχανή με ήχους και ρολό χαρτί. Γράφεις για πλάκα — τίποτα δεν σώζεται. Χωρίς cookies, χωρίς tracking.">
+<style>
+  :root {
+    --bg: #1a1512;
+    --desk: #241d16;
+    --paper: #f0e8d8;
+    --paper-shade: #e2d8c4;
+    --ink: #33302a;
+    --text: #ede5d5;
+    --text-muted: #a89a80;
+    --border: #3e3528;
+    --accent: #d7ccc8;
+    --machine: #4a3f33;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 16px 24px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  header h1 { font-size: 1.2rem; font-weight: 800; }
+  header h1 span { color: var(--accent); }
+  header .hint { font-size: 0.78rem; color: var(--text-muted); }
+
+  /* ===== DESK / STAGE ===== */
+  #stage {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 30px 16px 60px;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse at 50% 0%, #2c2318 0%, var(--bg) 70%);
+  }
+
+  .paper-scroll {
+    width: min(680px, 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Ρολό χαρτιού (κορυφή) */
+  .roll-top {
+    height: 34px;
+    background: linear-gradient(#d8cdb6, var(--paper-shade));
+    border: 1px solid #c4b89e;
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    position: relative;
+  }
+  .roll-top::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -2px;
+    height: 6px;
+    background: repeating-linear-gradient(90deg,
+      transparent 0 46px, rgba(0,0,0,0.06) 46px 50px);
+  }
+
+  .paper {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Courier New", Courier, monospace;
+    font-size: 1.02rem;
+    line-height: 1.85;
+    padding: 38px 44px 90px;
+    min-height: 340px;
+    border-left: 1px solid #c4b89e;
+    border-right: 1px solid #c4b89e;
+    position: relative;
+    cursor: text;
+    box-shadow: inset 0 0 60px rgba(120, 90, 40, 0.08);
+  }
+
+  /* Γραμμές χαρτιού — υπαισθησία με watermark */
+  .paper.lines::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      transparent 0 calc(1.85em - 1px),
+      rgba(120, 90, 40, 0.10) calc(1.85em - 1px) 1.85em);
+    pointer-events: none;
+  }
+
+  .paper .line { white-space: pre-wrap; word-break: break-word; min-height: 1.85em; }
+
+  /* Κέρσορας γραφομηχανής */
+  .caret {
+    display: inline-block;
+    width: 0.55em;
+    background: var(--ink);
+    margin-left: 1px;
+    animation: caretBlink 1s steps(1) infinite;
+  }
+  @keyframes caretBlink { 50% { opacity: 0; } }
+
+  /* Πάτημα μπάρας: микρό jitter σε όλο το χαρτί */
+  .paper.keyed { animation: keyJolt 0.08s ease; }
+  @keyframes keyJolt {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(1.5px); }
+    100% { transform: translateY(0); }
+  }
+
+  /* Το χαρτί «σηκώνεται» καθώς πληροί */
+  .paper-wrap { position: relative; overflow: hidden; max-height: 62vh; }
+  .paper-inner {
+    position: relative;
+    transition: top 0.05s linear;
+  }
+
+  /* Κατώτερο άκρο — «κόβεται» */
+  .cut-edge {
+    height: 22px;
+    background: var(--paper-shade);
+    border: 1px solid #c4b89e;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+  }
+
+  /* ===== MACHINE BAR ===== */
+  .machine {
+    margin-top: 18px;
+    background: linear-gradient(var(--machine), #3a3126);
+    border: 1px solid #2c251c;
+    border-radius: 14px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+
+  .machine .model {
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #8f8371;
+    font-weight: 800;
+  }
+
+  .machine .keys-hint { font-size: 0.76rem; color: #a89a80; }
+
+  button {
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+    border: 1px solid #2c251c;
+    background: #57493a;
+    color: var(--text);
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+  }
+
+  button:hover { border-color: var(--accent); }
+  button:active { transform: translateY(1px); }
+  button.danger:hover { border-color: #ff8a80; }
+
+  .dials { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  .switch {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .switch input { accent-color: #d7ccc8; cursor: pointer; }
+
+  footer {
+    padding: 14px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.7;
+  }
+
+  footer a { color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--text-muted); }
+  footer a:hover { border-bottom-style: solid; }
+
+  .kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-family: ui-monospace, monospace;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⌨️ Type<span>writer</span></h1>
+  <p class="hint">Γράψε ό,τι θες — τίποτα δεν σώζεται πουθενά. <span class="kbd">Esc</span> ξεκαθάρισμα</p>
+</header>
+
+<div id="stage">
+  <div class="paper-scroll">
+
+    <div class="roll-top"></div>
+
+    <div class="paper-wrap">
+      <div class="paper-inner" id="paperInner">
+        <div class="paper lines" id="paper">
+          <div class="line" id="renderLine"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cut-edge"></div>
+
+    <div class="machine">
+      <span class="model">ΘΕΡΜΟΣ&nbsp;&amp;&nbsp;ΣΙΑ&nbsp;—&nbsp;Μοντέλο&nbsp;Κ‑7</span>
+      <div class="dials">
+        <label class="switch" title="Ήχοι πλήκτρων">
+          <input type="checkbox" id="soundChk" checked> Ήχος
+        </label>
+        <label class="switch" title="Περιστασιακά αvraία γράμματα — γνησιότητα!">
+          <input type="checkbox" id="misalignChk" checked> Κοκκαλιάσματα
+        </label>
+        <button id="bellBtn" title="Κουδούνισμα">🔔</button>
+        <button id="returnBtn" title="Αλλαγή γραμμής — καρότσι">↵</button>
+        <button id="clearBtn" class="danger" title="Νέο φύλλο">🧻 Νέο φύλλο</button>
+      </div>
+      <span class="keys-hint">0 λέξεις · 0 γράμματα</span>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Designed by <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="../">Όλα τα apps</a><br>
+  Χωρίς cookies · Χωρίς tracking · Open source · Τίποτα δεν αποθηκεύεται
+</footer>
+
+<script>
+"use strict";
+(function () {
+
+  // ===== DOM =====
+  var paper = document.getElementById("paper");
+  var paperInner = document.getElementById("paperInner");
+  var renderLine = document.getElementById("renderLine");
+  var soundChk = document.getElementById("soundChk");
+  var misalignChk = document.getElementById("misalignChk");
+  var bellBtn = document.getElementById("bellBtn");
+  var returnBtn = document.getElementById("returnBtn");
+  var clearBtn = document.getElementById("clearBtn");
+  var keysHint = document.querySelector(".keys-hint");
+
+  // ===== STATE (μόνο στη μνήμη!) =====
+  var lines = [""];
+  var curLine = 0;
+  var charsPerLine = 46;   // ενημερώνεται από το πλάτος
+  var lineFeedPx = 0;
+
+  // ===== ΉΧΟΣ (Web Audio, 100% procedural) =====
+  var AC = null;
+
+  function ac() {
+    if (!AC) {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return null;
+      AC = new Ctx();
+    }
+    if (AC.state === "suspended") AC.resume();
+    return AC;
+  }
+
+  // Θόρυβος πλήκτρου: κοντό κλικ με ντετέρμινισμο... όχι — απλά filtered noise burst
+  function keySound() {
+    var ctx = ac();
+    if (!ctx) return;
+    var dur = 0.06;
+    var buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < d.length; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2.5);
+    }
+    var src = ctx.createBufferSource();
+    src.buffer = buf;
+    var filt = ctx.createBiquadFilter();
+    filt.type = "bandpass";
+    filt.frequency.value = 1400 + Math.random() * 900;
+    filt.Q.value = 1.2;
+    var gain = ctx.createGain();
+    gain.gain.value = 0.16;
+    src.connect(filt).connect(gain).connect(ctx.destination);
+    src.start();
+  }
+
+  // Δίσκος/κουδούνι: μεταλλικό ντιν
+  function bellSound() {
+    var ctx = ac();
+    if (!ctx) return;
+    var t = ctx.currentTime;
+    [1567, 2349, 3136].forEach(function (f, idx) {
+      var osc = ctx.createOscillator();
+      var g = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(idx === 0 ? 0.22 : 0.07, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+      osc.connect(g).connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 1.3);
+    });
+  }
+
+  // Καρότσι (carriage return): παχύ «ζσσσπ»
+  function returnSound() {
+    var ctx = ac();
+    if (!ctx) return;
+    var dur = 0.22;
+    var buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < d.length; i++) {
+      var env = i / d.length;
+      d[i] = (Math.random() * 2 - 1) * (env < 0.85 ? 0.5 : (1 - env) / 0.15 * 0.5);
+    }
+    var src = ctx.createBufferSource();
+    src.buffer = buf;
+    var filt = ctx.createBiquadFilter();
+    filt.type = "lowpass";
+    filt.frequency.value = 2600;
+    var gain = ctx.createGain();
+    gain.gain.value = 0.18;
+    src.connect(filt).connect(gain).connect(ctx.destination);
+    src.start();
+    // και το «κλακ» στο τέλος
+    setTimeout(keySound, dur * 1000);
+  }
+
+  // Διάστημα (space): πιο απαλό
+  function spaceSound() {
+    var ctx = ac();
+    if (!ctx) return;
+    var dur = 0.045;
+    var buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < d.length; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
+    }
+    var src = ctx.createBufferSource();
+    src.buffer = buf;
+    var filt = ctx.createBiquadFilter();
+    filt.type = "lowpass";
+    filt.frequency.value = 900;
+    var gain = ctx.createGain();
+    gain.gain.value = 0.10;
+    src.connect(filt).connect(gain).connect(ctx.destination);
+    src.start();
+  }
+
+  // ===== RENDering =====
+  function measure() {
+    // Μέτρηση πόσους μονοχρονικούς χαρακτήρες χωράει το χαρτί
+    var probe = document.createElement("span");
+    probe.style.visibility = "hidden";
+    probe.style.whiteSpace = "pre";
+    probe.style.font = "inherit";
+    probe.textContent = "0000000000";
+    renderLine.appendChild(probe);
+    var w10 = probe.getBoundingClientRect().width;
+    probe.remove();
+    if (w10 > 0) charsPerLine = Math.max(20, Math.floor((paper.clientWidth - 88) / (w10 / 10)));
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function render(full) {
+    measure();
+
+    // Τρέχουσα γραμμή με κέρσορα
+    var html = "";
+    for (var i = 0; i < lines.length; i++) {
+      var txt = lines[i];
+      if (i === curLine) {
+        txt = escapeHtml(txt) + '<span class="caret">&nbsp;</span>';
+      } else {
+        txt = escapeHtml(txt) || "&nbsp;";
+      }
+      if (i !== lines.length - 1 || true) {
+        html += '<div class="line"' + (i === curLine ? ' data-cur="1"' : '') + '>' + txt + "</div>";
+      }
+    }
+    renderLine.outerHTML = '<div class="line" id="renderLine">' + escapeHtml(lines[curLine]) + '<span class="caret">&nbsp;</span></div>';
+    renderLine = document.getElementById("renderLine");
+
+    // Άλλες γραμμές: πλήρης επανακατασκευή μόνο όταν αλλάζει δομή
+    if (full) {
+      paper.querySelectorAll(".line").forEach(function (n) { n.remove(); });
+      for (var i = 0; i < lines.length; i++) {
+        var div = document.createElement("div");
+        div.className = "line";
+        if (i === curLine) {
+          div.id = "renderLine";
+          div.innerHTML = escapeHtml(lines[i]) + '<span class="caret">&nbsp;</span>';
+        } else {
+          div.innerHTML = escapeHtml(lines[i]) || "&nbsp;";
+        }
+        paper.appendChild(div);
+      }
+      renderLine = document.getElementById("renderLine");
+    } else {
+      renderLine.innerHTML = escapeHtml(lines[curLine]) + '<span class="caret">&nbsp;</span>';
+    }
+
+    // Σύνολο λέξεων/χαρακτήρων
+    var all = lines.join("\n");
+    var words = all.trim() ? all.trim().split(/\s+/).length : 0;
+    keysHint.textContent = words + " λέξεις · " + all.replace(/\n/g, "").length + " γράμματα";
+
+    // Scroll: κράτα την τρέχουσα γραμμή ορατή
+    var cur = paper.querySelector('.line[data-cur="1"]') || renderLine;
+    var offset = cur.offsetTop - 40;
+    paperInner.style.top = Math.max(0, offset - 60) * -1 + "px";
+
+    // Κουδούνι πλησιέστηριας: 12 γράμματα πριν το τέλος γραμμής
+    var pos = lines[curLine].length;
+    if (pos === charsPerLine - 12 && soundChk.checked) bellSound();
+  }
+
+  // ===== INPUT =====
+  function typeChar(ch) {
+    if (lines[curLine].length >= charsPerLine) newLine();
+
+    // «Κοκκαλιάσματα»: 4% πιθανότητα το γράμμα να χαλαρώσει οριζόντια (όχι αλλάζει χαρακτήρα)
+    var glitch = misalignChk.checked && Math.random() < 0.04;
+    lines[curLine] += ch;
+
+    render(false);
+    paper.classList.remove("keyed");
+    void paper.offsetWidth;
+    paper.classList.add("keyed");
+
+    if (soundChk.checked) {
+      if (ch === " ") spaceSound();
+      else keySound();
+    }
+    void glitch;
+  }
+
+  function newLine() {
+    lines.push("");
+    curLine++;
+    render(true);
+    if (soundChk.checked) returnSound();
+  }
+
+  function backspace() {
+    if (lines[curLine].length > 0) {
+      lines[curLine] = lines[curLine].slice(0, -1);
+    } else if (curLine > 0) {
+      lines.pop();
+      curLine--;
+    } else {
+      return;
+    }
+    render(false);
+    if (soundChk.checked) keySound(); // «ξε-πάτημα» — μικρό κλικ
+  }
+
+  function newSheet() {
+    lines = [""];
+    curLine = 0;
+    render(true);
+    if (soundChk.checked) {
+      // «σέρσιμο» νέου φύλλου
+      var ctx = ac();
+      if (ctx) {
+        var dur = 0.35;
+        var buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+        var d = buf.getChannelData(0);
+        for (var i = 0; i < d.length; i++) {
+          d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 1.5) * 0.6;
+        }
+        var src = ctx.createBufferSource();
+        src.buffer = buf;
+        var filt = ctx.createBiquadFilter();
+        filt.type = "highpass";
+        filt.frequency.value = 1800;
+        var gain = ctx.createGain();
+        gain.gain.value = 0.12;
+        src.connect(filt).connect(gain).connect(ctx.destination);
+        src.start();
+      }
+    }
+  }
+
+  // ===== ΓΡΑΦΟΜΗΧΑΝΗ: ο 马 κέρσορας δουλεύει παντού στο paper =====
+  paper.addEventListener("click", function () { /* εστίαση — τίποτα για τώρα */ });
+
+  document.addEventListener("keydown", function (e) {
+    // Μηδέν παρεμβολή σε πραγματικά inputs
+    var tag = (e.target && e.target.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "select" || tag === "textarea") return;
+
+    if (e.key === "Escape") { newSheet(); return; }
+    if (e.key === "Enter") { e.preventDefault(); newLine(); return; }
+    if (e.key === "Backspace") { e.preventDefault(); backspace(); return; }
+
+    // Εκτυπώσιμοι χαρακτήρες μόνο (μία «格拉φική» γραφομηχανή)
+    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      typeChar(e.key);
+    }
+  });
+
+  // Mobile: κρυφό textarea για εγγενές πληκτρολόγιο
+  var bridge = document.createElement("textarea");
+  bridge.setAttribute("aria-hidden", "true");
+  bridge.style.position = "fixed";
+  bridge.style.opacity = "0";
+  bridge.style.pointerEvents = "none";
+  bridge.style.left = "-9999px";
+  document.body.appendChild(bridge);
+
+  paper.addEventListener("click", function () {
+    bridge.focus({ preventScroll: true });
+  });
+
+  bridge.addEventListener("input", function () {
+    var v = bridge.value;
+    if (v) {
+      for (var i = 0; i < v.length; i++) typeChar(v[i]);
+      bridge.value = "";
+    }
+  });
+
+  bridge.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); newLine(); }
+    else if (e.key === "Backspace") { e.preventDefault(); backspace(); }
+  });
+
+  // ===== BUTTONS =====
+  bellBtn.addEventListener("click", function () {
+    if (soundChk.checked) bellSound();
+  });
+
+  returnBtn.addEventListener("click", function () {
+    newLine();
+  });
+
+  clearBtn.addEventListener("click", function () {
+    newSheet();
+  });
+
+  // First user gesture ενεργοποιεί το AudioContext
+  document.addEventListener("pointerdown", function once() {
+    ac();
+    document.removeEventListener("pointerdown", once);
+  }, { once: true });
+
+  window.addEventListener("resize", function () { render(true); });
+
+  // ===== INIT =====
+  render(true);
+
+})();
+</script>
+
+</body>
+</html>

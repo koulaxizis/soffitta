@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Screen Pet</title> <!-- SUITE NAME prefix όταν επιλεγεί το όνομα -->
+<meta name="description" content="Ένα μικρό pixel πλάσμα που ζει στην οθόνη σου. Περπατάει, κοιμάται και ζητάει χάδια. Χωρίς cookies, χωρίς tracking.">
+<style>
+  :root {
+    --bg: #0b1420;
+    --surface: #122031;
+    --surface-2: #182c42;
+    --border: #24405c;
+    --text: #e6f2fb;
+    --text-muted: #8fb0c9;
+    --accent: #81d4fa;
+    --accent-soft: rgba(129, 212, 250, 0.14);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background:
+      radial-gradient(ellipse at 50% 120%, #16324e 0%, var(--bg) 65%);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  header {
+    padding: 16px 24px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  header h1 { font-size: 1.2rem; font-weight: 800; }
+  header h1 span { color: var(--accent); }
+  header .hint { font-size: 0.78rem; color: var(--text-muted); }
+
+  #stage {
+    flex: 1;
+    position: relative;
+    cursor: grab;
+    overflow: hidden;
+  }
+
+  #stage.dragging { cursor: grabbing; }
+
+  #petCanvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    image-rendering: pixelated;
+    will-change: transform;
+  }
+
+  /* ===== BARS ===== */
+  .stats {
+    position: absolute;
+    left: 20px;
+    bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 190px;
+  }
+
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    user-select: none;
+  }
+
+  .stat .icon { font-size: 0.95rem; }
+  .stat .track {
+    flex: 1;
+    height: 6px;
+    background: var(--surface-2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .stat .fill {
+    height: 100%;
+    width: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+  .stat.low .fill { background: #ff8a80; }
+
+  /* ===== ACTIONS ===== */
+  .actions {
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  button {
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 9px 18px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  }
+
+  button:hover { border-color: var(--accent); background: var(--surface-2); }
+  button:active { transform: translateY(1px); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #0b2030; }
+
+  /* ===== SPEECH BUBBLE ===== */
+  .bubble {
+    position: absolute;
+    background: var(--text);
+    color: #122031;
+    border-radius: 12px;
+    padding: 7px 14px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    white-space: nowrap;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+    z-index: 5;
+  }
+
+  .bubble.visible { opacity: 1; }
+  .bubble::after {
+    content: "";
+    position: absolute;
+    bottom: -6px;
+    left: 18px;
+    border: 6px solid transparent;
+    border-top-color: var(--text);
+    border-bottom: none;
+  }
+
+  /* ===== HEARTS ===== */
+  .heart {
+    position: absolute;
+    font-size: 1.1rem;
+    pointer-events: none;
+    animation: heartUp 1.1s ease forwards;
+    z-index: 4;
+  }
+
+  @keyframes heartUp {
+    0% { transform: translateY(0) scale(0.6); opacity: 1; }
+    100% { transform: translateY(-70px) scale(1.3); opacity: 0; }
+  }
+
+  footer {
+    padding: 14px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.7;
+  }
+
+  footer a { color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--text-muted); }
+  footer a:hover { border-bottom-style: solid; }
+
+  .kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-family: ui-monospace, monospace;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🐾 Screen <span>Pet</span></h1>
+  <p class="hint">Κάνε κλικ στο πλάσμα για χάδι · <span class="kbd">F</span> φαγητό · <span class="kbd">S</span> ύπνος</p>
+</header>
+
+<div id="stage">
+  <canvas id="petCanvas"></canvas>
+
+  <div class="stats" id="stats">
+    <div class="stat" id="statFood">
+      <span class="icon">🍖</span>
+      <div class="track"><div class="fill" id="foodFill"></div></div>
+    </div>
+    <div class="stat" id="statHappy">
+      <span class="icon">💛</span>
+      <div class="track"><div class="fill" id="happyFill"></div></div>
+    </div>
+    <div class="stat" id="statEnergy">
+      <span class="icon">⚡</span>
+      <div class="track"><div class="fill" id="energyFill"></div></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button id="feedBtn">🍖 Φαγητό</button>
+    <button id="sleepBtn">😴 Ύπνος</button>
+    <button id="newPetBtn" class="primary">✦ Νέο πλάσμα</button>
+  </div>
+</div>
+
+<footer>
+  Designed by <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="../">Όλα τα apps</a><br>
+  Χωρίς cookies · Χωρίς tracking · Open source
+</footer>
+
+<script>
+"use strict";
+(function () {
+
+  // ===== ΔΙΑΜΟΡΦΩΣΗ =====
+  var PX = 6;            // μέγεθος pixel σε CSS px
+  var SPR = 16;          // πλάγιο sprite 16x16 pixels
+  var WALK_SPEED = 42;   // px ανά δευτερόλεπτο
+  var TICK_MS = 3000;    // πόσο συχνά πέφτουν τα stats
+
+  var stage = document.getElementById("stage");
+  var canvas = document.getElementById("petCanvas");
+  var ctx = canvas.getContext("2d");
+
+  var foodFill = document.getElementById("foodFill");
+  var happyFill = document.getElementById("happyFill");
+  var energyFill = document.getElementById("energyFill");
+  var statFood = document.getElementById("statFood");
+  var statHappy = document.getElementById("statHappy");
+  var statEnergy = document.getElementById("statEnergy");
+  var feedBtn = document.getElementById("feedBtn");
+  var sleepBtn = document.getElementById("sleepBtn");
+  var newPetBtn = document.getElementById("newPetBtn");
+
+  var LS_KEY = "screenpet.v1";
+
+  // ===== STATE =====
+  var state = {
+    name: "",
+    palette: 0,
+    x: 0,
+    y: 0,
+    dir: 1,          // 1 = δεξιά, -1 = αριστερά
+    mode: "walk",    // walk | idle | sleep | eat | happy | drag
+    frame: 0,
+    food: 80,
+    happy: 80,
+    energy: 80,
+    lastTick: Date.now(),
+    lastAction: 0
+  };
+
+  var PALETTES = [
+    { name: "Γαλάζιο", body: "#81d4fa", belly: "#e1f5fe", eye: "#0b2030" },
+    { name: "Πορτοκαλί", body: "#ffb74d", belly: "#fff3e0", eye: "#5d2f00" },
+    { name: "Πράσινο", body: "#a5d6a7", belly: "#f1f8e9", eye: "#1b3a1e" },
+    { name: "Ροζ", body: "#f48fb1", belly: "#fce4ec", eye: "#4a1430" },
+    { name: "Μωβ", body: "#b39ddb", belly: "#ede7f6", eye: "#2c1849" }
+  ];
+
+  var NAMES = [
+    "Πίκα", "Κόκο", "Μπέλλα", "Λόλι", "Νούφα", "Σίσσυ", "Κούκος", "Μήλο",
+    "Φασολάκης", "Καφέ", "Ζίτα", "Πάντζαρής", "Μπέγια", "Σουάρι", "Τρίγωνο"
+  ];
+
+  var SPEECH = {
+    hungry: ["Πεινάω...", "Μμμ, φαγητό;", "Το στομάχι μου γκρινιάζει!"],
+    bored: ["Χαδέψου μου!", "Βαριέμαι...", "Παίξε μαζί μου!"],
+    tired: ["Νυστάζω...", "Νιώθω το κρεβάτι να με φωνάζει", "Ωχ..."],
+    happy: ["Λαλάλα!", "Είμαι ευτυχισμένο!", "Χοοοοπ!"],
+    eat: ["Ναμ νάμ!", "Νόστιμο!", "Περισσότερα!"],
+    wake: ["Καλημέρααα", "Ξύπνιος/α!", "Ωραία νύχτα!"],
+    sleep: ["Καληνύχτα...", "Ζzzz...", "Όνειρα γλυκά"]
+  };
+
+  var bubbleTimeout = null;
+  var bubble = null;
+  var lastRender = 0;
+
+  // ===== ΒΟΗΘΗΤΙΚΑ =====
+  function rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  // ===== ΑΠΟΘΗΚΕΥΣΗ =====
+  function save() {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify({
+        name: state.name, palette: state.palette,
+        food: state.food, happy: state.happy, energy: state.energy
+      }));
+    } catch (e) {}
+  }
+
+  function load() {
+    try {
+      var d = JSON.parse(localStorage.getItem(LS_KEY) || "null");
+      if (d && d.name) {
+        state.name = d.name;
+        state.palette = clamp(d.palette | 0, 0, PALETTES.length - 1);
+        state.food = clamp(+d.food || 80, 0, 100);
+        state.happy = clamp(+d.happy || 80, 0, 100);
+        state.energy = clamp(+d.energy || 80, 0, 100);
+      } else {
+        newPet(false);
+      }
+    } catch (e) {
+      newPet(false);
+    }
+  }
+
+  function newPet(persist) {
+    state.name = rnd(NAMES);
+    state.palette = Math.floor(Math.random() * PALETTES.length);
+    state.food = 80; state.happy = 80; state.energy = 80;
+    state.mode = "idle";
+    if (persist) {
+      save();
+      speak("Γεια! Με λένε " + state.name + "!");
+    }
+  }
+
+  // ===== SPEECH BUBBLE =====
+  function speak(text) {
+    if (!bubble) {
+      bubble = document.createElement("div");
+      bubble.className = "bubble";
+      stage.appendChild(bubble);
+    }
+    bubble.textContent = text;
+    bubble.style.left = state.x + 10 + "px";
+    bubble.style.top = (state.y - 44) + "px";
+    bubble.classList.add("visible");
+    clearTimeout(bubbleTimeout);
+    bubbleTimeout = setTimeout(function () {
+      bubble.classList.remove("visible");
+    }, 2600);
+  }
+
+  function spawnHeart(px, py) {
+    var h = document.createElement("div");
+    h.className = "heart";
+    h.textContent = "❤️";
+    h.style.left = (px + Math.random() * 30 - 10) + "px";
+    h.style.top = py + "px";
+    stage.appendChild(h);
+    setTimeout(function () { h.remove(); }, 1150);
+  }
+
+  // ===== SPRITE ΣΧΕΔΙΑΣΜΟΣ =====
+  // Το sprite είναι πλέγμα 16x16. "1" = σώμα, "2" = κοιλιά, "3" = μάτι
+  // Οι κινήσεις προκύπτουν από μικρές μετατοπίσεις ποδιών/ματιών.
+  function drawSprite() {
+    var pal = PALETTES[state.palette];
+    var cw = SPR * PX;
+    canvas.width = cw;
+    canvas.height = cw;
+    canvas.style.width = cw + "px";
+    canvas.style.height = cw + "px";
+
+    ctx.clearRect(0, 0, cw, cw);
+    ctx.imageSmoothingEnabled = false;
+
+    var body = "#body", belly = "#belly"; // χρώματα (strings παρακάτω)
+    var i, j;
+
+    // Ποδιά κίνησης: το bobbing κρατάει την αίσθηση του περπατήματος
+    var bob = 0;
+    var legPhase = 0;
+    if (state.mode === "walk") {
+      bob = (Math.floor(state.frame / 6) % 2) === 0 ? 0 : 1;
+      legPhase = Math.floor(state.frame / 6) % 2;
+    } else if (state.mode === "sleep") {
+      bob = 2; // καθιστό σώμα
+    } else if (state.mode === "happy") {
+      bob = (Math.floor(state.frame / 4) % 2) === 0 ? -2 : 0;
+    } else if (state.mode === "eat") {
+      bob = (Math.floor(state.frame / 5) % 2) === 0 ? 1 : 0;
+    }
+
+    var grid = [];
+
+    // --- Σώμα (στρογγυλεμένο) ---
+    for (j = 0; j < SPR; j++) {
+      var row = [];
+      for (i = 0; i < SPR; i++) row.push(0);
+      grid.push(row);
+    }
+
+    function rect(x0, y0, x1, y1, v) {
+      for (var yy = y0; yy <= y1; yy++)
+        for (var xx = x0; xx <= x1; xx++)
+          if (yy >= 0 && yy < SPR && xx >= 0 && xx < SPR) grid[yy][xx] = v;
+    }
+
+    // κεφάλι + σώμα
+    rect(4, 2, 12, 4, 1);   // κορυφή κεφαλιού
+    rect(2, 4, 13, 12, 1);  // κύρια μάζα
+    rect(3, 12, 12, 13, 1); // κάτω σώμα
+    rect(4, 14, 6, 15, 1);  // αριστερό πόδι
+    rect(9, 14, 11, 15, 1); // δεξί πόδι
+
+    // αυτιά
+    rect(3, 0, 4, 2, 1);
+    rect(11, 0, 12, 2, 1);
+
+    // κοιλιά
+    rect(4, 8, 11, 12, 2);
+
+    // ουρά (δεξιά πλευρά)
+    rect(13, 10, 15, 11, 1);
+
+    // πόδια: όταν περπατά, μετατοπίζονται εναλλάξ
+    if (legPhase === 1) {
+      rect(4, 14, 6, 15, 0);
+      rect(4, 13, 6, 13, 1);
+    }
+
+    // μάτια
+    var eyeOpen = state.mode !== "sleep";
+    var blink = (state.frame % 120) < 4 && eyeOpen; // περιστασιακό καρφωμένο βλεφάρισμα
+
+    if (state.mode === "sleep") {
+      rect(5, 6, 6, 6, 3);  // κλειστά μάτια (γραμμή)
+      rect(9, 6, 10, 6, 3);
+    } else if (blink) {
+      rect(5, 6, 6, 6, 3);
+      rect(9, 6, 10, 6, 3);
+    } else {
+      rect(5, 5, 6, 7, 3);  // ανοιχτά μάτια 2x3
+      rect(9, 5, 10, 7, 3);
+      // φώτιση κόρης προς την κατεύθυνση κίνησης
+      if (state.dir === 1) { grid[5][10] = 3; grid[5][6] = 0; grid[6][6] = 0; }
+    }
+
+    // στόμα
+    if (state.mode === "eat") {
+      rect(7, 10, 8, 11, 3);
+    } else if (state.mode === "happy") {
+      rect(7, 9, 8, 9, 3);
+    } else if (state.mode === "sleep") {
+      // "Zzz" ζωγραφίζεται μέσω bubble, όχι sprite
+    } else {
+      rect(7, 10, 8, 10, 3);
+    }
+
+    // Ζzzz κειμενάκι για ύπνο
+    if (state.mode === "sleep") {
+      rect(13, 2, 13, 2, 3);
+      rect(14, 0, 14, 1, 3);
+      rect(15, 0, 15, 0, 0);
+    }
+
+    // --- Render στο canvas με flips για κατεύθυνση ---
+    ctx.save();
+    ctx.translate(cw / 2, cw / 2 + bob * PX * 0.4);
+    ctx.scale(state.dir === 1 ? 1 : -1, 1);
+    ctx.translate(-cw / 2, -cw / 2);
+
+    var colors = { 1: pal.body, 2: pal.belly, 3: pal.eye };
+    for (j = 0; j < SPR; j++) {
+      for (i = 0; i < SPR; i++) {
+        var v = grid[j][i];
+        if (!v) continue;
+        ctx.fillStyle = colors[v];
+        ctx.fillRect(i * PX, j * PX, PX, PX);
+      }
+    }
+    ctx.restore();
+
+    // παρουσία κατεύθυνσης: φαίνεται και από το στόμα
+    void body; void belly;
+  }
+
+  // ===== ΑΝΑΒΟΣΒΗΣΜΟ ΘΟΡΥΒΟΥ =====
+  var hungerWarned = false;
+  var boredWarned = false;
+  var tiredWarned = false;
+
+  function tickStats() {
+    var now = Date.now();
+    var elapsedMin = (now - state.lastTick) / 60000;
+    if (elapsedMin < 0.05) return;
+    state.lastTick = now;
+
+    // Τα stats πέφτουν αργά (η εφαρμογή είναι χαλαρή!)
+    var decay = elapsedMin * 2; // ~2 μονάδες/λεπτό το καθένα
+    if (state.mode === "sleep") {
+      state.energy = clamp(state.energy + elapsedMin * 8, 0, 100);
+      state.food = clamp(state.food - decay * 0.5, 0, 100);
+      state.happy = clamp(state.happy - decay * 0.3, 0, 100);
+    } else {
+      state.food = clamp(state.food - decay, 0, 100);
+      state.happy = clamp(state.happy - decay * 0.8, 0, 100);
+      state.energy = clamp(state.energy - decay * 0.6, 0, 100);
+    }
+
+    // Παραπόνα (μία φορά ανά κατώφλι)
+    if (state.food < 25 && !hungerWarned) { speak(rnd(SPEECH.hungry)); hungerWarned = true; }
+    if (state.food >= 35) hungerWarned = false;
+    if (state.happy < 25 && !boredWarned) { speak(rnd(SPEECH.bored)); boredWarned = true; }
+    if (state.happy >= 35) boredWarned = false;
+    if (state.energy < 20 && !tiredWarned) { speak(rnd(SPEECH.tired)); tiredWarned = true; }
+    if (state.energy >= 35) tiredWarned = false;
+
+    // Αυτόματη αλλαγή κατάστασης
+    if (state.mode !== "sleep" && state.mode !== "drag") {
+      if (state.energy < 8) {
+        state.mode = "sleep";
+        speak(rnd(SPEECH.sleep));
+      } else if (state.energy >= 95 && state.mode === "sleep") {
+        state.mode = "idle";
+        speak(rnd(SPEECH.wake));
+      }
+    }
+
+    updateBars();
+    save();
+  }
+
+  function updateBars() {
+    foodFill.style.width = state.food + "%";
+    happyFill.style.width = state.happy + "%";
+    energyFill.style.width = state.energy + "%";
+    statFood.classList.toggle("low", state.food < 30);
+    statHappy.classList.toggle("low", state.happy < 30);
+    statEnergy.classList.toggle("low", state.energy < 30);
+  }
+
+  // ===== ΚΙΝΗΣΗ =====
+  var targetX = null;
+  var walkTimer = 0;
+
+  function update(dt) {
+    state.frame++;
+
+    if (state.mode === "drag") {
+      // τίποτα — η θέση ελέγχεται από το mouse/touch
+    } else if (state.mode === "walk") {
+      if (targetX !== null) {
+        var dx = targetX - state.x;
+        if (Math.abs(dx) < 6) {
+          targetX = null;
+          state.mode = "idle";
+          walkTimer = 2000 + Math.random() * 4000;
+        } else {
+          state.dir = dx > 0 ? 1 : -1;
+          state.x += clamp(dx, -WALK_SPEED * dt, WALK_SPEED * dt);
+        }
+      } else {
+        walkTimer -= dt * 1000;
+        if (walkTimer <= 0) {
+          // απόφαση: συνεχίζω, σταματάω, ή στρίβω
+          var r = Math.random();
+          if (r < 0.35) {
+            state.mode = "idle";
+            walkTimer = 1500 + Math.random() * 3500;
+          } else if (r < 0.5) {
+            state.dir *= -1; // στροφή
+            walkTimer = 1200 + Math.random() * 2500;
+          } else {
+            walkTimer = 1500 + Math.random() * 3000;
+          }
+        }
+        state.x += state.dir * WALK_SPEED * dt;
+      }
+
+      // Όρια σκηνής
+      var maxX = stage.clientWidth - canvas.width;
+      if (state.x < 0) { state.x = 0; state.dir = 1; targetX = null; }
+      if (state.x > maxX) { state.x = maxX; state.dir = -1; targetX = null; }
+    } else if (state.mode === "idle") {
+      walkTimer -= dt * 1000;
+      if (walkTimer <= 0 && state.mode !== "sleep") {
+        state.mode = "walk";
+        targetX = Math.random() * (stage.clientWidth - canvas.width);
+        walkTimer = 3000;
+      }
+    }
+
+    // Το πλάσμα κάθεται στο «πάτωμα» (λίγο πάνω από τα stats)
+    state.y = stage.clientHeight - canvas.height - 76;
+    if (state.y < 60) state.y = 60;
+
+    tickStats();
+  }
+
+  function loop(ts) {
+    var dt = Math.min(0.05, (ts - lastRender) / 1000 || 0.016);
+    lastRender = ts;
+
+    update(dt);
+    drawSprite();
+    canvas.style.transform = "translate(" + state.x + "px, " + state.y + "px)";
+
+    requestAnimationFrame(loop);
+  }
+
+  // ===== ΑΛΛΗΛΕΠΙΔΡΑΣΗ =====
+  canvas.addEventListener("pointerdown", function (e) {
+    e.preventDefault();
+    // Χάδι με κλικ — όχι drag αρχικά
+    state.mode = "happy";
+    state.happy = clamp(state.happy + 12, 0, 100);
+    speak(rnd(SPEECH.happy));
+    for (var i = 0; i < 3; i++) {
+      setTimeout(function () {
+        spawnHeart(state.x + 20 + Math.random() * 30, state.y - 10);
+      }, i * 180);
+    }
+    clearTimeout(happyBack);
+    happyBack = setTimeout(function () {
+      state.mode = "idle";
+      walkTimer = 1500;
+    }, 2200);
+    updateBars();
+    save();
+  });
+
+  var happyBack = null;
+
+  function feed() {
+    if (state.mode === "sleep") {
+      speak(rnd(SPEECH.wake));
+      state.mode = "idle";
+    }
+    state.food = clamp(state.food + 30, 0, 100);
+    state.mode = "eat";
+    speak(rnd(SPEECH.eat));
+    setTimeout(function () {
+      state.mode = "idle";
+      walkTimer = 2000;
+    }, 2400);
+    updateBars();
+    save();
+  }
+
+  function toggleSleep() {
+    if (state.mode === "sleep") {
+      state.mode = "idle";
+      speak(rnd(SPEECH.wake));
+    } else {
+      state.mode = "sleep";
+      speak(rnd(SPEECH.sleep));
+    }
+    updateBars();
+    save();
+  }
+
+  feedBtn.addEventListener("click", feed);
+  sleepBtn.addEventListener("click", toggleSleep);
+
+  newPetBtn.addEventListener("click", function () {
+    newPet(true);
+  });
+
+  // Χαμηλό πάτημα στη σκηνή → το κατοικίδιο περπατάει εκεί
+  stage.addEventListener("pointerdown", function (e) {
+    if (e.target === canvas) return; // το κανβάς έχει δικό του handler
+    var rect = stage.getBoundingClientRect();
+    var px = e.clientX - rect.left;
+    if (state.mode === "sleep") return;
+    targetX = clamp(px - canvas.width / 2, 0, stage.clientWidth - canvas.width);
+    state.mode = "walk";
+  });
+
+  // Πληκτρολόγιο
+  document.addEventListener("keydown", function (e) {
+    var tag = (e.target && e.target.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "select" || tag === "textarea") return;
+    if (e.key === "f" || e.key === "F") feed();
+    else if (e.key === "s" || e.key === "S") toggleSleep();
+  });
+
+  // Resize: κράτα το πλάσμα μέσα στα όρια
+  window.addEventListener("resize", function () {
+    var maxX = stage.clientWidth - canvas.width;
+    state.x = clamp(state.x, 0, maxX);
+  });
+
+  // ===== INIT =====
+  load();
+  state.x = stage.clientWidth / 2 - canvas.width / 2;
+  updateBars();
+  setTimeout(function () {
+    speak("Γεια! Είμαι η/ο " + state.name + "! 👋");
+  }, 700);
+  requestAnimationFrame(loop);
+
+})();
+</script>
+
+</body>
+</html>

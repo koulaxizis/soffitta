@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soffitta — tiny apps for idle creativity</title>
+<meta name="description" content="Soffitta is a playground of tiny self-contained web apps: generators, toys, games of chance and a moment of calm. Free, open source, no cookies, no tracking.">
+<link rel="canonical" href="https://soffitta.site/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://soffitta.site/">
+<meta property="og:title" content="Soffitta">
+<meta property="og:description" content="A playground of tiny self-contained web apps — generators, toys, games of chance and a moment of calm.">
+<meta name="theme-color" content="#0d1117">
+<link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d1117'/%3E%3Cpath d='M10 35L32 11L54 35' fill='none' stroke='%23e6ce9a' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='25' y='40' width='14' height='13' rx='3' fill='%23e6ce9a'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #151b23;
+    --border: #232c37;
+    --text: #e6edf3;
+    --text-muted: #8b98a8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ===== ΕΡΓΑΛΕΙΑ (γλώσσα + εγκατάσταση) ===== */
+  .toolbar {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 16px 24px 0;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .lang-switch {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .lang-switch button {
+    background: none;
+    border: none;
+    padding: 6px 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+    letter-spacing: 0.04em;
+  }
+
+  .lang-switch button.active {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  #installBtn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+  }
+  #installBtn:hover { border-color: var(--text); }
+
+  header.hero {
+    padding: 48px 24px 40px;
+    text-align: center;
+  }
+
+  header.hero h1 {
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+  }
+
+  header.hero p {
+    margin-top: 10px;
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    max-width: 52ch;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.7;
+  }
+
+  /* ===== ΠΛΕΓΜΑ ===== */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 0 24px 56px;
+  }
+
+  .card {
+    --c: #8ecfff;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 20px 18px;
+    text-decoration: none;
+    color: var(--text);
+    overflow: hidden;
+    transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: var(--c);
+    opacity: 0.85;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: var(--c);
+    box-shadow: 0 12px 34px rgba(0,0,0,0.4);
+  }
+
+  .card .emoji {
+    font-size: 1.7rem;
+    line-height: 1;
+  }
+
+  .card .name {
+    font-size: 0.98rem;
+    font-weight: 800;
+  }
+
+  .card .desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .card:hover .name { color: var(--c); }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 30px 24px 90px;
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 2;
+  }
+
+  footer a {
+    color: var(--text);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--text-muted);
+  }
+  footer a:hover { border-bottom-style: solid; }
+
+  /* ===== ΕΠΙΣΤΡΟΦΗ ΣΤΗΝ ΚΟΡΥΦΗ ===== */
+  #toTop {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 1rem;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, border-color 0.15s ease;
+  }
+
+  #toTop.show { opacity: 1; pointer-events: auto; }
+  #toTop:hover { border-color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <button id="installBtn" hidden data-en="⬇ Install app" data-el="⬇ Εγκατάσταση">⬇ Install app</button>
+  <div class="lang-switch" role="group" aria-label="Language">
+    <button id="langEn" class="active">EN</button>
+    <button id="langEl">ΕΛ</button>
+  </div>
+</div>
+
+<header class="hero">
+  <h1>Soffitta</h1>
+  <p data-en="Tiny apps for idle creativity — generators, toys, games of chance and a moment of calm. Each app stands alone; everything free and local."
+     data-el="Μικρο-εφαρμογές για χαλαρή δημιουργία — γεννήτριες, toys, παιχνίδια τύχης και μια στιγμή ηρεμίας. Κάθε app αυτόνομο, όλα δωρεάν και τοπικά.">
+    Tiny apps for idle creativity — generators, toys, games of chance and a moment of calm.
+    Each app stands alone; everything free and local.
+  </p>
+</header>
+
+<nav class="grid" aria-label="Apps">
+
+  <a class="card" href="netizen/" style="--c:#5af0c8;">
+    <span class="emoji">🪪</span>
+    <span class="name" data-en="Netizen ID" data-el="Netizen ID">Netizen ID</span>
+    <span class="desc" data-en="Your voluntary digital identity card — build it and take it with you."
+          data-el="Η εθελοντική ψηφιακή σου ταυτότητα — φτιάξε την κάρτα σου και κατέβασέ την.">Your voluntary digital identity card — build it and take it with you.</span>
+  </a>
+
+  <a class="card" href="wallpaper/" style="--c:#ff6ea9;">
+    <span class="emoji">🖼️</span>
+    <span class="name" data-en="Wallpaper Generator" data-el="Γεννήτρια Ταπετσαριών">Wallpaper Generator</span>
+    <span class="desc" data-en="Generative art with seeds — 5 styles, palettes, exports up to 8192px."
+          data-el="Γεννητική τέχνη με σπόρους — 5 στυλ, παλέτες, εξαγωγή έως 8192px.">Generative art with seeds — 5 styles, palettes, exports up to 8192px.</span>
+  </a>
+
+  <a class="card" href="dice/" style="--c:#ffd166;">
+    <span class="emoji">🎲</span>
+    <span class="name" data-en="Dice &amp; Coin" data-el="Ζάρια &amp; Νόμισμα">Dice &amp; Coin</span>
+    <span class="desc" data-en="d4 to d100, advantage/disadvantage, coin flips and history."
+          data-el="d4 έως d100, πλεονέκτημα/μειονέκτημα, στρίψιμο νομίσματος, ιστορικό.">d4 to d100, advantage/disadvantage, coin flips and history.</span>
+  </a>
+
+  <a class="card" href="mixer/" style="--c:#8ecfff;">
+    <span class="emoji">🎧</span>
+    <span class="name" data-en="Sound Mixer Toy" data-el="Sound Mixer Toy">Sound Mixer Toy</span>
+    <span class="desc" data-en="Rain, fireplace, café, crickets — every sound is synthesized live."
+          data-el="Βροχή, τζάκι, καφετέρια, τζίτζικες — όλοι οι ήχοι συντίθενται live.">Rain, fireplace, café, crickets — every sound is synthesized live.</span>
+  </a>
+
+  <a class="card" href="wheel/" style="--c:#ffb35c;">
+    <span class="emoji">🎡</span>
+    <span class="name" data-en="Wheel of Fate" data-el="Τροχός της Μοίρας">Wheel of Fate</span>
+    <span class="desc" data-en="The wheel of decisions: add options and let fate speak."
+          data-el="Ο τροχός της απόφασης: πρόσθεσε επιλογές και άφησε την τύχη να μιλήσει.">The wheel of decisions: add options and let fate speak.</span>
+  </a>
+
+  <a class="card" href="zen/" style="--c:#a5d6a7;">
+    <span class="emoji">🌬️</span>
+    <span class="name" data-en="Micro-Zen" data-el="Micro-Zen">Micro-Zen</span>
+    <span class="desc" data-en="One breathing circle: box, 4-7-8, coherent. A minute of quiet."
+          data-el="Ένας κύκλος αναπνοής: τετράγωνη, 4-7-8, συνεκτική. Ένα λεπτό ησυχίας.">One breathing circle: box, 4-7-8, coherent. A minute of quiet.</span>
+  </a>
+
+  <a class="card" href="names/" style="--c:#c9a0ff;">
+    <span class="emoji">🎭</span>
+    <span class="name" data-en="Name Generator" data-el="Γεννήτορας Ονομάτων">Name Generator</span>
+    <span class="desc" data-en="Handles, titles and dynastic pairs — hundreds of thousands of combinations."
+          data-el="Handles, τίτλοι και δυναστικά ζεύγη — εκατοντάδες χιλιάδες συνδυασμοί.">Handles, titles and dynastic pairs — hundreds of thousands of combinations.</span>
+  </a>
+
+  <a class="card" href="pixel/" style="--c:#ff8a80;">
+    <span class="emoji">👨‍🎨</span>
+    <span class="name" data-en="Pixel Avatar Maker" data-el="Pixel Avatar Maker">Pixel Avatar Maker</span>
+    <span class="desc" data-en="8×8 pixel faces — same seed, same face, always."
+          data-el="Πυξελίδια πρόσωπα 8×8 — ο ίδιος σπόρος, πάντα το ίδιο πρόσωπο.">8×8 pixel faces — same seed, same face, always.</span>
+  </a>
+
+  <a class="card" href="oracle/" style="--c:#b39ddb;">
+    <span class="emoji">🔮</span>
+    <span class="name" data-en="Oracle" data-el="Μαντείο">Oracle</span>
+    <span class="desc" data-en="Ask and receive your prophecy — true, but never quite as expected."
+          data-el="Ρώτα και πάρε τον χρησμό σου — αληθινό, αλλά όχι με τον τρόπο που περιμένεις.">Ask and receive your prophecy — true, but never quite as expected.</span>
+  </a>
+
+  <a class="card" href="pet/" style="--c:#81d4fa;">
+    <span class="emoji">🐾</span>
+    <span class="name" data-en="Screen Pet" data-el="Κατοικίδιο Οθόνης">Screen Pet</span>
+    <span class="desc" data-en="A pixel pet that walks, sleeps and gets hungry on your screen."
+          data-el="Ένα πιξελάτο κατοικίδιο που περπατάει, κοιμάται και πεινάει στην οθόνη σου.">A pixel pet that walks, sleeps and gets hungry on your screen.</span>
+  </a>
+
+  <a class="card" href="museum/" style="--c:#e6ce9a;">
+    <span class="emoji">🏛️</span>
+    <span class="name" data-en="One-Minute Museum" data-el="Μουσείο Ενός Λεπτού">One-Minute Museum</span>
+    <span class="desc" data-en="A random Wikipedia article every minute — Wikipedia, CC BY-SA."
+          data-el="Ένα τυχαίο άρθρο της Wikipedia ανά λεπτό — από τη Wikipedia, CC BY-SA.">A random Wikipedia article every minute — Wikipedia, CC BY-SA.</span>
+  </a>
+
+  <a class="card" href="typewriter/" style="--c:#d7ccc8;">
+    <span class="emoji">⌨️</span>
+    <span class="name" data-en="Typewriter" data-el="Γραφομηχανή">Typewriter</span>
+    <span class="desc" data-en="A typewriter with sounds, a bell and a paper roll. Stores nothing."
+          data-el="Γραφομηχανή με ήχους, καμπανάκι και ρολό χαρτί. Χωρίς αποθήκευση.">A typewriter with sounds, a bell and a paper roll. Stores nothing.</span>
+  </a>
+
+  <a class="card" href="moon/" style="--c:#cfd8dc;">
+    <span class="emoji">🌙</span>
+    <span class="name" data-en="Moon &amp; Sky" data-el="Σελήνη &amp; Ουρανός">Moon &amp; Sky</span>
+    <span class="desc" data-en="The moon phase and the color of the sky — now, or any day you like."
+          data-el="Η φάση της σελήνης και το χρώμα του ουρανού — τώρα ή όποια μέρα θες.">The moon phase and the color of the sky — now, or any day you like.</span>
+  </a>
+
+</nav>
+
+<footer>
+  <span data-en="Designed by" data-el="Σχεδιασμένο από τον">Designed by</span>
+  <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="/" data-en="All apps" data-el="Όλα τα apps">All apps</a><br>
+  <span data-en="No cookies · No tracking · Open source"
+        data-el="Χωρίς cookies · Χωρίς tracking · Ανοιχτού κώδικα">No cookies · No tracking · Open source</span>
+</footer>
+
+<button id="toTop" aria-label="Back to top" title="Back to top">↑</button>
+
+<script>
+"use strict";
+(function () {
+
+  // ===== i18n =====
+  var LANG_KEY = "soffitta.lang";
+
+  var T = {
+    title: {
+      en: "Soffitta — tiny apps for idle creativity",
+      el: "Soffitta — μικρο-εφαρμογές για χαλαρή δημιουργία"
+    },
+    toTop: { en: "Back to top", el: "Επιστροφή στην κορυφή" }
+  };
+
+  var langEnBtn = document.getElementById("langEn");
+  var langElBtn = document.getElementById("langEl");
+  var installBtn = document.getElementById("installBtn");
+  var toTopBtn = document.getElementById("toTop");
+
+  function detect() {
+    try {
+      var saved = localStorage.getItem(LANG_KEY);
+      if (saved === "en" || saved === "el") return saved;
+    } catch (e) {}
+    var nav = (navigator.language || "en").slice(0, 2).toLowerCase();
+    return nav === "el" ? "el" : "en";
+  }
+
+  function apply(lang) {
+    document.documentElement.setAttribute("lang", lang);
+    document.title = T.title[lang];
+    var nodes = document.querySelectorAll("[data-en]");
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].textContent = lang === "el"
+        ? nodes[i].getAttribute("data-el")
+        : nodes[i].getAttribute("data-en");
+    }
+    langEnBtn.classList.toggle("active", lang === "en");
+    langElBtn.classList.toggle("active", lang === "el");
+    toTopBtn.setAttribute("aria-label", T.toTop[lang]);
+    toTopBtn.setAttribute("title", T.toTop[lang]);
+  }
+
+  function set(lang) {
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    apply(lang);
+  }
+
+  langEnBtn.addEventListener("click", function () { set("en"); });
+  langElBtn.addEventListener("click", function () { set("el"); });
+
+  // Αρχική γλώσσα: προτίμηση επισκέπτη → browser γλώσσα → EN
+  apply(detect());
+
+  // ===== ΕΠΙΣΤΡΟΦΗ ΣΤΗΝ ΚΟΡΥΦΗ =====
+  window.addEventListener("scroll", function () {
+    toTopBtn.classList.toggle("show", window.scrollY > 300);
+  });
+  toTopBtn.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  // ===== ΕΓΚΑΤΑΣΤΑΣΗ (PWA) =====
+  var deferredPrompt = null;
+
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.hidden = false;
+  });
+
+  installBtn.addEventListener("click", function () {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  window.addEventListener("appinstalled", function () {
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  // ===== SERVICE WORKER (offline) =====
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("./sw.js").catch(function (err) {
+        console.warn("SW registration failed:", err);
+      });
+    });
+  }
+
+})();
+</script>
+
+</body>
+</html>

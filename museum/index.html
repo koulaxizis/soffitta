@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One-Minute Museum</title> <!-- SUITE NAME prefix όταν επιλεγεί το όνομα -->
+<meta name="description" content="Ένα μουσείο που αλλάζει έκθεμα κάθε λεπτό. Ένα τυχαίο άρθρο της ελληνικής Wikipedia, σε αίθουσα σκούρου φόντου. Χωρίς cookies, χωρίς tracking.">
+<style>
+  :root {
+    --bg: #14110c;
+    --surface: #1e1912;
+    --surface-2: #282117;
+    --border: #453a26;
+    --text: #f2ead8;
+    --text-muted: #b0a382;
+    --accent: #e6ce9a;
+    --accent-soft: rgba(230, 206, 154, 0.12);
+    --danger: #d98880;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background:
+      radial-gradient(ellipse at 50% -20%, #241d10 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: Georgia, "Times New Roman", serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.04em; }
+  header h1 span { color: var(--accent); }
+  header .hint { font-size: 0.75rem; color: var(--text-muted); font-family: "Segoe UI", sans-serif; }
+
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 34px 20px 46px;
+    gap: 22px;
+  }
+
+  /* ===== ΑΙΘΟΥΣΑ ΕΚΘΕΣΕΩΣ ===== */
+  .hall {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 30px 30px 24px;
+    width: min(92vw, 620px);
+    box-shadow: 0 18px 60px rgba(0,0,0,0.55);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .wall-lamp {
+    width: 58px; height: 8px;
+    border-radius: 999px;
+    background: var(--accent);
+    opacity: 0.85;
+    box-shadow: 0 0 40px rgba(230, 206, 154, 0.45);
+  }
+
+  .frame {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    background: var(--surface-2);
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 260px;
+  }
+
+  #exhibitImage {
+    display: block;
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 6px;
+  }
+
+  .frame.no-image .plaque-art {
+    font-size: 3.4rem;
+    opacity: 0.5;
+    letter-spacing: 0.3em;
+    padding: 60px 0;
+  }
+
+  /* ===== ΤΑΜΠΕΛΑ ===== */
+  .plaque {
+    text-align: center;
+    width: 100%;
+  }
+
+  .exhibit-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--accent);
+    line-height: 1.35;
+  }
+
+  .exhibit-summary {
+    margin-top: 10px;
+    font-size: 0.98rem;
+    line-height: 1.75;
+    color: var(--text);
+    max-width: 52ch;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .source-line {
+    margin-top: 14px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-family: "Segoe UI", sans-serif;
+  }
+
+  .source-line a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--accent);
+  }
+  .source-line a:hover { border-bottom-style: solid; }
+
+  /* ===== ΧΡΟΝΟΔΙΑΚΟΠΤΗΣ ===== */
+  .timer-track {
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--surface-2);
+    overflow: hidden;
+  }
+
+  #timerBar {
+    height: 100%;
+    width: 100%;
+    background: var(--accent);
+    transform-origin: left;
+    transition: transform 1s linear;
+  }
+
+  /* ===== ΧΕΙΡΙΣΤΗΡΙΑ ===== */
+  .controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  button {
+    font-family: "Segoe UI", sans-serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 11px 22px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    transition: border-color 0.15s ease, transform 0.1s ease, filter 0.15s ease;
+  }
+
+  button:hover:not([disabled]) { border-color: var(--accent); filter: brightness(1.1); }
+  button:active:not([disabled]) { transform: translateY(1px); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #241c0e; }
+  button.primary:hover:not([disabled]) { filter: brightness(1.07); }
+  button[disabled] { opacity: 0.45; cursor: default; }
+
+  /* ===== ΚΑΤΑΣΤΑΣΗ / ΣΦΑΛΜΑ ===== */
+  #statusLine {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-family: "Segoe UI", sans-serif;
+    min-height: 1.2em;
+    text-align: center;
+    letter-spacing: 0.03em;
+  }
+
+  #errorBox {
+    display: none;
+    width: min(92vw, 620px);
+    background: var(--surface);
+    border: 1px solid #6b4038;
+    border-radius: 14px;
+    padding: 22px 26px;
+    text-align: center;
+    color: #e8b8b0;
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+
+  .counter-note {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-family: "Segoe UI", sans-serif;
+    letter-spacing: 0.05em;
+  }
+
+  footer {
+    margin-top: auto;
+    padding: 14px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.7;
+    font-family: "Segoe UI", sans-serif;
+  }
+  footer a { color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--text-muted); }
+  footer a:hover { border-bottom-style: solid; }
+
+  .kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-family: ui-monospace, monospace;
+  }
+
+  /* reveal animation του εκθέματος */
+  .reveal { animation: fadeUp 0.9s ease both; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏛️ One-Minute <span style="color:var(--accent);">Museum</span></h1>
+  <p class="hint">Ένα έκθεμα ανά λεπτό · Ελληνική Wikipedia</p>
+</header>
+
+<main>
+
+  <div class="hall" id="hall">
+
+    <div class="wall-lamp"></div>
+
+    <div class="frame" id="exhibitFrame">
+      <!-- Η εικόνα μπαίνει δυναμικά. Αν δεν υπάρχει, δείχνουμε γλυπτικό σύμβολο -->
+      <img id="exhibitImage" alt="" style="display:none;" referrerpolicy="no-referrer">
+      <div id="exhibitFallback" class="plaque-art" style="display:none;">✦ ◈ ✦</div>
+    </div>
+
+    <div class="plaque">
+      <h2 class="exhibit-title" id="exhibitTitle">Το μουσείο ετοιμάζεται…</h2>
+      <p class="exhibit-summary" id="exhibitSummary">
+        Ένα δωμάτιο, ένας πίνακας, εξήντα δευτερόλεπτα. Τα εκθέματα φτάνουν
+        από τη Wikipedia — κάθε επίσκεψη μια νέα αίθουσα.
+      </p>
+      <p class="source-line" id="sourceLine">Ανοίγει σε λίγο…</p>
+    </div>
+
+    <div class="timer-track" aria-hidden="true">
+      <div id="timerBar"></div>
+    </div>
+
+  </div>
+
+  <div class="btn-row" style="display:flex; gap:10px;">
+    <button id="nextBtn" class="primary">➤ Επόμενο έκθεμα</button>
+  </div>
+
+  <p id="statusLine" class="counter-note" aria-live="polite"></p>
+
+  <div id="errorBox"></div>
+
+</main>
+
+<footer>
+  Designed by <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="../">Όλα τα apps</a><br>
+  Περιεχόμενο από τη <a href="https://www.wikipedia.org" target="_blank" rel="noopener">Wikipedia</a>, άδεια CC BY-SA 4.0 ·
+  Χωρίς cookies · Χωρίς tracking · Open source ·
+  <span class="kbd">Space</span> επόμενο · <span class="kbd">P</span> παύση/συνέχεια
+</footer>
+
+<script>
+"use strict";
+(function () {
+
+  // ===== ΣΤΟΙΧΕΙΑ DOM (όλα από το markup της Part 1) =====
+  var hallEl = document.getElementById("hall");
+  var frameEl = document.getElementById("exhibitFrame");
+  var imgEl = document.getElementById("exhibitImage");
+  var fallbackEl = document.getElementById("exhibitFallback");
+  var titleEl = document.getElementById("exhibitTitle");
+  var summaryEl = document.getElementById("exhibitSummary");
+  var sourceLineEl = document.getElementById("sourceLine");
+  var timerBarEl = document.getElementById("timerBar");
+  var nextBtn = document.getElementById("nextBtn");
+  var statusLineEl = document.getElementById("statusLine");
+  var errorBoxEl = document.getElementById("errorBox");
+
+  // ===== ΣΤΑΘΕΡΕΣ =====
+  var API_URL = "https://el.wikipedia.org/api/rest_v1/page/random/summary";
+  var DURATION = 60;           // δευτερόλεπτα ανά έκθεμα
+  var MIN_SUMMARY = 160;       // ελάχιστοι χαρακτήρες περίληψης
+  var MAX_TRIES = 6;           // προσπάθειες μέχρι καλό έκθεμα
+  var PREFETCH_DELAY = 8000;  // πότε αρχίζει το preload του επόμενου
+
+  // ===== ΚΑΤΑΣΤΑΣΗ (μόνο στη μνήμη — κανένα localStorage) =====
+  var current = null;          // το τρέχον έκθεμα
+  var prefetched = null;       // το προφόρτωμένο επόμενο
+  var timeLeft = DURATION;
+  var paused = false;
+  var visitCount = 0;
+  var fetching = false;
+
+  // ===== FETCH =====
+  async function fetchExhibit() {
+    for (var attempt = 0; attempt < MAX_TRIES; attempt++) {
+      var resp = await fetch(API_URL, { headers: { "Accept": "application/json" } });
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+      var data = await resp.json();
+      var title = data.title || "";
+      var summary = (data.extract || "").trim();
+
+      // Φιλτράρισμα: πολύ σύντομα άρθρα ή χωρίς τίτλο δεν είναι εκθέματα
+      if (!title || summary.length < MIN_SUMMARY) continue;
+
+      // Δίσambil:(pages που είναι λίστες/ανακατευθύνσεις με μηδενικό περιεχόμενο)
+      if (data.type === "disambiguation") continue;
+
+      return {
+        title: title,
+        summary: summary,
+        imgSrc: (data.thumbnail && data.thumbnail.source) || null,
+        url: (data.content_urls && data.content_urls.desktop && data.content_urls.desktop.page) || null
+      };
+    }
+    // Αν μετά από πολλές προσπάθειες δεν βρέθηκε «τέλειο» άρθρο, δεχόμαστε το τελευταίο
+    throw new Error("not-found");
+  }
+
+  // ===== ΕΜΦΑΝΙΣΗ =====
+  function showExhibit(ex) {
+    current = ex;
+
+    // Κουρτίνα-εικόνα
+    if (ex.imgSrc) {
+      imgEl.src = ex.imgSrc;
+      imgEl.alt = ex.title;
+      imgEl.style.display = "block";
+      fallbackEl.style.display = "none";
+      frameEl.classList.remove("no-image");
+    } else {
+      imgEl.removeAttribute("src");
+      imgEl.style.display = "none";
+      fallbackEl.style.display = "block";
+      frameEl.classList.add("no-image");
+    }
+
+    // Ταμπέλα
+    titleEl.textContent = ex.title;
+    summaryEl.textContent = ex.summary;
+    sourceLineEl.innerHTML =
+      'Από τη <a href="' + (ex.url || "https://el.wikipedia.org") +
+      '" target="_blank" rel="noopener">Wikipedia</a> · Άδεια CC BY-SA 4.0';
+
+    // Ξαναπαίξε το animation (re-flow trick)
+    hallEl.classList.remove("reveal");
+    void hallEl.offsetWidth;
+    hallEl.classList.add("reveal");
+
+    // Μετρητής + επανεκκίνηση χρόνου
+    visitCount++;
+    timeLeft = DURATION;
+    paused = false;
+    updateStatus();
+    drawTimer();
+  }
+
+  function updateStatus() {
+    var mm = Math.floor(timeLeft / 60);
+    var ss = Math.floor(timeLeft % 60);
+    var t = mm + ":" + ("0" + ss).slice(-2);
+    if (paused) {
+      statusLineEl.textContent = "Παύση · Έκθεμα #" + visitCount + " · " + t + " απομένουν";
+    } else {
+      statusLineEl.textContent = "Έκθεμα #" + visitCount + " · Επόμενο σε " + t;
+    }
+  }
+
+  function drawTimer() {
+    // Λωρίδα που αδειάζει: width ανάλογη του χρόνου που απομένει
+    var pct = (timeLeft / DURATION) * 100;
+    timerBarEl.style.transition = "none";
+    timerBarEl.style.width = pct + "%";
+    // Ξαναενεργοποίηση του smooth transition μετά το repaint
+    void timerBarEl.offsetWidth;
+    timerBarEl.style.transition = "width 1s linear";
+  }
+
+  // ===== ΡΟΗ: ΕΠΟΜΕΝΟ ΕΚΘΕΜΑ =====
+  async function advance() {
+    if (fetching) return;
+    fetching = true;
+    nextBtn.disabled = true;
+    statusLineEl.textContent = "Παραλαβή νέου εκθέματος…";
+
+    try {
+      var ex = prefetched || await fetchExhibit();
+      prefetched = null;
+      showExhibit(ex);
+      schedulePrefetch();
+    } catch (err) {
+      showError(err);
+    } finally {
+      nextBtn.disabled = false;
+      fetching = false;
+    }
+  }
+
+  // Προφόρτωση του επόμενου: δρομολογείται λίγο μετά την κάθε αλλαγή
+  // (όχι αμέσως, για να μην χτυπάμε το API σε γρήγορα skips)
+  var prefetchTimer = null;
+
+  function schedulePrefetch() {
+    clearTimeout(prefetchTimer);
+    prefetchTimer = setTimeout(async function () {
+      if (prefetched) return;
+      try { prefetched = await fetchExhibit(); } catch (e) {}
+    }, PREFETCH_DELAY);
+  }
+
+  // ===== ΣΦΑΛΜΑ =====
+  function showError(err) {
+    var offline = !navigator.onLine || (err instanceof TypeError);
+    if (offline) {
+      errorBoxEl.style.display = "block";
+      errorBoxEl.textContent =
+        "🏛 Το μουσείο είναι σήμερα κλειστό — χρειάζεται σύνδεση με το διαδίκτυο. " +
+        "Ελέγξτε τη σύνδεσή σας και δοκιμάστε ξανά.";
+    } else {
+      errorBoxEl.style.display = "block";
+      errorBoxEl.textContent =
+        "🏛 Η αίθουσα δεν φτάνει αυτή τη στιγμή (σφάλμα: " + err.message + "). " +
+        "Δοκιμάστε ξανά σε λίγο.";
+    }
+    statusLineEl.textContent = "Αναμονή…";
+  }
+
+  // ===== ΧΡΟΝΟΔΙΑΚΟΠΤΗΣ =====
+  setInterval(function () {
+    if (paused || !current) return;
+    timeLeft--;
+    if (timeLeft <= 0) {
+      advance();          // αυτόματη αλλαγή έκθεματος κάθε 60''
+      return;
+    }
+    updateStatus();
+    // Smooth μείωση της λωρίδας (η CSS transition κάνει τη δουλειά ανά δευτ.)
+    timerBarEl.style.width = ((timeLeft / DURATION) * 100) + "%";
+  }, 1000);
+
+  // ===== ΧΕΙΡΙΣΤΗΡΙΑ =====
+  nextBtn.addEventListener("click", advance);
+
+  function togglePause() {
+    if (!current) return;
+    paused = !paused;
+    updateStatus();
+  }
+
+  document.addEventListener("keydown", function (e) {
+    var tag = (e.target && e.target.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea" || tag === "select") return;
+    if (e.code === "Space") {
+      e.preventDefault();
+      advance();
+    } else if (e.key.toLowerCase() === "p") {
+      togglePause();
+    }
+  });
+
+  // Αν η σύνδεση επιστρέψει, ξανανοίγει το μουσείο αυτόματα
+  window.addEventListener("online", function () {
+    errorBoxEl.style.display = "none";
+    if (!current) advance();
+  });
+
+  // ===== INIT =====
+  advance();
+
+})();
+</script>
+
+</body>
+</html>

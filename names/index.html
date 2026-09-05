@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Name Generator</title> <!-- SUITE NAME prefix όταν επιλεγεί το όνομα -->
+<meta name="description" content="Γεννήτορας ονομάτων και τίτλων: handles, epithets, λεκτικά ζευγάρια. Πάνω από ένα εκατομμύριο συνδυασμοί, όλα τοπικά. Χωρίς cookies, χωρίς tracking.">
+<style>
+  :root {
+    --bg: #130f1a;
+    --surface: #1b1526;
+    --surface-2: #241b33;
+    --border: #3a2c52;
+    --text: #efeaf7;
+    --text-muted: #a696c4;
+    --accent: #c9a0ff;
+    --accent-soft: rgba(201, 160, 255, 0.13);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background:
+      radial-gradient(ellipse at 50% -20%, #251a35 0%, var(--bg) 65%);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  header h1 { font-size: 1.2rem; font-weight: 800; }
+  header h1 span { color: var(--accent); }
+  header .hint { font-size: 0.78rem; color: var(--text-muted); }
+
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 0;
+  }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+    .side { border-left: none !important; border-top: 1px solid var(--border); }
+  }
+
+  /* ===== ΠΕΡΙΟΧΗ ΑΠΟΤΕΛΕΣΜΑΤΩΝ ===== */
+  .results {
+    padding: 30px 28px 44px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    overflow-y: auto;
+  }
+
+  .name-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  }
+
+  @keyframes popIn {
+    from { transform: translateY(10px) scale(0.97); opacity: 0; }
+    to   { transform: none; opacity: 1; }
+  }
+
+  .name-card .name {
+    font-size: 1.12rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    word-break: break-all;
+    flex: 1;
+  }
+
+  .name-card .badge {
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px 9px;
+    white-space: nowrap;
+  }
+
+  .name-card .actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .name-card .actions button {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--text);
+    transition: border-color 0.15s ease, background 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .name-card .actions button:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .name-card .actions button.starred { background: var(--accent-soft); border-color: var(--accent); }
+
+  .more-btn {
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 800;
+    padding: 15px;
+    border-radius: 12px;
+    cursor: pointer;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #1c1230;
+    transition: filter 0.15s ease, transform 0.1s ease;
+  }
+  .more-btn:hover { filter: brightness(1.07); }
+  .more-btn:active { transform: translateY(1px); }
+
+  .copied-toast {
+    position: fixed;
+    bottom: 26px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--accent);
+    color: #1c1230;
+    font-size: 0.85rem;
+    font-weight: 800;
+    padding: 10px 22px;
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 30;
+  }
+  .copied-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ===== ΠΛΕΥΡΗ ΣΤΗΛΗ ===== */
+  .side {
+    border-left: 1px solid var(--border);
+    padding: 24px 20px 34px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    overflow-y: auto;
+  }
+
+  h2.section {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+
+  .modes { display: flex; flex-direction: column; gap: 7px; }
+
+  .mode {
+    font-family: inherit;
+    text-align: left;
+    font-size: 0.88rem;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .mode small {
+    display: block;
+    font-size: 0.66rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .mode:hover { border-color: var(--accent); }
+  .mode.active { background: var(--accent-soft); border-color: var(--accent); }
+  .mode.active small { color: var(--accent); opacity: 0.85; }
+
+  /* Γλώσσα */
+  .lang-toggle { display: flex; gap: 8px; }
+  .lang-toggle button {
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 6px 16px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+  }
+  .lang-toggle button.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+  /* Ύφος handle */
+  .style-check {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 0.82rem;
+    padding: 6px 0;
+    color: var(--text);
+    cursor: pointer;
+    user-select: none;
+  }
+  .style-check input { accent-color: var(--accent); }
+
+  /* Φavorites */
+  .fav-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .fav-list li {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.86rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    word-break: break-all;
+  }
+  .fav-list li .rm {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 2px 4px;
+  }
+  .fav-list li .rm:hover { color: var(--accent); }
+  .fav-empty { font-size: 0.78rem; color: var(--text-muted); font-style: italic; }
+
+  footer {
+    margin-top: auto;
+    padding: 14px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.7;
+  }
+  footer a { color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--text-muted); }
+  footer a:hover { border-bottom-style: solid; }
+
+  .kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-family: ui-monospace, monospace;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎭 Name <span>Generator</span></h1>
+  <p class="hint"><span class="kbd">Enter</span> νέα δέσμη · <span class="kbd">⭐</span> αγαπημένα · <span class="kbd">📋</span> αντιγραφή</p>
+</header>
+
+<main>
+
+  <section class="results" id="results">
+    <button class="more-btn" id="genBtn">✦ Γέννησε 8 ονόματα</button>
+  </section>
+
+  <aside class="side">
+
+    <div>
+      <h2 class="section">Τρόπος</h2>
+      <div class="modes">
+        <button class="mode active" data-mode="handle">
+          Handles
+          <small>usernames για τα οποίαθι σου</small>
+        </button>
+        <button class="mode" data-mode="title">
+          Τίτλοι
+          <small>βιογραφικά epithets, στυλ Netizen</small>
+        </button>
+        <button class="mode" data-mode="duo">
+          Δυναστικά ζεύγη
+          <small>π.χ. «Argonaut của Πάτρα» — φαντασία</small>
+        </button>
+      </div>
+    </div>
+
+    <div id="handleOpts">
+      <h2 class="section">Γλώσσα</h2>
+      <div class="lang-toggle">
+        <button class="active" data-lang="en">Ελληνικά-λατινικά</button>
+        <button data-lang="greek">Ελληνικά</button>
+      </div>
+
+      <h2 class="section" style="margin-top:18px;">Ύφος</h2>
+      <label class="style-check"><input type="checkbox" id="chkLeet" checked> Leet παραλλαγές (a→@)</label>
+      <label class="style-check"><input type="checkbox" id="chkSep" checked> Διαχωριστικά (_ και -)</label>
+      <label class="style-check"><input type="checkbox" id="chkNum"> Αριθμητικά επιθέματα</label>
+    </div>
+
+    <div>
+      <h2 class="section">Αγαπημένα</h2>
+      <ul class="fav-list" id="favList"></ul>
+      <p class="fav-empty" id="favEmpty">Κανένα ακόμα — ⭐ ένα όνομα για να το κρατήσεις.</p>
+    </div>
+
+  </aside>
+
+</main>
+
+<footer>
+  Designed by <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="../">Όλα τα apps</a><br>
+  Χωρίς cookies · Χωρίς tracking · Open source · Καθαρά συνδυαστική γέννηση, χωρίς δίκτυο
+</footer>
+
+<div class="copied-toast" id="toast">Αντιγράφηκε!</div>
+
+<script>
+"use strict";
+(function () {
+
+  // ===== DOM =====
+  var resultsEl = document.getElementById("results");
+  var genBtn = document.getElementById("genBtn");
+  var favListEl = document.getElementById("favList");
+  var favEmptyEl = document.getElementById("favEmpty");
+  var toastEl = document.getElementById("toast");
+  var handleOptsEl = document.getElementById("handleOpts");
+
+  var LS_FAVS = "namegen.favorites.v1";
+
+  var mode = "handle";     // handle | title | duo
+  var lang = "en";        // en (latinized) | greek
+  var style = { leet: true, sep: true, num: false };
+
+  // ===== ΛΕΞΙΚΟ =====
+  // Handle: επίθετα + ουσιαστικά, κυρίως net/web ιδιωματισμός
+  var ADJ_EN = [
+    "silent","cosmic","neon","digital","midnight","amber","lunar","wireless",
+    "velvet","rusty","electric","hollow","jolly","quiet","wild","clever",
+    "lofi","hyper","nova","misty","solar","rapid","ancient","modern",
+    "pixel","spectral","eager","free","static","noble","rogue","serene",
+    "golden","iron","shadow","crimson","azure","frost","ember","storm"
+  ];
+
+  var NOUN_EN = [
+    "netizen","fox","crow","otter","moth","lynx","beacon","harbor",
+    "ember","cipher","signal","packet","kernel","archive","cache","vector",
+    "sprite","ghost","smith","wanderer","archivist","bard","scholar","tinker",
+    "raven","wolf","hawk","tuna","squid","bee","firefly","compass",
+    "lantern","furnace","monolith","orbit","ripple","echo","gale","drift"
+  ];
+
+  var ADJ_GR = [
+    "αμίλητος","βαρύς","ήρεμος","σκοτεινός","αρχαίος","λευκός","μαύρος",
+    "χρυσός","σιδερένιος","τυχερός","γρήγορος","φωτεινός","άγριος","γλυκός"
+  ];
+  var ADJ_GR_F = [
+    "σίγουρη","αμίλητη","σκοτεινή","αρχαία","λευκή","μαύρη","χρυσή",
+    "γρήγορη","φωτεινή","άγρια","γλυκιά","βαριά","ήρεμη","τυχερή"
+  ];
+
+  var NOUN_GR = [
+    "αλεπού","κοράκι","λύγκας","γλάρος","κάπρος","φάρος","πυρσός","κόμβος",
+    "σκιά","έρανος","πεπρωμένο","ταξιδευτής","αρχέλιος","γνώστης","τσοπάνης",
+    "κιθάρα","πέτρινος","κύκνος","μέλισσα","καβούρι","θάλασσα","βροχή","αέρας"
+  ];
+
+  // Τίτλοι (bio epithets) — καπετάνιοι πνεύματος
+  var TITLE_ROLES = [
+    "Netizen","Open-Sourcerer","Creative Commoner","Cyber-Griot","Digital Bard",
+    "Byte Whisperer","Packet Poet","Kernel Keeper","Cache Alchemist","Signal Herder",
+    "Repo Wrangler","Daemon Tamer","Cursor Nomad","Patch Sailor","Loop Artisan",
+    "Syntax Shepherd","Pixel Forester","Archive Diver","Protocol Monk","Terminal Minstrel"
+  ];
+  var TITLE_DOMAINS = [
+    "of the Quiet Web","of the Open Road","of Free Software","of the Long Night",
+    "of the Static Sea","of the Nested Loops","of the Unsigned","of the Public Domain",
+    "of the 404 Realm","of the Git Tributaries","of the Terminal Dawn","of the Deep Cache",
+    "of the Analog Isles","of the Slow Web","of the Ethereal LAN","of the Compile Mist"
+  ];
+
+  // Δυναστικά ζεύγη
+  var EPITHET_GR = [
+    "ο Σιωπηλός","του Φάρου","ο Αδέσποτος","της Σιωπής","ο Καλός",
+    "της Λεωφόρου","ο Νυχτερινός","της Καταιγίδας","ο Ασημένιος","του Ψηλού Κόσμου"
+  ];
+  var PLACE_GR = [
+    "της Πόλης","των Βράχων","της Ακτής","του Ανέμου","της Λεκάνης",
+    "του Βορρά","της Στέππας","των Νησιών","της Χώρας","του Λιμανιοῦ"
+  ];
+
+  // ===== ΕΡΓΑΛΕΙΑ =====
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function toHandle(adj, noun, langSel) {
+    if (langSel === "greek") {
+      // Ελληνική ορθογραφία: επίθετο ταιριαστό στο γένος του ουσιαστικού είναι πολυτέλεια εδώ —
+      // επιλέγουμε θηλυκό/αρσενικό ταιριαστά που δοκιμάστηκαν στη λίστα μας.
+      var sep = style.sep ? pick(["_", "-"]) : "";
+      var raw = adj + sep + noun;
+      return grLat(raw, langSel);
+    }
+    var sep = style.sep ? pick(["", "_", "-", "."]) : "";
+    var a = adj.toLowerCase();
+    var n = noun.toLowerCase();
+    if (style.leet && Math.random() < 0.28) {
+      a = a.replace(/o/g, "0").replace(/e/g, "3").replace(/a/g, "@");
+    }
+    var h = a + sep + n;
+    if (style.num && Math.random() < 0.4) {
+      h += String(Math.floor(Math.random() * 90) + 10);
+    }
+    return h;
+  }
+
+  // Ελληνικά →/→ latin transliteration (για handle), ή κρατάμε ελληνικά
+  function grLat(s) {
+    return s; // ελληνική λειτουργία παράγει ελληνικούς χαρακτήρες — τα social τα δέχονται πλέον
+  }
+
+  function generateOne() {
+    if (mode === "handle") {
+      if (lang === "greek") {
+        var male = Math.random() < 0.5;
+        var adj = male ? pick(ADJ_GR) : pick(ADJ_GR_F);
+        return toHandle(adj, pick(NOUN_GR), "greek");
+      }
+      return toHandle(pick(ADJ_EN), pick(NOUN_NOUNS_SAFE()), "en");
+    }
+    if (mode === "title") {
+      var sep = pick([" ", " ", " · ", " "]);
+      return pick(TITLE_ROLES) + (Math.random() < 0.55 ? sep + pick(TITLE_DOMAINS) : "");
+    }
+    // duo
+    var name1 = pick(FIRST_GR);
+    return name1 + " " + pick(EPITHET_GR) + " " + pick(PLACE_GR);
+  }
+
+  var FIRST_GR = [
+    "Ορέστης","Σαπφώ","Λαζαρος","Νεφέλη","Άρης","Ιφιγένεια","Θουκυδίδης",
+    "Μαργαρίτα","Κύβος","Ελένη","Δημήτρης","Αγγελική","Λέων","Αμαλία"
+  ];
+
+  function NOUN_NOUNS_SAFE() { return NOUN_EN; }
+
+  // ===== AGORA =====
+  var favorites = [];
+  try {
+    var f = JSON.parse(localStorage.getItem(LS_FAVS) || "null");
+    if (Array.isArray(f)) favorites = f.slice(0, 50);
+  } catch (e) {}
+
+  function saveFavs() {
+    try { localStorage.setItem(LS_FAVS, JSON.stringify(favorites)); } catch (e) {}
+  }
+
+  function modeLabel() {
+    if (mode === "handle") return "handle";
+    if (mode === "title") return "τίτλος";
+    return "ζεύγος";
+  }
+
+  function renderBatch() {
+    // Καθαρισμός παλιών καρτών (κρατάμε το κουμπί)
+    Array.prototype.forEach.call(resultsEl.querySelectorAll(".name-card"), function (el) { el.remove(); });
+
+    for (var i = 0; i < 8; i++) {
+      var name = generateOne();
+      var card = document.createElement("div");
+      card.className = "name-card";
+      card.style.animationDelay = (i * 0.04) + "s";
+
+      var nameEl = document.createElement("span");
+      nameEl.className = "name";
+      nameEl.textContent = name;
+
+      var badge = document.createElement("span");
+      badge.className = "badge";
+      badge.textContent = modeLabel();
+
+      var actions = document.createElement("div");
+      actions.className = "actions";
+
+      var star = document.createElement("button");
+      star.title = "Αγαπημένο";
+      var starred = favorites.indexOf(name) !== -1;
+      star.textContent = starred ? "⭐" : "☆";
+      if (starred) star.classList.add("starred");
+      star.addEventListener("click", function (nm, btn) {
+        return function () { toggleFavorite(nm, btn); };
+      }(name, star));
+
+      var copy = document.createElement("button");
+      copy.title = "Αντιγραφή";
+      copy.textContent = "📋";
+      copy.addEventListener("click", function (nm) {
+        return function () { copyName(nm); };
+      }(name));
+
+      actions.appendChild(star);
+      actions.appendChild(copy);
+
+      card.appendChild(nameEl);
+      card.appendChild(badge);
+      card.appendChild(actions);
+
+      resultsEl.insertBefore(card, genBtn);
+    }
+  }
+
+  function toggleFavorite(name, btn) {
+    var idx = favorites.indexOf(name);
+    if (idx === -1) {
+      favorites.unshift(name);
+      if (favorites.length > 50) favorites.pop();
+      btn.textContent = "⭐";
+      btn.classList.add("starred");
+    } else {
+      favorites.splice(idx, 1);
+      btn.textContent = "☆";
+      btn.classList.remove("starred");
+    }
+    saveFavs();
+    renderFavs();
+  }
+
+  function copyName(name) {
+    function done() {
+      toastEl.classList.add("show");
+      setTimeout(function () { toastEl.classList.remove("show"); }, 1400);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(name).then(done, done);
+    } else {
+      var ta = document.createElement("textarea");
+      ta.value = name;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); } catch (e) {}
+      ta.remove();
+      done();
+    }
+  }
+
+  function renderFavs() {
+    favListEl.innerHTML = "";
+    favEmptyEl.style.display = favorites.length ? "none" : "block";
+    for (var i = 0; i < favorites.length; i++) {
+      var li = document.createElement("li");
+      li.textContent = favorites[i];
+
+      var rm = document.createElement("button");
+      rm.className = "rm";
+      rm.title = "Αφαίρεση";
+      rm.textContent = "✕";
+      rm.addEventListener("click", function (nm) {
+        return function () {
+          var idx = favorites.indexOf(nm);
+          if (idx !== -1) { favorites.splice(idx, 1); saveFavs(); renderFavs(); renderBatch(); }
+        };
+      }(favorites[i]));
+
+      li.appendChild(rm);
+      favListEl.appendChild(li);
+    }
+  }
+
+  // ===== UI EVENTS =====
+  genBtn.addEventListener("click", renderBatch);
+
+  var modeBtns = document.querySelectorAll(".mode");
+  modeBtns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      mode = btn.getAttribute("data-mode");
+      modeBtns.forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      // Τα ύφος/γλώσσα αφορούν μόνο τα handles
+      handleOptsEl.style.opacity = (mode === "handle") ? "1" : "0.35";
+      handleOptsEl.style.pointerEvents = (mode === "handle") ? "auto" : "none";
+      renderBatch();
+    });
+  });
+
+  var langBtns = document.querySelectorAll(".lang-toggle button");
+  langBtns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      lang = btn.getAttribute("data-lang");
+      langBtns.forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+    });
+  });
+
+  document.getElementById("chkLeet").addEventListener("change", function () { style.leet = this.checked; });
+  document.getElementById("chkSep").addEventListener("change", function () { style.sep = this.checked; });
+  document.getElementById("chkNum").addEventListener("change", function () { style.num = this.checked; });
+
+  // ===== ΠΛΗΚΤΡΟΛΟΓΙΟ =====
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    var tag = (e.target && e.target.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea" || tag === "button" || tag === "select") return;
+    renderBatch();
+  });
+
+  // ===== INIT =====
+  renderFavs();
+  renderBatch();
+
+})();
+</script>
+
+</body>
+</html>
