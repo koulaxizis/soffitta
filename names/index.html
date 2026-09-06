@@ -1,10 +1,22 @@
 <!DOCTYPE html>
-<html lang="el">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Name Generator</title> <!-- SUITE NAME prefix όταν επιλεγεί το όνομα -->
-<meta name="description" content="Γεννήτορας ονομάτων και τίτλων: handles, epithets, λεκτικά ζευγάρια. Πάνω από ένα εκατομμύριο συνδυασμοί, όλα τοπικά. Χωρίς cookies, χωρίς tracking.">
+<title>Name Generator — Soffitta</title>
+<meta name="description" content="Names and titles generator: handles, epithets, regal pairs. Over a million combinations, all local. Free, open source, no cookies, no tracking.">
+<link rel="canonical" href="https://soffitta.site/names/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://soffitta.site/names/">
+<meta property="og:title" content="Name Generator — Soffitta">
+<meta property="og:description" content="Handles, titles and regal pairs — purely combinatorial generation, no network.">
+<!-- TODO (αργότερα): og-cover.png 1200×630 στον φάκελο names/ -->
+<meta property="og:image" content="https://soffitta.site/names/og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#130f1a">
+<link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23130f1a'/%3E%3Cpath d='M10 35L32 11L54 35' fill='none' stroke='%23e6ce9a' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='25' y='40' width='14' height='13' rx='3' fill='%23c9a0ff'/%3E%3C/svg%3E">
+<link rel="manifest" href="../manifest.webmanifest">
 <style>
   :root {
     --bg: #130f1a;
@@ -42,6 +54,46 @@
   header h1 { font-size: 1.2rem; font-weight: 800; }
   header h1 span { color: var(--accent); }
   header .hint { font-size: 0.78rem; color: var(--text-muted); }
+
+  /* ===== ΕΡΓΑΛΕΙΑ (γλώσσα + εγκατάσταση) ===== */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .lang-switch {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .lang-switch button {
+    background: none;
+    border: none;
+    padding: 6px 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+    letter-spacing: 0.04em;
+  }
+
+  .lang-switch button.active {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  #installBtn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+  }
+  #installBtn:hover { border-color: var(--accent); }
 
   main {
     flex: 1;
@@ -201,7 +253,7 @@
   .mode.active { background: var(--accent-soft); border-color: var(--accent); }
   .mode.active small { color: var(--accent); opacity: 0.85; }
 
-  /* Γλώσσα */
+  /* Γλώσσα handles */
   .lang-toggle { display: flex; gap: 8px; }
   .lang-toggle button {
     font-family: inherit;
@@ -216,7 +268,7 @@
   }
   .lang-toggle button.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 
-  /* Ύφος handle */
+  /* Ύφος handles */
   .style-check {
     display: flex;
     align-items: center;
@@ -229,7 +281,7 @@
   }
   .style-check input { accent-color: var(--accent); }
 
-  /* Φavorites */
+  /* Αγαπημένα */
   .fav-list {
     list-style: none;
     display: flex;
@@ -281,56 +333,84 @@
   }
 </style>
 </head>
+
 <body>
 
 <header>
-  <h1>🎭 Name <span>Generator</span></h1>
-  <p class="hint"><span class="kbd">Enter</span> νέα δέσμη · <span class="kbd">⭐</span> αγαπημένα · <span class="kbd">📋</span> αντιγραφή</p>
+  <div>
+    <h1>🎭 Name <span>Generator</span></h1>
+    <p class="hint">
+      <span class="kbd">Enter</span>
+      <span data-en="new batch" data-el="νέα δέσμη">new batch</span> ·
+      <span class="kbd">⭐</span>
+      <span data-en="favorites" data-el="αγαπημένα">favorites</span> ·
+      <span class="kbd">📋</span>
+      <span data-en="copy" data-el="αντιγραφή">copy</span>
+    </p>
+  </div>
+  <div class="toolbar">
+    <button id="installBtn" hidden data-en="⬇ Install app" data-el="⬇ Εγκατάσταση">⬇ Install app</button>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button id="langEn" class="active">EN</button>
+      <button id="langEl">ΕΛ</button>
+    </div>
+  </div>
 </header>
 
 <main>
 
   <section class="results" id="results">
-    <button class="more-btn" id="genBtn">✦ Γέννησε 8 ονόματα</button>
+    <button class="more-btn" id="genBtn">✦ <span data-en="Generate 8 names" data-el="Γέννησε 8 ονόματα">Generate 8 names</span></button>
   </section>
 
   <aside class="side">
 
     <div>
-      <h2 class="section">Τρόπος</h2>
+      <h2 class="section" data-en="Mode" data-el="Τρόπος">Mode</h2>
       <div class="modes">
         <button class="mode active" data-mode="handle">
-          Handles
-          <small>usernames για τα οποίαθι σου</small>
+          <span data-en="Handles" data-el="Handles">Handles</span>
+          <small data-en="usernames for your corners of the web" data-el="usernames για τις γωνιές σου στο web">usernames for your corners of the web</small>
         </button>
         <button class="mode" data-mode="title">
-          Τίτλοι
-          <small>βιογραφικά epithets, στυλ Netizen</small>
+          <span data-en="Titles" data-el="Τίτλοι">Titles</span>
+          <small data-en="bio epithets, Netizen style" data-el="βιογραφικά epithets, στυλ Netizen">bio epithets, Netizen style</small>
         </button>
         <button class="mode" data-mode="duo">
-          Δυναστικά ζεύγη
-          <small>π.χ. «Argonaut của Πάτρα» — φαντασία</small>
+          <span data-en="Regal pairs" data-el="Δυναστικά ζεύγη">Regal pairs</span>
+          <small data-en="fantasy «name + epithet + realm»" data-el="φαντασίας «όνομα + επίθετο + τόπος»">fantasy name + epithet</small>
         </button>
       </div>
     </div>
 
     <div id="handleOpts">
-      <h2 class="section">Γλώσσα</h2>
+      <h2 class="section" data-en="Character set" data-el="Αλφάβητο">Character set</h2>
       <div class="lang-toggle">
-        <button class="active" data-lang="en">Ελληνικά-λατινικά</button>
-        <button data-lang="greek">Ελληνικά</button>
+        <button class="active" data-lang="en" data-en="Latin (EN)" data-el="Λατινικά (EN)">Latin (EN)</button>
+        <button data-lang="greek" data-en="Greek (GR)" data-el="Ελληνικά (GR)">Greek (GR)</button>
       </div>
 
-      <h2 class="section" style="margin-top:18px;">Ύφος</h2>
-      <label class="style-check"><input type="checkbox" id="chkLeet" checked> Leet παραλλαγές (a→@)</label>
-      <label class="style-check"><input type="checkbox" id="chkSep" checked> Διαχωριστικά (_ και -)</label>
-      <label class="style-check"><input type="checkbox" id="chkNum"> Αριθμητικά επιθέματα</label>
+      <h2 class="section" style="margin-top:18px;" data-en="Style" data-el="Ύφος">Style</h2>
+      <label class="style-check">
+        <input type="checkbox" id="chkLeet" checked>
+        <span data-en="Leet variants (a→@)" data-el="Leet παραλλαγές (a→@)">Leet variants (a→@)</span>
+      </label>
+      <label class="style-check">
+        <input type="checkbox" id="chkSep" checked>
+        <span data-en="Separators (_ and -)" data-el="Διαχωριστικά (_ και -)">Separators (_ and -)</span>
+      </label>
+      <label class="style-check">
+        <input type="checkbox" id="chkNum">
+        <span data-en="Numeric suffixes" data-el="Αριθμητικά επιθέματα">Numeric suffixes</span>
+      </label>
     </div>
 
     <div>
-      <h2 class="section">Αγαπημένα</h2>
+      <h2 class="section" data-en="Favorites" data-el="Αγαπημένα">Favorites</h2>
       <ul class="fav-list" id="favList"></ul>
-      <p class="fav-empty" id="favEmpty">Κανένα ακόμα — ⭐ ένα όνομα για να το κρατήσεις.</p>
+      <p class="fav-empty" id="favEmpty"
+         data-en="None yet — ⭐ a name to keep it."
+         data-el="Κανένα ακόμα — ⭐ ένα όνομα για να το κρατήσεις.">None yet — ⭐ a name to keep it.</p>
     </div>
 
   </aside>
@@ -338,12 +418,14 @@
 </main>
 
 <footer>
-  Designed by <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
-  <a href="../">Όλα τα apps</a><br>
-  Χωρίς cookies · Χωρίς tracking · Open source · Καθαρά συνδυαστική γέννηση, χωρίς δίκτυο
+  <span data-en="Designed by" data-el="Σχεδιασμένο από τον">Designed by</span>
+  <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="../" data-en="All apps" data-el="Όλα τα apps">All apps</a><br>
+  <span data-en="No cookies · No tracking · Open source · Purely combinatorial, no network"
+        data-el="Χωρίς cookies · Χωρίς tracking · Ανοιχτού κώδικα · Καθαρά συνδυαστική γέννηση, χωρίς δίκτυο">No cookies · No tracking · Open source</span>
 </footer>
 
-<div class="copied-toast" id="toast">Αντιγράφηκε!</div>
+<div class="copied-toast" id="toast" data-en="Copied!" data-el="Αντιγράφηκε!">Copied!</div>
 
 <script>
 "use strict";
@@ -356,15 +438,82 @@
   var favEmptyEl = document.getElementById("favEmpty");
   var toastEl = document.getElementById("toast");
   var handleOptsEl = document.getElementById("handleOpts");
+  var langEnBtn = document.getElementById("langEn");
+  var langElBtn = document.getElementById("langEl");
+  var installBtn = document.getElementById("installBtn");
 
   var LS_FAVS = "namegen.favorites.v1";
 
   var mode = "handle";     // handle | title | duo
-  var lang = "en";        // en (latinized) | greek
+  var charset = "en";      // en (latin) | greek — ΑΦΟΡΑ ΜΟΝΟ τα handles
   var style = { leet: true, sep: true, num: false };
 
-  // ===== ΛΕΞΙΚΟ =====
-  // Handle: επίθετα + ουσιαστικά, κυρίως net/web ιδιωματισμός
+  // ===== i18n (κοινό μοτίβο σε όλη τη σουίτα) =====
+  var LANG_KEY = "soffitta.lang";
+
+  var T = {
+    title: {
+      en: "Name Generator — Soffitta",
+      el: "Γεννήτορας Ονομάτων — Soffitta"
+    },
+    metaDesc: {
+      en: "Names and titles generator: handles, epithets, regal pairs. Over a million combinations, all local. Free, open source, no cookies, no tracking.",
+      el: "Γεννήτορας ονομάτων και τίτλων: handles, epithets, δυναστικά ζεύγη. Πάνω από ένα εκατομμύριο συνδυασμοί, όλα τοπικά. Χωρίς cookies, χωρίς tracking."
+    },
+    gen: { en: "✦ Generate 8 names", el: "✦ Γέννησε 8 ονόματα" },
+    badge: {
+      handle: { en: "handle", el: "handle" },
+      title: { en: "title", el: "τίτλος" },
+      duo: { en: "pair", el: "ζεύγος" }
+    },
+    favEmpty: { en: "None yet — ⭐ a name to keep it.", el: "Κανένα ακόμα — ⭐ ένα όνομα για να το κρατήσεις." },
+    toast: { en: "Copied!", el: "Αντιγράφηκε!" },
+    tStar: { en: "Favorite", el: "Αγαπημένο" },
+    tCopy: { en: "Copy", el: "Αντιγραφή" },
+    tRemove: { en: "Remove", el: "Αφαίρεση" },
+    ariaLang: { en: "Language", el: "Γλώσσα" }
+  };
+
+  function detectLang() {
+    try {
+      var saved = localStorage.getItem(LANG_KEY);
+      if (saved === "en" || saved === "el") return saved;
+    } catch (e) {}
+    var nav = (navigator.language || "en").slice(0, 2).toLowerCase();
+    return nav === "el" ? "el" : "en";
+  }
+
+  var currentLang = detectLang();
+
+  function applyStatic() {
+    document.documentElement.setAttribute("lang", currentLang);
+    document.title = T.title[currentLang];
+    var metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute("content", T.metaDesc[currentLang]);
+    var nodes = document.querySelectorAll("[data-en]");
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].textContent = currentLang === "el"
+        ? nodes[i].getAttribute("data-el")
+        : nodes[i].getAttribute("data-en");
+    }
+    langEnBtn.classList.toggle("active", currentLang === "en");
+    langElBtn.classList.toggle("active", currentLang === "el");
+    toastEl.textContent = T.toast[currentLang];
+    favEmptyEl.textContent = T.favEmpty[currentLang];
+  }
+
+  function setLang(lang) {
+    currentLang = lang;
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    applyStatic();
+    renderFavs();   // τίτλοι κουμπιών αφαίρεσης
+    renderBatch();  // badges + τίτλοι star/copy
+  }
+
+  langEnBtn.addEventListener("click", function () { setLang("en"); });
+  langElBtn.addEventListener("click", function () { setLang("el"); });
+
+  // ===== ΛΕΞΙΚΟ — HANDLES (latin) =====
   var ADJ_EN = [
     "silent","cosmic","neon","digital","midnight","amber","lunar","wireless",
     "velvet","rusty","electric","hollow","jolly","quiet","wild","clever",
@@ -381,56 +530,96 @@
     "lantern","furnace","monolith","orbit","ripple","echo","gale","drift"
   ];
 
-  var ADJ_GR = [
+  // ===== ΛΕΞΙΚΟ — HANDLES (ελληνικά, κατά γένος) =====
+  // bug #1: επίθετο + ουσιαστικό πάντα από την ίδια λίστα γένους
+  var ADJ_GR_M = [
     "αμίλητος","βαρύς","ήρεμος","σκοτεινός","αρχαίος","λευκός","μαύρος",
-    "χρυσός","σιδερένιος","τυχερός","γρήγορος","φωτεινός","άγριος","γλυκός"
+    "χρυσός","σιδερένιος","τυχερός","γρήγορος","φωτεινός","άγριος","γλυκός",
+    "νυχτερινός","ασημένιος"
   ];
   var ADJ_GR_F = [
-    "σίγουρη","αμίλητη","σκοτεινή","αρχαία","λευκή","μαύρη","χρυσή",
-    "γρήγορη","φωτεινή","άγρια","γλυκιά","βαριά","ήρεμη","τυχερή"
+    "αμίλητη","βαριά","ήρεμη","σκοτεινή","αρχαία","λευκή","μαύρη",
+    "χρυσή","σιδερένια","τυχερή","γρήγορη","φωτεινή","άγρια","γλυκιά",
+    "νυχτερινή","ασημένια"
+  ];
+  var ADJ_GR_N = [
+    "αμίλητο","βαρύ","ήρεμο","σκοτεινό","αρχαίο","λευκό","μαύρο",
+    "χρυσό","σιδερένιο","τυχερό","γρήγορο","φωτεινό","άγριο","γλυκό",
+    "νυχτερινό","ασημένιο"
   ];
 
-  var NOUN_GR = [
-    "αλεπού","κοράκι","λύγκας","γλάρος","κάπρος","φάρος","πυρσός","κόμβος",
-    "σκιά","έρανος","πεπρωμένο","ταξιδευτής","αρχέλιος","γνώστης","τσοπάνης",
-    "κιθάρα","πέτρινος","κύκνος","μέλισσα","καβούρι","θάλασσα","βροχή","αέρας"
+  var NOUN_GR_M = [
+    "φάρος","πυρσός","κόμβος","ταξιδευτής","γνώστης","τσοπάνης",
+    "λύγκας","γλάρος","κύκνος","καβούρι","κάπρος","αέρας"
+  ];
+  var NOUN_GR_F = [
+    "αλεπού","σκιά","θάλασσα","βροχή","μέλισσα","κιθάρα",
+    "καταιγίδα","καρδιά","στιγμή","αυγή","νύχτα","πέτρα"
+  ];
+  var NOUN_GR_N = [
+    "κοράκι","πεπρωμένο","ρόδι","ηφαίστειο","βουνό","σύννεφο",
+    "δελφίνι","ξωτικό","κύμα","φυτό","σκοτάδι","βιβλίο"
   ];
 
-  // Τίτλοι (bio epithets) — καπετάνιοι πνεύματος
-  var TITLE_ROLES = [
+  // ===== ΛΕΞΙΚΟ — ΤΙΤΛΟΙ =====
+  var TITLE_ROLES_EN = [
     "Netizen","Open-Sourcerer","Creative Commoner","Cyber-Griot","Digital Bard",
     "Byte Whisperer","Packet Poet","Kernel Keeper","Cache Alchemist","Signal Herder",
     "Repo Wrangler","Daemon Tamer","Cursor Nomad","Patch Sailor","Loop Artisan",
     "Syntax Shepherd","Pixel Forester","Archive Diver","Protocol Monk","Terminal Minstrel"
   ];
-  var TITLE_DOMAINS = [
+  var TITLE_DOMAINS_EN = [
     "of the Quiet Web","of the Open Road","of Free Software","of the Long Night",
     "of the Static Sea","of the Nested Loops","of the Unsigned","of the Public Domain",
     "of the 404 Realm","of the Git Tributaries","of the Terminal Dawn","of the Deep Cache",
     "of the Analog Isles","of the Slow Web","of the Ethereal LAN","of the Compile Mist"
   ];
 
-  // Δυναστικά ζεύγη
-  var EPITHET_GR = [
+  var TITLE_ROLES_EL = [
+    "Ανοιχτο-Μάγος","Ψηφιακός Βάρδος","Ψίθυρος Bytes","Ποιητής Πακέτων",
+    "Φύλακας Kernel","Αλχημιστής Cache","Βοσκός Σημάτων","Ταξιδευτής Κέρσορα",
+    "Ναυτικός Patches","Τεχνίτης Βρόχων","Βοσκός Σύνταξης","Δασοφύλακας Pixels",
+    "Βουτηχτής Αρχείων","Μοναχός Πρωτοκόλλων","Τροβαδούρος Τερματικού","Νομάδας Δικτύου"
+  ];
+  var TITLE_DOMAINS_EL = [
+    "της Ήσυχης Ιστοσελίδας","των Ανοιχτών Δρόμων","του Ελεύθερου Λογισμικού","της Μακριάς Νύχτας",
+    "της Θάλασσας Static","των Φωλιασμένων Βρόχων","των Άγραφων","του Κοινού Κτήρους",
+    "του Χωρίου 404","των Παραποτάμων Git","της Αυγής Τερματικού","του Βαθέος Cache",
+    "των Αναλογικών Νήσων","του Αργού Διαδικτύου","του Αιθέριου LAN","της Ομίχλης Μεταγλώττισης"
+  ];
+
+  // ===== ΛΕΞΙΚΟ — ΔΥΝΑΣΤΙΚΑ ΖΕΥΓΗ =====
+  var FIRST_EL = [
+    "Ορέστης","Σαπφώ","Λάζαρος","Νεφέλη","Άρης","Ιφιγένεια","Θουκυδίδης",
+    "Μαργαρίτα","Ελένη","Δημήτρης","Αγγελική","Λέων","Αμαλία","Κίμων"
+  ];
+  var EPITHET_EL = [
     "ο Σιωπηλός","του Φάρου","ο Αδέσποτος","της Σιωπής","ο Καλός",
     "της Λεωφόρου","ο Νυχτερινός","της Καταιγίδας","ο Ασημένιος","του Ψηλού Κόσμου"
   ];
-  var PLACE_GR = [
+  var PLACE_EL = [
     "της Πόλης","των Βράχων","της Ακτής","του Ανέμου","της Λεκάνης",
-    "του Βορρά","της Στέππας","των Νησιών","της Χώρας","του Λιμανιοῦ"
+    "του Βορρά","της Στέππας","των Νησιών","της Χώρας","του Λιμανιού"
+  ];
+
+  var FIRST_EN = [
+    "Orestis","Sappho","Lazaros","Nefeli","Aris","Ifigenia","Thoukydidis",
+    "Margarita","Eleni","Dimitris","Angeliki","Leon","Amalia","Kimonas"
+  ];
+  var EPITHET_EN = [
+    "the Silent","of the Lighthouse","the Unclaimed","of Silence","the Good",
+    "of the Avenue","the Nightly","of the Storm","the Silver","of the High World"
+  ];
+  var PLACE_EN = [
+    "of the City","of the Rocks","of the Coast","of the Wind","of the Basin",
+    "of the North","of the Steppe","of the Islands","of the Land","of the Harbour"
   ];
 
   // ===== ΕΡΓΑΛΕΙΑ =====
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-  function toHandle(adj, noun, langSel) {
-    if (langSel === "greek") {
-      // Ελληνική ορθογραφία: επίθετο ταιριαστό στο γένος του ουσιαστικού είναι πολυτέλεια εδώ —
-      // επιλέγουμε θηλυκό/αρσενικό ταιριαστά που δοκιμάστηκαν στη λίστα μας.
-      var sep = style.sep ? pick(["_", "-"]) : "";
-      var raw = adj + sep + noun;
-      return grLat(raw, langSel);
-    }
+  // Handle σε λατινικούς χαρακτήρες: leet / separators / αριθμοί
+  function toHandleEn(adj, noun) {
     var sep = style.sep ? pick(["", "_", "-", "."]) : "";
     var a = adj.toLowerCase();
     var n = noun.toLowerCase();
@@ -444,37 +633,37 @@
     return h;
   }
 
-  // Ελληνικά →/→ latin transliteration (για handle), ή κρατάμε ελληνικά
-  function grLat(s) {
-    return s; // ελληνική λειτουργία παράγει ελληνικούς χαρακτήρες — τα social τα δέχονται πλέον
+  // Handle σε ελληνικά: σωστό ταιριασμα γένους (bug #1)
+  // Σημ.: leet/αριθμοί έχουν νόημα μόνο σε λατινικούς — σκόπιμα δεν εφαρμόζονται εδώ
+  function toHandleGr(adj, noun) {
+    var sep = style.sep ? pick(["_", "-", ""]) : "";
+    return adj + sep + noun;
   }
 
   function generateOne() {
     if (mode === "handle") {
-      if (lang === "greek") {
-        var male = Math.random() < 0.5;
-        var adj = male ? pick(ADJ_GR) : pick(ADJ_GR_F);
-        return toHandle(adj, pick(NOUN_GR), "greek");
+      if (charset === "greek") {
+        var g = pick(["m", "f", "n"]);
+        var adj = g === "m" ? pick(ADJ_GR_M) : g === "f" ? pick(ADJ_GR_F) : pick(ADJ_GR_N);
+        var noun = g === "m" ? pick(NOUN_GR_M) : g === "f" ? pick(NOUN_GR_F) : pick(NOUN_GR_N);
+        return toHandleGr(adj, noun);
       }
-      return toHandle(pick(ADJ_EN), pick(NOUN_NOUNS_SAFE()), "en");
+      return toHandleEn(pick(ADJ_EN), pick(NOUN_EN));
     }
     if (mode === "title") {
+      var roles = currentLang === "el" ? TITLE_ROLES_EL : TITLE_ROLES_EN;
+      var domains = currentLang === "el" ? TITLE_DOMAINS_EL : TITLE_DOMAINS_EN;
       var sep = pick([" ", " ", " · ", " "]);
-      return pick(TITLE_ROLES) + (Math.random() < 0.55 ? sep + pick(TITLE_DOMAINS) : "");
+      return pick(roles) + (Math.random() < 0.55 ? sep + pick(domains) : "");
     }
-    // duo
-    var name1 = pick(FIRST_GR);
-    return name1 + " " + pick(EPITHET_GR) + " " + pick(PLACE_GR);
+    // duo — γλώσσα content = γλώσσα UI
+    var first = currentLang === "el" ? pick(FIRST_EL) : pick(FIRST_EN);
+    var ep = currentLang === "el" ? pick(EPITHET_EL) : pick(EPITHET_EN);
+    var pl = currentLang === "el" ? pick(PLACE_EL) : pick(PLACE_EN);
+    return first + " " + ep + " " + pl;
   }
 
-  var FIRST_GR = [
-    "Ορέστης","Σαπφώ","Λαζαρος","Νεφέλη","Άρης","Ιφιγένεια","Θουκυδίδης",
-    "Μαργαρίτα","Κύβος","Ελένη","Δημήτρης","Αγγελική","Λέων","Αμαλία"
-  ];
-
-  function NOUN_NOUNS_SAFE() { return NOUN_EN; }
-
-  // ===== AGORA =====
+  // ===== ΑΓΑΠΗΜΕΝΑ =====
   var favorites = [];
   try {
     var f = JSON.parse(localStorage.getItem(LS_FAVS) || "null");
@@ -485,15 +674,16 @@
     try { localStorage.setItem(LS_FAVS, JSON.stringify(favorites)); } catch (e) {}
   }
 
+  // ===== RENDER =====
   function modeLabel() {
-    if (mode === "handle") return "handle";
-    if (mode === "title") return "τίτλος";
-    return "ζεύγος";
+    return T.badge[mode][currentLang];
   }
 
   function renderBatch() {
     // Καθαρισμός παλιών καρτών (κρατάμε το κουμπί)
     Array.prototype.forEach.call(resultsEl.querySelectorAll(".name-card"), function (el) { el.remove(); });
+
+    genBtn.textContent = T.gen[currentLang];
 
     for (var i = 0; i < 8; i++) {
       var name = generateOne();
@@ -513,7 +703,7 @@
       actions.className = "actions";
 
       var star = document.createElement("button");
-      star.title = "Αγαπημένο";
+      star.title = T.tStar[currentLang];
       var starred = favorites.indexOf(name) !== -1;
       star.textContent = starred ? "⭐" : "☆";
       if (starred) star.classList.add("starred");
@@ -522,7 +712,7 @@
       }(name, star));
 
       var copy = document.createElement("button");
-      copy.title = "Αντιγραφή";
+      copy.title = T.tCopy[currentLang];
       copy.textContent = "📋";
       copy.addEventListener("click", function (nm) {
         return function () { copyName(nm); };
@@ -582,7 +772,7 @@
 
       var rm = document.createElement("button");
       rm.className = "rm";
-      rm.title = "Αφαίρεση";
+      rm.title = T.tRemove[currentLang];
       rm.textContent = "✕";
       rm.addEventListener("click", function (nm) {
         return function () {
@@ -605,7 +795,7 @@
       mode = btn.getAttribute("data-mode");
       modeBtns.forEach(function (b) { b.classList.remove("active"); });
       btn.classList.add("active");
-      // Τα ύφος/γλώσσα αφορούν μόνο τα handles
+      // Το σύνολο χαρακτήρων/ύφος αφορά μόνο τα handles
       handleOptsEl.style.opacity = (mode === "handle") ? "1" : "0.35";
       handleOptsEl.style.pointerEvents = (mode === "handle") ? "auto" : "none";
       renderBatch();
@@ -615,7 +805,7 @@
   var langBtns = document.querySelectorAll(".lang-toggle button");
   langBtns.forEach(function (btn) {
     btn.addEventListener("click", function () {
-      lang = btn.getAttribute("data-lang");
+      charset = btn.getAttribute("data-lang");
       langBtns.forEach(function (b) { b.classList.remove("active"); });
       btn.classList.add("active");
     });
@@ -633,7 +823,38 @@
     renderBatch();
   });
 
+  // ===== ΕΓΚΑΤΑΣΤΑΣΗ (PWA) =====
+  var deferredPrompt = null;
+
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.hidden = false;
+  });
+
+  installBtn.addEventListener("click", function () {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  window.addEventListener("appinstalled", function () {
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  // ===== SERVICE WORKER (offline — κοινός SW της σουίτας στη ρίζα) =====
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("../sw.js").catch(function (err) {
+        console.warn("SW registration failed:", err);
+      });
+    });
+  }
+
   // ===== INIT =====
+  applyStatic();
   renderFavs();
   renderBatch();
 

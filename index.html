@@ -96,6 +96,65 @@
     margin-right: auto;
     line-height: 1.7;
   }
+  
+    /* ===== DISCLAIMER + NEWSLETTER ===== */
+    .notice {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 0 24px 36px;
+  }
+
+  .disclaimer {
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .disclaimer .emoji { font-size: 1.3rem; line-height: 1.4; }
+
+    .newsletter {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+  }
+
+  .newsletter p {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin: 0;
+    display: inline;
+  }
+
+  .nl-btn {
+    display: inline-block;
+    background: var(--text);
+    color: var(--bg);
+    font: 700 0.8rem "Segoe UI", system-ui, sans-serif;
+    letter-spacing: 0.02em;
+    border-radius: 999px;
+    padding: 8px 18px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: filter 0.15s ease;
+  }
+  .nl-btn:hover { filter: brightness(0.85); }
+  
+  
 
   /* ===== ΠΛΕΓΜΑ ===== */
   .grid {
@@ -212,6 +271,26 @@
     Each app stands alone; everything free and local.
   </p>
 </header>
+
+<!-- ===== DISCLAIMER ===== -->
+<section class="notice">
+  <div class="disclaimer">
+    <span class="emoji">🧪</span>
+    <span data-en="Experimental playground: this place is for tinkering, play and fun. Most apps are permanently under development and almost certainly contain bugs — please don't rely on them for anything serious or productive."
+          data-el="Πειραματικό playground: εδώ κάνουμε πειραματισμό, παιχνίδι και διασκέδαση. Οι περισσότερες εφαρμογές είναι μόνιμα υπό εξέλιξη και σχεδόν σίγουρα περιέχουν σφάλματα — μην τις χρησιμοποιήσεις για οτιδήποτε σοβαρό ή παραγωγικό.">Experimental playground: this place is for tinkering, play and fun. Most apps are permanently under development and almost certainly contain bugs — please don't rely on them for anything serious or productive.</span>
+  </div>
+
+    <div class="newsletter">
+    <p data-en="Want a heads-up about new apps and updates? Subscribe to the newsletter."
+       data-el="Θες να μαθαίνεις πρώτος για νέες εφαρμογές και ενημερώσεις; Γράψου στο newsletter.">Want a heads-up about new apps and updates? Subscribe to the newsletter.</p>
+    <a class="nl-btn" href="https://preview.mailerlite.io/forms/642133/197798100209764076/share"
+       target="_blank" rel="noopener"
+       data-en="✉ Subscribe" data-el="✉ Εγγραφή">✉ Subscribe</a>
+  </div>
+</section>
+
+<!-- ===== DISCLAIMER ΤΕΛΟΣ ===== -->
+
 
 <nav class="grid" aria-label="Apps">
 

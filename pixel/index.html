@@ -1,10 +1,22 @@
 <!DOCTYPE html>
-<html lang="el">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pixel Avatar Maker</title> <!-- SUITE NAME prefix όταν επιλεγεί το όνομα -->
-<meta name="description" content="Πυξελίδη avatar 8×8: κάθε σπόρος, ένα μοναδικό πρόσωπο. Export PNG, σώσε τα αγαπημένα σου. Χωρίς cookies, χωρίς tracking.">
+<title>Pixel Avatar Maker — Soffitta</title>
+<meta name="description" content="8×8 pixel avatars: every seed, a unique face. Deterministic generation, PNG export, a museum of favorites. Free, open source, no cookies, no tracking.">
+<link rel="canonical" href="https://soffitta.site/avatar/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://soffitta.site/avatar/">
+<meta property="og:title" content="Pixel Avatar Maker — Soffitta">
+<meta property="og:description" content="Every seed, a unique pixel face — deterministic, offline, yours to keep.">
+<!-- TODO (αργότερα): og-cover.png 1200×630 στον φάκελο avatar/ -->
+<meta property="og:image" content="https://soffitta.site/avatar/og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#1c1214">
+<link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231c1214'/%3E%3Cpath d='M10 35L32 11L54 35' fill='none' stroke='%23e6ce9a' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='25' y='40' width='14' height='13' rx='3' fill='%23ff8a80'/%3E%3C/svg%3E">
+<link rel="manifest" href="../manifest.webmanifest">
 <style>
   :root {
     --bg: #1c1214;
@@ -41,6 +53,46 @@
   header h1 { font-size: 1.2rem; font-weight: 800; }
   header h1 span { color: var(--accent); }
   header .hint { font-size: 0.78rem; color: var(--text-muted); }
+
+  /* ===== ΕΡΓΑΛΕΙΑ (γλώσσα + εγκατάσταση) ===== */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .lang-switch {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .lang-switch button {
+    background: none;
+    border: none;
+    padding: 6px 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+    letter-spacing: 0.04em;
+  }
+
+  .lang-switch button.active {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  #installBtn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+  }
+  #installBtn:hover { border-color: var(--accent); }
 
   main {
     flex: 1;
@@ -194,11 +246,28 @@
   }
 </style>
 </head>
+
 <body>
 
 <header>
-  <h1>👨‍🎨 Pixel Avatar <span>Maker</span></h1>
-  <p class="hint"><span class="kbd">R</span> νέο πρόσωπο · <span class="kbd">P</span> επόμενη παλέτα · <span class="kbd">D</span> λήψη PNG</p>
+  <div>
+    <h1>👨‍🎨 Pixel Avatar <span>Maker</span></h1>
+    <p class="hint">
+      <span class="kbd">R</span>
+      <span data-en="new face" data-el="νέο πρόσωπο">new face</span> ·
+      <span class="kbd">P</span>
+      <span data-en="next palette" data-el="επόμενη παλέτα">next palette</span> ·
+      <span class="kbd">D</span>
+      <span data-en="download PNG" data-el="λήψη PNG">download PNG</span>
+    </p>
+  </div>
+  <div class="toolbar">
+    <button id="installBtn" hidden data-en="⬇ Install app" data-el="⬇ Εγκατάσταση">⬇ Install app</button>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button id="langEn" class="active">EN</button>
+      <button id="langEl">ΕΛ</button>
+    </div>
+  </div>
 </header>
 
 <main>
@@ -209,16 +278,16 @@
       <canvas id="avatar" width="320" height="320"></canvas>
     </div>
 
-    <button id="rerollBtn" class="primary">✦ Νέο πρόσωπο</button>
+    <button id="rerollBtn" class="primary">✦ <span data-en="New face" data-el="Νέο πρόσωπο">New face</span></button>
 
     <div class="seed-row">
-      <input class="seed-input" id="seedInput" maxlength="12" spellcheck="false" aria-label="Σπόρος avatar">
-      <button id="loadSeedBtn" title="Φόρτωσε τον σπόρο">↵</button>
+      <input class="seed-input" id="seedInput" maxlength="12" spellcheck="false" aria-label="Avatar seed">
+      <button id="loadSeedBtn" title="Load this seed">↵</button>
     </div>
 
     <div class="btn-row">
-      <button id="dlBtn">⬇ Λήψη PNG</button>
-      <button id="copySeedBtn">⧉ Αντιγραφή σπόρου</button>
+      <button id="dlBtn">⬇ <span data-en="Download PNG" data-el="Λήψη PNG">Download PNG</span></button>
+      <button id="copySeedBtn">⧉ <span data-en="Copy seed" data-el="Αντιγραφή σπόρου">Copy seed</span></button>
     </div>
 
   </section>
@@ -226,16 +295,18 @@
   <aside class="side">
 
     <div>
-      <h2 class="section">Παλέτες</h2>
+      <h2 class="section" data-en="Palettes" data-el="Παλέτες">Palettes</h2>
       <div class="palette" id="paletteGrid"></div>
     </div>
 
     <div>
-      <h2 class="section">Μουσείο</h2>
+      <h2 class="section" data-en="Museum" data-el="Μουσείο">Museum</h2>
       <div class="gallery" id="gallery"></div>
-      <p class="gal-empty" id="galEmpty" style="margin-top:8px;">Δεν έχεις σώσει πρόσωπο ακόμα.</p>
-      <button id="saveBtn" style="width:100%; margin-top:10px;">💾 Σώσε το τρέχον</button>
-      <p class="note" style="margin-top:8px;">Κλικ σε σωσμένο πρόσωπο = επαναφορά του σπόρου του.</p>
+      <p class="gal-empty" id="galEmpty" style="margin-top:8px;"
+         data-en="No faces saved yet." data-el="Δεν έχεις σώσει πρόσωπο ακόμα.">No faces saved yet.</p>
+      <button id="saveBtn" style="width:100%; margin-top:10px;">💾 <span data-en="Save current" data-el="Σώσε το τρέχον">Save current</span></button>
+      <p class="note" style="margin-top:8px;"
+         data-en="Click a saved face to restore its seed." data-el="Κλικ σε σωσμένο πρόσωπο = επαναφορά του σπόρου του.">Click a saved face to restore its seed.</p>
     </div>
 
   </aside>
@@ -243,16 +314,18 @@
 </main>
 
 <footer>
-  Designed by <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
-  <a href="../">Όλα τα apps</a><br>
-  Χωρίς cookies · Χωρίς tracking · Open source · Ο ίδιος σπόρος, πάντα το ίδιο πρόσωπο
+  <span data-en="Designed by" data-el="Σχεδιασμένο από τον">Designed by</span>
+  <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="../" data-en="All apps" data-el="Όλα τα apps">All apps</a><br>
+  <span data-en="No cookies · No tracking · Open source · Same seed, same face"
+        data-el="Χωρίς cookies · Χωρίς tracking · Ανοιχτού κώδικα · Ο ίδιος σπόρος, πάντα το ίδιο πρόσωπο">No cookies · No tracking · Open source · Same seed, same face</span>
 </footer>
 
 <script>
 "use strict";
 (function () {
 
-  // ===== ΣΤΟΙΧΕΙΑ DOM (όλα υπάρχουν στο markup της Part 1) =====
+  // ===== DOM =====
   var canvas = document.getElementById("avatar");
   var ctx = canvas.getContext("2d");
   var seedInput = document.getElementById("seedInput");
@@ -264,13 +337,76 @@
   var galleryEl = document.getElementById("gallery");
   var galEmptyEl = document.getElementById("galEmpty");
   var saveBtn = document.getElementById("saveBtn");
+  var langEnBtn = document.getElementById("langEn");
+  var langElBtn = document.getElementById("langEl");
+  var installBtn = document.getElementById("installBtn");
 
   // ===== ΣΤΑΘΕΡΕΣ =====
   var GRID = 8;
   var CELL = 40;                       // 8 × 40 = 320px λογικό canvas
-  var EXPORT_SIZE = 512;               // 8 × 64
+  var EXPORT_SIZE = 512;                // 8 × 64
   var LS_GALLERY = "pixelavatar.gallery.v1";
   var LS_STATE = "pixelavatar.state.v1";
+
+  // ===== i18n (κοινό μοτίβο σε όλη τη σουίτα) =====
+  var LANG_KEY = "soffitta.lang";
+
+  var T = {
+    title: {
+      en: "Pixel Avatar Maker — Soffitta",
+      el: "Pixel Avatar Maker — Soffitta"
+    },
+    metaDesc: {
+      en: "8×8 pixel avatars: every seed, a unique face. Deterministic generation, PNG export, a museum of favorites. Free, open source, no cookies, no tracking.",
+      el: "Πιξελάτα avatar 8×8: κάθε σπόρος, ένα μοναδικό πρόσωπο. Καθοριστική γέννηση, εξαγωγή PNG, μουσείο αγαπημένων. Χωρίς cookies, χωρίς tracking."
+    },
+    ariaSeed: { en: "Avatar seed", el: "Σπόρος avatar" },
+    tLoadSeed: { en: "Load this seed", el: "Φόρτωσε τον σπόρο" },
+    tCopySeed: { en: "Copy seed", el: "Αντιγραφή σπόρου" },
+    seedLabel: { en: "Seed", el: "Σπόρος" },
+    saved: { en: "Saved to museum", el: "Σώθηκε στο μουσείο" },
+    restored: { en: "Restored", el: "Επαναφέρθηκε" },
+    copied: { en: "Seed copied", el: "Ο σπόρος αντιγράφηκε" }
+  };
+
+  function detectLang() {
+    try {
+      var saved = localStorage.getItem(LANG_KEY);
+      if (saved === "en" || saved === "el") return saved;
+    } catch (e) {}
+    var nav = (navigator.language || "en").slice(0, 2).toLowerCase();
+    return nav === "el" ? "el" : "en";
+  }
+
+  var currentLang = detectLang();
+
+  function applyStatic() {
+    document.documentElement.setAttribute("lang", currentLang);
+    document.title = T.title[currentLang];
+    var metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute("content", T.metaDesc[currentLang]);
+    var nodes = document.querySelectorAll("[data-en]");
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].textContent = currentLang === "el"
+        ? nodes[i].getAttribute("data-el")
+        : nodes[i].getAttribute("data-en");
+    }
+    langEnBtn.classList.toggle("active", currentLang === "en");
+    langElBtn.classList.toggle("active", currentLang === "el");
+    seedInput.setAttribute("aria-label", T.ariaSeed[currentLang]);
+    loadSeedBtn.title = T.tLoadSeed[currentLang];
+    copySeedBtn.title = T.tCopySeed[currentLang];
+    renderGallery(); // captions «Σπόρος: …» στη νέα γλώσσα
+  }
+
+  function setLang(lang) {
+    currentLang = lang;
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    applyStatic();
+  }
+
+  langEnBtn.addEventListener("click", function () { setLang("en"); });
+  langElBtn.addEventListener("click", function () { setLang("el"); });
 
   // ===== ΠΑΛΕΤΕΣ =====
   var PAL = [
@@ -314,12 +450,18 @@
     return mulberry32(xmur3(seedStr || "lumo")());
   }
 
+  // bug #2: crypto fallback — το seed δεν είναι κρυπτογραφικό μυστικό,
+  // το Math.random αρκεί ως εναλλακτική σε περιβάλλοντα χωρίς getRandomValues
   function randomSeedStr() {
     var abc = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
     var s = "";
-    var buf = new Uint32Array(6);
-    (window.crypto || window.msCrypto).getRandomValues(buf);
-    for (var i = 0; i < 6; i++) s += abc[buf[i] % abc.length];
+    if (window.crypto && window.crypto.getRandomValues) {
+      var buf = new Uint32Array(6);
+      window.crypto.getRandomValues(buf);
+      for (var i = 0; i < 6; i++) s += abc[buf[i] % abc.length];
+    } else {
+      for (var j = 0; j < 6; j++) s += abc[Math.floor(Math.random() * abc.length)];
+    }
     return s;
   }
 
@@ -384,7 +526,7 @@
       put(5, eyeRow + 1, eyeC);
     }
 
-    // Ξανθιές παρειές (μόνο πάνω σε δέρμα)
+    // Πάλλευρες παρειές (μόνο πάνω σε δέρμα)
     if (blushOn) {
       if (at(1, eyeRow + 1) === skin) put(1, eyeRow + 1, "#e89090");
       if (at(6, eyeRow + 1) === skin) put(6, eyeRow + 1, "#e89090");
@@ -487,13 +629,13 @@
       mc.width = 64;
       mc.height = 64;
       paintPixels(item.pixels, item.pal, mc.getContext("2d"), 8);
-      mc.title = "Σπόρος: " + item.seed;
+      mc.title = T.seedLabel[currentLang] + ": " + item.seed;
       mc.addEventListener("click", function () {
         seedInput.value = item.seed;
         currentPal = item.pal;
         buildPaletteUI();
         render();
-        showToast("Επαναφέρθηκε: " + item.seed);
+        showToast(T.restored[currentLang] + ": " + item.seed);
       });
       galleryEl.appendChild(mc);
     });
@@ -508,7 +650,7 @@
     if (gallery.length > 8) gallery = gallery.slice(0, 8);
     saveGallery();
     renderGallery();
-    showToast("Σώθηκε στο μουσείο");
+    showToast(T.saved[currentLang]);
   });
 
   // ===== ΕΞΑΓΩΓΗ PNG =====
@@ -544,7 +686,7 @@
 
   copySeedBtn.addEventListener("click", function () {
     var txt = seedInput.value;
-    function ok() { showToast("Ο σπόρος αντιγράφηκε"); }
+    function ok() { showToast(T.copied[currentLang]); }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(txt).then(ok, ok);
     } else {
@@ -558,7 +700,7 @@
     }
   });
 
-  // ===== TOAST (δημιουργείται δυναμικά — δεν χρειάζεται markup) =====
+  // ===== TOAST (δημιουργείται δυναμικά) =====
   var toastEl = null;
   var toastTimer = null;
 
@@ -583,9 +725,12 @@
   }
 
   // ===== ΠΛΗΚΤΡΟΛΟΓΙΟ (R / P / D) =====
+  // bug #1: modifiers — Ctrl+R (reload) και Ctrl+P (print) δεν πειράζουν το app
+  // bug #4: exclusion και για buttons — πλήρες suite pattern
   document.addEventListener("keydown", function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
     var tag = (e.target && e.target.tagName || "").toLowerCase();
-    if (tag === "input" || tag === "textarea" || tag === "select") return;
+    if (tag === "input" || tag === "textarea" || tag === "select" || tag === "button") return;
     var k = e.key.toLowerCase();
     if (k === "r") reroll();
     else if (k === "p") {
@@ -596,8 +741,39 @@
     else if (k === "d") dlBtn.click();
   });
 
+  // ===== ΕΓΚΑΤΑΣΤΑΣΗ (PWA) =====
+  var deferredPrompt = null;
+
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.hidden = false;
+  });
+
+  installBtn.addEventListener("click", function () {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  window.addEventListener("appinstalled", function () {
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  // ===== SERVICE WORKER (offline — κοινός SW της σουίτας στη ρίζα) =====
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("../sw.js").catch(function (err) {
+        console.warn("SW registration failed:", err);
+      });
+    });
+  }
+
   // ===== INIT =====
   loadState();
+  applyStatic();
   buildPaletteUI();
   render();
   renderGallery();

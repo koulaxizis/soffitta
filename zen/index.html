@@ -1,10 +1,22 @@
 <!DOCTYPE html>
-<html lang="el">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Micro-Zen</title> <!-- SUITE NAME prefix όταν επιλεγεί το όνομα -->
-<meta name="description" content="Ένας κύκλος αναπνοής και ένα λεπτό ησυχίας. Διάταξεις 4-4-4 και 4-7-8. Χωρίς cookies, χωρίς tracking.">
+<title>Micro-Zen — Soffitta</title>
+<meta name="description" content="A breathing circle and a minute of quiet. 4-4-4 and 4-7-8 patterns, sessions of 1–5 minutes. Free, open source, no cookies, no tracking.">
+<link rel="canonical" href="https://soffitta.site/zen/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://soffitta.site/zen/">
+<meta property="og:title" content="Micro-Zen — Soffitta">
+<meta property="og:description" content="A breathing circle and a minute of quiet — 4-4-4, 4-7-8, coherent breathing.">
+<!-- TODO (αργότερα): og-cover.png 1200×630 στον φάκελο zen/ -->
+<meta property="og:image" content="https://soffitta.site/zen/og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0c1410">
+<link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230c1410'/%3E%3Cpath d='M10 35L32 11L54 35' fill='none' stroke='%23e6ce9a' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='25' y='40' width='14' height='13' rx='3' fill='%23a5d6a7'/%3E%3C/svg%3E">
+<link rel="manifest" href="../manifest.webmanifest">
 <style>
   :root {
     --bg: #0c1410;
@@ -45,6 +57,46 @@
   header h1 span { color: var(--accent); }
   header .session { font-size: 0.8rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
+  /* ===== ΕΡΓΑΛΕΙΑ (γλώσσα + εγκατάσταση) ===== */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .lang-switch {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .lang-switch button {
+    background: none;
+    border: none;
+    padding: 6px 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+    letter-spacing: 0.04em;
+  }
+
+  .lang-switch button.active {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  #installBtn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font: 700 0.75rem "Segoe UI", system-ui, sans-serif;
+  }
+  #installBtn:hover { border-color: var(--accent); }
+
   main {
     flex: 1;
     position: relative;
@@ -55,6 +107,7 @@
     justify-content: center;
     gap: 30px;
     padding: 20px;
+    overflow-y: auto;
   }
 
   /* ===== ΚΥΚΛΟΣ ΑΝΑΠΝΟΗΣ ===== */
@@ -108,6 +161,7 @@
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: #17301a;
+    text-align: center;
   }
 
   .core .count {
@@ -119,7 +173,7 @@
     margin-top: 2px;
   }
 
-  /* Ήπια παλμική εξωτερική λάμψη στον χτυπημό */
+  /* Ήπια παλμική εξωτερική λάμψη */
   .ring.pulse {
     width: 46%;
     height: 46%;
@@ -243,100 +297,195 @@
   }
 </style>
 </head>
+
 <body>
 
 <header>
-  <h1>🌬️ Micro-<span>Zen</span></h1>
-  <span class="session" id="sessionEl">0 αναπνοές · 00:00</span>
+  <div>
+    <h1>🌬️ Micro-<span>Zen</span></h1>
+  </div>
+  <div class="toolbar">
+    <span class="session" id="sessionEl">0 breaths · 00:00</span>
+    <button id="installBtn" hidden data-en="⬇ Install app" data-el="⬇ Εγκατάσταση">⬇ Install app</button>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button id="langEn" class="active">EN</button>
+      <button id="langEl">ΕΛ</button>
+    </div>
+  </div>
 </header>
 
 <main id="main">
 
-  <div class="breath-stage" id="breathStage" role="button" tabindex="0" aria-label="Έναρξη ή παύση αναπνοής">
+  <div class="breath-stage" id="breathStage" role="button" tabindex="0"
+       data-aria-en="Start or pause breathing" data-aria-el="Έναρξη ή παύση αναπνοής"
+       aria-label="Start or pause breathing">
     <div class="ring outer"></div>
     <div class="ring mid"></div>
     <div class="ring pulse" id="pulseRing"></div>
     <div class="core" id="coreCircle">
-      <span class="phase" id="phaseEl">Έτοιμο</span>
+      <span class="phase" id="phaseEl">Ready</span>
       <span class="count" id="countEl">●</span>
     </div>
   </div>
 
-  <p class="tap-hint">Άγγιξε τον κύκλο για έναρξη</p>
+  <p class="tap-hint" data-en="Tap the circle to begin" data-el="Άγγιξε τον κύκλο για έναρξη">Tap the circle to begin</p>
 
   <div class="controls">
     <button class="pattern active" data-pattern="444">
-      Τετράγωνο
-      <small>4–4–4 · ισορροπία</small>
+      <span data-en="Box" data-el="Τετράγωνο">Box</span>
+      <small>4–4–4 · <span data-en="balance" data-el="ισορροπία">balance</span></small>
     </button>
     <button class="pattern" data-pattern="478">
-      Χαλάρωση
-      <small>4–7–8 · ύπνος</small>
+      <span data-en="Relax" data-el="Χαλάρωση">Relax</span>
+      <small>4–7–8 · <span data-en="sleep" data-el="ύπνος">sleep</span></small>
     </button>
-    <button class="pattern" data-pattern=" coherent">
-      Συνεκτικό
-      <small>5,5 συνεχόμενες</small>
+    <button class="pattern" data-pattern="coherent">
+      <span data-en="Coherent" data-el="Συνεκτικό">Coherent</span>
+      <small>5.5 <span data-en="continuous" data-el="συνεχόμενες">continuous</span></small>
     </button>
   </div>
 
   <div class="duration">
-    <span>Διάρκεια:</span>
+    <span data-en="Duration:" data-el="Διάρκεια:">Duration:</span>
     <button data-min="1">1′</button>
     <button data-min="3" class="active">3′</button>
     <button data-min="5">5′</button>
-    <button data-min="0">Ελεύθερο</button>
+    <button data-min="0" data-en="Free" data-el="Ελεύθερο">Free</button>
   </div>
 
 </main>
 
 <footer>
-  Designed by <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
-  <a href="../">Όλα τα apps</a><br>
-  Χωρίς cookies · Χωρίς tracking · Open source · <span class="kbd">Space</span> έναρξη/παύση
+  <span data-en="Designed by" data-el="Σχεδιασμένο από τον">Designed by</span>
+  <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+  <a href="../" data-en="All apps" data-el="Όλα τα apps">All apps</a><br>
+  <span data-en="No cookies · No tracking · Open source" data-el="Χωρίς cookies · Χωρίς tracking · Ανοιχτού κώδικα">No cookies · No tracking · Open source</span>
+  · <span class="kbd">Space</span>
+  <span data-en="start/pause" data-el="έναρξη/παύση">start/pause</span>
 </footer>
 
 <script>
 "use strict";
 (function () {
 
+  // ===== DOM =====
   var stage = document.getElementById("breathStage");
   var core = document.getElementById("coreCircle");
   var pulse = document.getElementById("pulseRing");
   var phaseEl = document.getElementById("phaseEl");
   var countEl = document.getElementById("countEl");
   var sessionEl = document.getElementById("sessionEl");
+  var langEnBtn = document.getElementById("langEn");
+  var langElBtn = document.getElementById("langEl");
+  var installBtn = document.getElementById("installBtn");
+
+  // ===== i18n (κοινό μοτίβο σε όλη τη σουίτα) =====
+  var LANG_KEY = "soffitta.lang";
+
+  var T = {
+    title: {
+      en: "Micro-Zen — Soffitta",
+      el: "Micro-Zen — Soffitta"
+    },
+    metaDesc: {
+      en: "A breathing circle and a minute of quiet. 4-4-4 and 4-7-8 patterns, sessions of 1–5 minutes. Free, open source, no cookies, no tracking.",
+      el: "Ένας κύκλος αναπνοής και ένα λεπτό ησυχίας. Διάταξεις 4-4-4 και 4-7-8, συνεδρίες 1–5 λεπτών. Χωρίς cookies, χωρίς tracking."
+    },
+    breaths: { en: "breaths", el: "αναπνοές" },
+    ready: { en: "Ready", el: "Έτοιμο" },
+    paused: { en: "Paused", el: "Παύση" },
+    wellDone: { en: "Well done", el: "Καλά τα πήγες" },
+    inhale: { en: "Inhale", el: "Εισπνοή" },
+    hold: { en: "Hold", el: "Κράτα" },
+    exhale: { en: "Exhale", el: "Εκπνοή" },
+    ariaStage: { en: "Start or pause breathing", el: "Έναρξη ή παύση αναπνοής" }
+  };
 
   // ===== ΠΡΟΓΡΑΜΜΑΤΑ ΑΝΑΠΝΟΗΣ =====
   var PATTERNS = {
-    "444": { name: "Τετράγωνο", phases: [
-      { key: "in",  label: "Εισπνοή",  secs: 4 },
-      { key: "hold",label: "Κράτα",    secs: 4 },
-      { key: "out", label: "Εκπνοή",   secs: 4 }
+    "444": { phases: [
+      { key: "in",   secs: 4 },
+      { key: "hold", secs: 4 },
+      { key: "out",  secs: 4 }
     ]},
-    "478": { name: "Χαλάρωση", phases: [
-      { key: "in",  label: "Εισπνοή",  secs: 4 },
-      { key: "hold",label: "Κράτα",    secs: 7 },
-      { key: "out", label: "Εκπνοή",   secs: 8 }
+    "478": { phases: [
+      { key: "in",   secs: 4 },
+      { key: "hold", secs: 7 },
+      { key: "out",  secs: 8 }
     ]},
-    "coherent": { name: "Συνεκτικό", phases: [
-      { key: "in",  label: "Εισπνοή",  secs: 5.5 },
-      { key: "out", label: "Εκπνοή",   secs: 5.5 }
+    "coherent": { phases: [
+      { key: "in",  secs: 5.5 },
+      { key: "out", secs: 5.5 }
     ]}
   };
 
-  var patternKey = "444";
-  var targetMinutes = 3; // 0 = ελεύθερο
+  // Φάσεις: label από το T ανά ενεργή γλώσσα
+  function phaseLabel(key) {
+    if (key === "in") return T.inhale[currentLang];
+    if (key === "hold") return T.hold[currentLang];
+    return T.exhale[currentLang];
+  }
 
   // ===== STATE =====
   var running = false;
+  var paused = false;        // bug #2: καθαρή flag, όχι string compare
+  var finished = false;      // «Καλά τα πήγες» — ξεκινάμε νέα συνεδρία μετά
   var phaseIdx = 0;
-  var phaseElapsed = 0;     // δευτ. στην τρέχουσα φάση
+  var phaseElapsed = 0;      // δευτ. στην τρέχουσα φάση
   var breathCount = 0;
   var totalSeconds = 0;
   var lastTs = 0;
 
+  var patternKey = "444";
+  var targetMinutes = 3; // 0 = ελεύθερο
+
   // Scale του κύκλου ανά φάση
   var SCALE = { in: 1.6, hold: 1.6, out: 1 };
+
+  // ===== i18n APPLY =====
+  var currentLang = detectLang();
+
+  function detectLang() {
+    try {
+      var saved = localStorage.getItem(LANG_KEY);
+      if (saved === "en" || saved === "el") return saved;
+    } catch (e) {}
+    var nav = (navigator.language || "en").slice(0, 2).toLowerCase();
+    return nav === "el" ? "el" : "en";
+  }
+
+  function applyStatic() {
+    document.documentElement.setAttribute("lang", currentLang);
+    document.title = T.title[currentLang];
+    var metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute("content", T.metaDesc[currentLang]);
+    var nodes = document.querySelectorAll("[data-en]");
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].textContent = currentLang === "el"
+        ? nodes[i].getAttribute("data-el")
+        : nodes[i].getAttribute("data-en");
+    }
+    langEnBtn.classList.toggle("active", currentLang === "en");
+    langElBtn.classList.toggle("active", currentLang === "el");
+    stage.setAttribute("aria-label", T.ariaStage[currentLang]);
+
+    // Τρέχουσα κατάσταση στην ενεργή γλώσσα (χωρίς να πειράξει το engine)
+    if (finished) phaseEl.textContent = T.wellDone[currentLang];
+    else if (!running) phaseEl.textContent = T.ready[currentLang];
+    else if (paused) phaseEl.textContent = T.paused[currentLang];
+    else phaseEl.textContent = phaseLabel(currentPhase().key);
+
+    updateSessionText();
+  }
+
+  function setLang(lang) {
+    currentLang = lang;
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    applyStatic();
+  }
+
+  langEnBtn.addEventListener("click", function () { setLang("en"); });
+  langElBtn.addEventListener("click", function () { setLang("el"); });
 
   // ===== ΚΥΚΛΟΣ =====
   function setScale(s) {
@@ -356,7 +505,7 @@
     phaseIdx = (phaseIdx + 1) % PATTERNS[patternKey].phases.length;
     phaseElapsed = 0;
     var np = currentPhase();
-    phaseEl.textContent = np.label;
+    phaseEl.textContent = phaseLabel(np.key);
     applyPhaseScale(np.key);
     if (np.secs % 1 !== 0) {
       countEl.textContent = ""; // δεκαδικά — μόνο ο κύκλος μετράει
@@ -364,15 +513,11 @@
   }
 
   function applyPhaseScale(key) {
-    if (key === "in") {
-      // Μεγάλωμα με ομαλή μετάβαση ανάλογα με διάρκεια εισπνοής
-      core.style.transition = "transform " + currentPhase().secs + "s ease-in-out";
-      pulse.style.transition = "transform " + currentPhase().secs + "s ease-in-out";
-      setScale(SCALE.in);
-    } else if (key === "out") {
-      core.style.transition = "transform " + currentPhase().secs + "s ease-in-out";
-      pulse.style.transition = "transform " + currentPhase().secs + "s ease-in-out";
-      setScale(SCALE.out);
+    if (key === "in" || key === "out") {
+      var dur = currentPhase().secs;
+      core.style.transition = "transform " + dur + "s ease-in-out";
+      pulse.style.transition = "transform " + dur + "s ease-in-out";
+      setScale(key === "in" ? SCALE.in : SCALE.out);
     }
     // hold: μένει στη θέση του (transition ήδη ολοκληρωμένο)
   }
@@ -408,15 +553,17 @@
   function updateSessionText() {
     var mm = Math.floor(totalSeconds / 60);
     var ss = Math.floor(totalSeconds % 60);
-    sessionEl.textContent = breathCount + " αναπνοές · " +
+    sessionEl.textContent = breathCount + " " + T.breaths[currentLang] + " · " +
       ("0" + mm).slice(-2) + ":" + ("0" + ss).slice(-2);
   }
 
   function startSession() {
     running = true;
+    paused = false;
+    finished = false;
     phaseIdx = 0;
     phaseElapsed = 0;
-    phaseEl.textContent = currentPhase().label;
+    phaseEl.textContent = phaseLabel(currentPhase().key);
     if (currentPhase().secs % 1 === 0) {
       countEl.textContent = String(currentPhase().secs);
     }
@@ -427,34 +574,43 @@
 
   function pauseSession() {
     running = false;
-    phaseEl.textContent = "Παύση";
+    paused = true;
+    phaseEl.textContent = T.paused[currentLang];
   }
 
   function resumeSession() {
     running = true;
+    paused = false;
     lastTs = 0;
-    phaseEl.textContent = currentPhase().label;
-    applyPhaseScale(currentPhase().key);
+    phaseEl.textContent = phaseLabel(currentPhase().key);
+    // Το transition ξαναπιάνει από την τρέχουσα κλίμακα —
+    // δεν ξανατρέχουμε applyPhaseScale ώστε να μη «χτενίζει» η αρχή της φάσης
     requestAnimationFrame(tick);
   }
 
   function finishSession() {
     running = false;
-    phaseEl.textContent = "Καλά τα πήγες";
+    finished = true;
+    phaseEl.textContent = T.wellDone[currentLang];
     countEl.textContent = "🙏";
+    core.style.transition = "transform 0.6s ease-out";
+    pulse.style.transition = "transform 0.6s ease-out";
     setScale(1);
   }
 
-  // ===== ΕΝΑΡΞΗ / ΠΑΥΣΗ =====
+  // ===== ΕΝΑΡΞΗ / ΠΑΥΣΗ (καθαρό state machine — bug #2) =====
   function toggle() {
     if (!running) {
-      if (totalSeconds > 0 && phaseEl.textContent === "Παύση") {
-        resumeSession();
-      } else {
-        totalSeconds = 0;
+      if (paused) {
+        resumeSession();          // συνέχεια από εκεί που σταμάτησε
+      } else if (finished || totalSeconds > 0) {
+        totalSeconds = 0;         // νέα συνεδρία
         breathCount = 0;
+        finished = false;
         updateSessionText();
         startSession();
+      } else {
+        startSession();           // πρώτη έναρξη
       }
     } else {
       pauseSession();
@@ -462,6 +618,7 @@
   }
 
   stage.addEventListener("click", toggle);
+
   stage.addEventListener("keydown", function (e) {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -480,12 +637,14 @@
       btn.classList.add("active");
       // Επανεκκίνηση με νέο ρυθμό
       running = false;
+      paused = false;
+      finished = false;
       totalSeconds = 0;
       breathCount = 0;
       phaseIdx = 0;
       phaseElapsed = 0;
       setScale(1);
-      phaseEl.textContent = "Έτοιμο";
+      phaseEl.textContent = T.ready[currentLang];
       countEl.textContent = "●";
       updateSessionText();
     });
@@ -501,11 +660,12 @@
     });
   });
 
-  // ===== ΠΛΗΚΤΡΟΛΟΓΙΟ =====
+  // ===== ΠΛΗΚΤΡΟΛΟΓΙΟ (bug #1: το stage έχει το δικό του handler) =====
   document.addEventListener("keydown", function (e) {
     if (e.code !== "Space") return;
     var tag = (e.target && e.target.tagName || "").toLowerCase();
     if (tag === "input" || tag === "select" || tag === "textarea" || tag === "button") return;
+    if (e.target === stage) return; // το stage το χειρίζεται μόνο του (Enter/Space)
     e.preventDefault();
     toggle();
   });
@@ -525,8 +685,38 @@
     }
   })();
 
+  // ===== ΕΓΚΑΤΑΣΤΑΣΗ (PWA) =====
+  var deferredPrompt = null;
+
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.hidden = false;
+  });
+
+  installBtn.addEventListener("click", function () {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  window.addEventListener("appinstalled", function () {
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  // ===== SERVICE WORKER (offline — κοινός SW της σουίτας στη ρίζα) =====
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("../sw.js").catch(function (err) {
+        console.warn("SW registration failed:", err);
+      });
+    });
+  }
+
   // ===== INIT =====
-  updateSessionText();
+  applyStatic(); // i18n + κατάσταση «Ready» στην ενεργή γλώσσα + session text
 
 })();
 </script>

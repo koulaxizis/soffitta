@@ -3,22 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Netizen ID — Create your digital identity card</title>
+<title>Netizen ID — Soffitta</title>
 <meta name="description" content="Build your netizen identity card: pixel art avatar, fully optional fields, export in 7 formats. No tracking, no accounts, no network calls.">
 <meta name="author" content="Christos Koulaxizis">
 <meta name="robots" content="index, follow, max-image-preview:large">
-<meta name="color-scheme" content="dark light">
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="manifest" href="manifest.json">
+<link rel="canonical" href="https://soffitta.site/netizen/">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Netizen ID — Your digital identity card">
+<meta property="og:url" content="https://soffitta.site/netizen/">
+<meta property="og:title" content="Netizen ID — Soffitta">
 <meta property="og:description" content="Pixel avatar, optional disclosure, export as PNG/JPG/GIF/WEBP/SVG/PDF/HTML.">
-<meta property="og:image" content="og-cover.png">
+<!-- TODO (αργότερα): og-cover.png 1200×630 στον φάκελο netizen/ -->
+<meta property="og:image" content="https://soffitta.site/netizen/og-cover.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta property="og:url" content="./">
 <meta name="theme-color" content="#15121a">
-<link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2315121a'/%3E%3Cpath d='M10 35L32 11L54 35' fill='none' stroke='%23e6ce9a' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='25' y='40' width='14' height='13' rx='3' fill='%23ff5d5d'/%3E%3C/svg%3E">
+<link rel="manifest" href="../manifest.webmanifest">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebApplication","name":"Netizen ID",
 "description":"Netizen identity card generator with pixel art avatar.",
@@ -27,7 +27,630 @@
 "author":{"@type":"Person","name":"Christos Koulaxizis","url":"https://koulaxizis.gr"},
 "license":"https://opensource.org/licenses/MIT"}
 </script>
+<style>
+/* ============================================================
+   NETIZEN ID — style (Soffitta port, dark-only UI)
+   Palette: "Sunset Terminal"
+   Designed by Christos Koulaxizis — MIT License
+   ============================================================ */
+
+/* ---------- Theme variables (dark UI) ---------- */
+:root {
+  --bg:        #15121a;
+  --surface:   #211c2b;
+  --surface-2: #2a2337;
+  --border:    #372f47;
+  --text:      #f2ecf7;
+  --text-dim:  #a79db5;
+  --accent:    #ff5c5c;
+  --accent-dk: #d94a4a;
+  --secondary: #0fbfa0;
+  --gold:      #ffb454;
+  --shadow:    0 2px 16px rgba(0, 0, 0, 0.45);
+}
+
+/* ---------- Reset-ish ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: "SF Mono", "Cascadia Code", ui-monospace,
+               Menlo, Consolas, monospace;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+::selection { background: var(--accent); color: #fff; }
+
+a { color: var(--secondary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+img, svg { display: block; max-width: 100%; }
+
+/* ---------- Header ---------- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1.25rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+.brand em { color: var(--accent); font-style: normal; }
+
+.logo svg { width: 26px; height: 26px; }
+.logo .lg-bg { fill: var(--accent); }
+
+.controls { display: flex; align-items: center; gap: 0.5rem; }
+
+/* ΕΡΓΑΛΕΙΑ ΣΟΥΙΤΑΣ (γλώσσα + εγκατάσταση) */
+.lang-switch {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.lang-switch button {
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  color: var(--text-dim);
+  cursor: pointer;
+  font: 700 0.75rem "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  letter-spacing: 0.04em;
+}
+
+.lang-switch button.active {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+#installBtn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font: 700 0.75rem "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+#installBtn:hover { border-color: var(--accent); }
+
+/* ---------- Split view layout ---------- */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(340px, 46%) 1fr;
+  gap: 1.5rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 2.5rem;
+  align-items: start;
+}
+
+.pane { min-width: 0; }
+
+.pane-preview {
+  position: sticky;
+  top: 76px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.pane-title {
+  margin: 0;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+}
+
+.actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+/* ---------- Buttons ---------- */
+.btn, .actions button {
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease,
+              border-color 0.15s ease;
+}
+.btn:hover, .actions button:hover {
+  border-color: var(--secondary);
+  transform: translateY(-1px);
+}
+
+.btn.primary, .actions .primary {
+  background: var(--accent);
+  border-color: var(--accent-dk);
+  color: #fff;
+  font-weight: 700;
+}
+.btn.primary:hover, .actions .primary:hover { background: var(--accent-dk); }
+
+.btn.secondary { border-color: var(--secondary); color: var(--secondary); }
+
+/* ---------- Card stage ---------- */
+.card-stage {
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 1.1rem;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+/* ============================================================
+   THE ID CARD — ISO ID-1 ratio (85.6 × 54 mm ≈ 1.585)
+   ============================================================ */
+.id-card {
+  --card-bg:     #ffffff;
+  --card-ink:    #231d2b;
+  --card-accent: #ff5d5d;
+  --card-sub:    #6f6679;
+
+  display: grid;
+  grid-template-columns: 118px 1fr 74px;
+  gap: 0.9rem;
+  aspect-ratio: 85.6 / 54;
+  padding: 1rem 1.15rem;
+  background: var(--card-bg);
+  color: var(--card-ink);
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.28);
+  font-size: clamp(8px, 1.35vw, 13px);
+}
+
+/* subtle guilloché-ish top band */
+.id-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 8px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--card-accent) 0 14px,
+    var(--gold) 14px 22px,
+    var(--secondary) 22px 34px
+  );
+}
+.id-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(var(--card-ink) 0.5px, transparent 0.6px);
+  background-size: 4px 4px;
+  opacity: 0.05;
+}
+
+/* Photo frame (left) */
+.card-photo {
+  align-self: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 2px solid var(--card-ink);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--photo-bg, #ddd0ee);
+  image-rendering: pixelated;
+  display: grid;
+  place-items: center;
+}
+.card-photo canvas, .card-photo img { width: 100%; height: 100%; }
+
+/* Middle: fields */
+.card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.3em;
+  min-width: 0;
+  z-index: 1;
+}
+
+.card-headline {
+  font-size: 1.5em;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 0.15em;
+}
+.card-headline .cc { color: var(--card-accent); }
+
+.card-username {
+  font-size: 1.25em;
+  font-weight: 700;
+  margin: 0 0 0.35em;
+  overflow-wrap: anywhere;
+}
+
+.card-bio {
+  font-style: italic;
+  font-size: 0.85em;
+  color: var(--card-sub);
+  margin: 0.2em 0 0;
+  overflow-wrap: anywhere;
+}
+
+.card-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 0.5em;
+  font-size: 1em;
+  align-items: baseline;
+}
+.card-row dt {
+  text-transform: uppercase;
+  font-size: 0.72em;
+  letter-spacing: 0.08em;
+  color: var(--card-sub);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.card-row dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.card-tags { display: flex; flex-wrap: wrap; gap: 0.35em; margin-top: 0.45em; }
+.card-tag {
+  font-size: 0.72em;
+  font-weight: 700;
+  padding: 0.12em 0.55em;
+  border: 1px solid var(--card-accent);
+  border-radius: 999px;
+  color: var(--card-accent);
+  letter-spacing: 0.04em;
+}
+
+/* Right rail: serial + barcode */
+.card-rail {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  text-align: right;
+  z-index: 1;
+  padding-top: 0.5em;
+}
+
+.card-serial {
+  font-size: 0.68em;
+  letter-spacing: 0.14em;
+  color: var(--card-sub);
+  font-weight: 700;
+}
+
+.card-barcode {
+  width: 100%;
+  height: 38%;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 2px;
+  gap: 1px;
+  align-content: end;
+}
+.card-barcode span { background: var(--card-ink); height: 100%; }
+.card-barcode span.on { height: 100%; }
+.card-barcode span.off { height: 40%; opacity: 0.25; }
+
+.card-issue {
+  font-size: 0.62em;
+  color: var(--card-sub);
+  letter-spacing: 0.06em;
+}
+
+/* Card color schemes offered to user */
+.id-card.scheme-terminal { --card-bg:#211c2b; --card-ink:#f2ecf7; --card-sub:#a79db5; }
+.id-card.scheme-paper     { --card-bg:#faf6ef; --card-ink:#231d2b; --card-sub:#6f6679; }
+.id-card.scheme-mint      { --card-bg:#eafaf5; --card-ink:#0d3d33; --card-sub:#4e7d72; --card-accent:#00b89c; }
+.id-card.scheme-rose      { --card-bg:#fff0ef; --card-ink:#33161a; --card-sub:#8a5b5f; }
+
+/* ---------- Form panel ---------- */
+.pane-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pane-form h2 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+#identityForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.8rem; }
+.field label { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; }
+
+#identityForm details {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.15rem 0.9rem 0.8rem;
+  margin-bottom: 0.75rem;
+}
+
+#identityForm summary {
+  cursor: pointer;
+  padding: 0.45rem 0;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+#identityForm summary::-webkit-details-marker { display: none; }
+#identityForm summary::before { content: "▸"; color: var(--accent); transition: transform 0.15s; }
+#identityForm details[open] summary::before { transform: rotate(90deg); }
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 0.6rem;
+}
+
+input[type="text"], input[type="date"], input[type="password"],
+input[type="email"], textarea, select {
+  width: 100%;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.65rem;
+  font-family: inherit;
+  font-size: 0.88rem;
+  transition: border-color 0.15s ease;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--secondary);
+}
+textarea { resize: vertical; min-height: 2.6em; }
+
+input[type="color"] {
+  width: 44px; height: 34px;
+  padding: 2px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--surface-2);
+  cursor: pointer;
+}
+
+/* Tags / characteristics */
+#characteristics {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 0.8rem 0.9rem;
+  margin: 0 0 0.75rem;
+}
+#characteristics legend { padding: 0 0.4rem; font-weight: 700; font-size: 0.9rem; }
+
+.tags-list { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+
+.tag-chip {
+  font-family: inherit;
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.tag-chip:hover { border-color: var(--accent); color: var(--text); }
+.tag-chip.active {
+  background: var(--accent);
+  border-color: var(--accent-dk);
+  color: #fff;
+  font-weight: 700;
+}
+
+.tag-add { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
+.tag-add input { flex: 1; }
+
+.note {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin: 0.6rem 0 0;
+}
+
+/* Avatar editor (classes produced by the avatar engine initUI) */
+.avatar-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.avatar-dl {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px dashed var(--border);
+}
+.avatar-dl-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+.avatar-dl .btn { padding: 0.3rem 0.7rem; font-size: 0.78rem; }
+
+/* Second avatar-dl row (tools) sits flush under the first */
+.avatar-dl + .avatar-dl {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chk input { width: auto; accent-color: var(--accent); cursor: pointer; }
+
+.dice-btn { align-self: flex-start; }
+
+.av-groups {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.av-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.35rem;
+}
+.av-field label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.swatch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.1s ease, border-color 0.1s ease;
+}
+.swatch:hover { transform: scale(1.12); }
+.swatch.active {
+  border-color: var(--text);
+  box-shadow: 0 0 0 2px var(--accent) inset;
+}
+.swatch-bg .swatch { border-color: var(--border); }
+
+/* ---------- Toast ---------- */
+#toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--accent);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 0.7rem 1.2rem;
+  box-shadow: var(--shadow);
+  z-index: 100;
+  font-size: 0.88rem;
+  animation: toast-in 0.25s ease;
+  max-width: min(92vw, 480px);
+}
+#toast.hidden { display: none; }
+#toast.ok  { border-color: var(--secondary); border-left-color: var(--secondary); }
+#toast.err { border-color: var(--accent);   border-left-color: var(--accent); }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ---------- Footer ---------- */
+.foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.9rem 1.25rem 1.4rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  letter-spacing: 0.03em;
+}
+.foot a { color: var(--text-dim); }
+.foot a:hover { color: var(--accent); text-decoration: none; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .pane-preview { position: static; }
+  .id-card { font-size: 10px; }
+}
+
+@media (max-width: 560px) {
+  .site-header { flex-wrap: wrap; }
+  .foot { flex-direction: column; text-align: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
 </head>
+
 <body>
 <header class="site-header">
   <a class="brand" href="./">
@@ -37,11 +660,11 @@
     <span>Netizen <em>ID</em></span>
   </a>
   <div class="controls">
-    <select id="lang-select" aria-label="Language">
-      <option value="en">EN</option>
-      <option value="el">ΕΛ</option>
-    </select>
-    <button id="theme-toggle" class="btn icon-btn" aria-label="Toggle theme"></button>
+    <button id="installBtn" hidden data-i18n="install_app">⬇ Install app</button>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button id="langEn" class="active">EN</button>
+      <button id="langEl">ΕΛ</button>
+    </div>
   </div>
 </header>
 
@@ -75,8 +698,8 @@
         <label for="username" data-i18n="username">Username *</label>
         <input type="text" id="username" name="username" maxlength="60" placeholder="koulaxizis" required>
       </div>
-	  
-	        <div class="field">
+
+      <div class="field">
         <label for="cardScheme" data-i18n="scheme_label">Card style</label>
         <select id="cardScheme">
           <option value="terminal">Terminal (dark)</option>
@@ -117,7 +740,7 @@
         <textarea name="bio" rows="3" placeholder="Say something memorable…"></textarea>
       </details>
 
-            <details open id="secAvatarAnchor"><summary data-i18n="sec_avatar">🎨 Pixel Art Avatar</summary>
+      <details open id="secAvatarAnchor"><summary data-i18n="sec_avatar">🎨 Pixel Art Avatar</summary>
         <div id="avatarControls"></div>
         <div class="avatar-dl">
           <span class="avatar-dl-label" data-i18n="av_dl">Download avatar:</span>
@@ -146,16 +769,1567 @@
 </main>
 
 <footer class="foot">
-  <span>No cookies · No tracking · No ads · No accounts · MIT</span>
-  <span>© <span id="year">2026</span> <a href="https://koulaxizis.gr">Christos Koulaxizis</a> · <a href="https://glarolykoi.net">glarolykoi.net</a> · <a href="https://noxpress.tech">noxpress.tech</a></span>
+  <span>
+    <span data-i18n="designed_by">Designed by</span>
+    <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+    <a href="https://glarolykoi.net" target="_blank" rel="noopener">glarolykoi.net</a> ·
+    <a href="https://noxpress.tech" target="_blank" rel="noopener">noxpress.tech</a> ·
+    <a href="../" data-i18n="all_apps">All apps</a>
+  </span>
+  <span data-i18n="privacy_line">No cookies · No tracking · No ads · No accounts · MIT</span>
 </footer>
 
 <div id="toast" class="hidden" role="status"></div>
 
 <script src="vendor/jspdf.umd.min.js" defer></script>
-<script src="gif.js" defer></script>
-<script src="avatar.js" defer></script>
-<script src="app.js" defer></script>
-<script src="exporter.js" defer></script>
+
+<script>
+"use strict";
+
+/* ============================================================
+   NETIZEN ID — 1/4: gif.js
+   Minimal single-frame GIF89a encoder (literal-code LZW)
+   Zero dependencies — MIT License — Christos Koulaxizis
+   ============================================================ */
+
+(function () {
+  "use strict";
+
+  /* Encode an opaque canvas to a valid static GIF.
+     Returns Uint8Array, or null on catastrophic failure. */
+  function encode(canvas) {
+    const w = canvas.width, h = canvas.height;
+    const img = canvas.getContext("2d").getImageData(0, 0, w, h).data;
+
+    /* Pass 1: exact palette. On overflow (>256 colors from antialiased
+       text edges), retry posterized to 51-step levels (max 216 colors). */
+    let res = buildIndex(img, w * h, 0);
+    if (!res) res = buildIndex(img, w * h, 51);
+    if (!res) return null;
+
+    const out = [];
+
+    /* Header: GIF89a */
+    out.push(0x47, 0x49, 0x46, 0x38, 0x39, 0x61);
+
+    /* Logical Screen Descriptor — no global color table */
+    out.push(w & 255, (w >> 8) & 255, h & 255, (h >> 8) & 255, 0x00, 0x00, 0x00);
+
+    /* Image Descriptor + Local Color Table (256 entries, flag 0x87) */
+    out.push(0x2C, 0, 0, 0, 0, w & 255, (w >> 8) & 255, h & 255, (h >> 8) & 255, 0x87);
+    for (let i = 0; i < 768; i++) out.push(i < res.palette.length ? res.palette[i] : 0);
+
+    /* LZW stream: literal codes only (valid, larger than compressed) */
+    out.push(8); /* minimum code size */
+    const lzw = lzwLiteral(res.index, res.palette.length / 3);
+    for (let i = 0; i < lzw.length; i += 255) {
+      const n = Math.min(255, lzw.length - i);
+      out.push(n);
+      for (let k = 0; k < n; k++) out.push(lzw[i + k]);
+    }
+    out.push(0x00); /* sub-block terminator */
+    out.push(0x3B); /* trailer */
+
+    return new Uint8Array(out);
+  }
+
+  function buildIndex(data, npix, quant) {
+    const map = new Map();
+    const palette = [];
+    const index = new Uint8Array(npix);
+    for (let i = 0, n = 0; n < npix; i += 4, n++) {
+      let r = data[i], g = data[i + 1], b = data[i + 2];
+      if (quant) {
+        r = Math.min(255, Math.round(r / quant) * quant);
+        g = Math.min(255, Math.round(g / quant) * quant);
+        b = Math.min(255, Math.round(b / quant) * quant);
+      }
+      const key = (r << 16) | (g << 8) | b;
+      let pi = map.get(key);
+      if (pi === undefined) {
+        if (palette.length === 768) return null; /* hit the 256-color cap */
+        pi = palette.length / 3;
+        map.set(key, pi);
+        palette.push(r, g, b);
+      }
+      index[n] = pi;
+    }
+    return { index, palette };
+  }
+
+  /* GIF LZW emitting only literal codes: decoder-compatible dictionary
+     growth tracked, CLEAR issued before the 4096-entry limit. */
+  function lzwLiteral(index, colorCount) {
+    const CLEAR = 256, EOI = 257;
+    const bytes = [];
+    let cur = 0, curBits = 0;
+    const emit = (code, size) => {
+      cur |= code << curBits;
+      curBits += size;
+      while (curBits >= 8) { bytes.push(cur & 255); cur >>= 8; curBits -= 8; }
+    };
+    let codeSize = 9;
+    let nextCode = 258;
+    let firstAfterClear = true;
+    emit(CLEAR, codeSize);
+    for (let n = 0; n < index.length; n++) {
+      emit(index[n], codeSize);
+      if (firstAfterClear) firstAfterClear = false;
+      else nextCode++;
+      if (nextCode === (1 << codeSize) && codeSize < 12) codeSize++;
+      if (nextCode === 4096) {
+        emit(CLEAR, codeSize);
+        codeSize = 9; nextCode = 258; firstAfterClear = true;
+      }
+    }
+    emit(EOI, codeSize);
+    if (curBits > 0) bytes.push(cur & 255);
+    return bytes;
+  }
+
+  window.NIDGif = { encode };
+})();
+
+/* ============================================================
+   NETIZEN ID — 2/4: avatar.js
+   Pixel Art Avatar Engine — 16×16, layered, zero dependencies
+   ============================================================ */
+
+(function () {
+  "use strict";
+
+  const SIZE = 16;
+
+  /* ---------- helpers ---------- */
+  const pad = (rows) => {
+    const g = rows.slice();
+    while (g.length < SIZE) g.push("");
+    return g;
+  };
+
+  function shade(hex, f) {
+    const n = parseInt(hex.slice(1), 16);
+    const r = Math.min(255, Math.round(((n >> 16) & 255) * f));
+    const g = Math.min(255, Math.round(((n >> 8) & 255) * f));
+    const b = Math.min(255, Math.round((n & 255) * f));
+    return "rgb(" + r + "," + g + "," + b + ")";
+  }
+
+  /* ---------- palettes ---------- */
+  const SKINS = [
+    { id: "porcelain", c: "#ffe0c7" },
+    { id: "sand",      c: "#f2c49b" },
+    { id: "tan",       c: "#d99a6c" },
+    { id: "brown",     c: "#a9673f" },
+    { id: "deep",      c: "#6f4429" },
+    { id: "leaf",      c: "#8ac926" },
+    { id: "forest",    c: "#588157" },
+    { id: "steel",     c: "#b8b8cc" },
+    { id: "graphite",  c: "#8d99ae" },
+    { id: "rustbot",   c: "#c1666b" }
+  ];
+
+  const HAIRS = [
+    { id: "black",    c: "#231d2b" },
+    { id: "brown",    c: "#6b4226" },
+    { id: "chestnut", c: "#9b5a3c" },
+    { id: "blonde",   c: "#e3b23c" },
+    { id: "red",      c: "#c0392b" },
+    { id: "auburn",   c: "#8b2500" },
+    { id: "silver",   c: "#95a5a6" },
+    { id: "white",    c: "#f2ecf7" },
+    { id: "coral",    c: "#ff5d5d" },
+    { id: "pink",     c: "#ff85a1" },
+    { id: "teal",     c: "#00b89c" },
+    { id: "blue",     c: "#70a1ff" },
+    { id: "green",    c: "#6ab04c" },
+    { id: "purple",   c: "#8e6fd8" }
+  ];
+
+  const SHIRTS = [
+    { id: "coral",  c: "#ff5d5d" },
+    { id: "teal",   c: "#00b89c" },
+    { id: "gold",   c: "#ffc24b" },
+    { id: "ink",    c: "#231d2b" },
+    { id: "paper",  c: "#f2ecf7" },
+    { id: "navy",   c: "#274690" },
+    { id: "olive",  c: "#606c38" },
+    { id: "wine",   c: "#9d0208" }
+  ];
+
+  const BGS = ["#ffe8d6", "#ffd6d6", "#d6f5ea", "#fff3c4", "#e6defc",
+               "#2a2337", "#231d2b", "#12303a", "#3d2b1f"];
+
+  /* ---------- face styles (base layer) ----------
+     S skin | s skin-shade | T shirt | t shirt-shade
+     H hair | K fixed dark      */
+  const FACES = {
+    human: pad([
+      "................",
+      ".....SSSSSS.....",
+      "....SSSSSSSS....",
+      "...SSSSSSSSSS...",
+      "...SSSSSSSSSS...",
+      "...SSSSSSSSSS...",
+      "...SSSSSSSSSS...",
+      "...SSSSSSSSSS...",
+      "....SSSSSSSS....",
+      ".....SSSSSS.....",
+      "......SSSS......",
+      "......SSSS......",
+      "......ssss......",
+      "...TTTTTTTTTT...",
+      "..TTTTTTTTTTTT..",
+      "..tTTTTTTTTTTt.."
+    ]),
+    robot: pad([
+      ".......K........",
+      ".......K........",
+      "....SSSSSSSS....",
+      "...SSSSSSSSSS...",
+      "..SSSSSSSSSSSS..",
+      "..SSSSSSSSSSSS..",
+      "..SSSSSSSSSSSS..",
+      "..SSSSSSSSSSSS..",
+      "..SSSSSSSSSSSS..",
+      "...SSSSSSSSSS...",
+      "....SSSSSSSS....",
+      "......SSSS......",
+      "......ssss......",
+      "...TTTTTTTTTT...",
+      "..TTTTTTTTTTTT..",
+      "..tTTTTTTTTTTt.."
+    ]),
+    plant: pad([
+      "......HHH.......",
+      ".....HHHHH......",
+      "......KK........",
+      "....SSSSSSSS....",
+      "...SSSSSSSSSS...",
+      "...SSSSSSSSSS...",
+      "...SSSSSSSSSS...",
+      "...SSSSSSSSSS...",
+      "...SSSSSSSSSS...",
+      "....SSSSSSSS....",
+      "......SSSS......",
+      "......SSSS......",
+      "......ssss......",
+      "...TTTTTTTTTT...",
+      "..TTTTTTTTTTTT..",
+      "..tTTTTTTTTTTt.."
+    ]),
+    cat: pad([
+      "..S..........S..",
+      "..SS........SS..",
+      "..SSSSSSSSSSSS..",
+      "...SSSSSSSSSS...",
+      "...SSSSSSSSSS...",
+      "...SSSSSSSSSS...",
+      "...SSSSSSSSSS...",
+      "...SSSSSSSSSS...",
+      "...SSSSSSSSSS...",
+      "....SSSSSSSS....",
+      "......SSSS......",
+      "......SSSS......",
+      "......ssss......",
+      "...TTTTTTTTTT...",
+      "..TTTTTTTTTTTT..",
+      "..tTTTTTTTTTTt.."
+    ])
+  };
+
+  /* ---------- hair ---------- */
+  const HAIRSTYLES = {
+    none: [],
+    short: pad([
+      "................",
+      "................",
+      "....HHHHHHHH....",
+      "...HHHHHHHHHH...",
+      "...HHhHHHHhHH...",
+      "...HHHHHHHHHH..."
+    ]),
+    buzz: pad([
+      "................",
+      "................",
+      "................",
+      "....HHHHHHHH....",
+      "...HHHHHHHHHH..."
+    ]),
+    long: pad([
+      "................",
+      ".....HHHHHH.....",
+      "....HHHHHHHH....",
+      "...HHHHHHHHHH...",
+      "...HHHHHHHHHH...",
+      "...HHH....HHH...",
+      "...HHH....HHH...",
+      "...HHHH..HHHH...",
+      "....HHH..HHH...."
+    ]),
+    mohawk: pad([
+      ".......HH.......",
+      ".......HH.......",
+      ".......HH.......",
+      "......HHHH......",
+      "......HHHH......"
+    ]),
+    afro: pad([
+      "....HHHHHHHH....",
+      "...HHHHHHHHHH...",
+      "..HHHHHHHHHHHH..",
+      "..HHHHHHHHHHHH..",
+      "...HHHHHHHHHH..."
+    ]),
+    bun: pad([
+      "......HHHH......",
+      ".....HHHHHH.....",
+      "....HHHHHHHH....",
+      "...HHHHHHHHHH...",
+      "...HHHHHHHHHH..."
+    ]),
+    sidepart: pad([
+      "................",
+      "....HHHHHHHH....",
+      "...HHHHHHHHHH...",
+      "...HHHHHhHHHH...",
+      "...HhHHHHHHHH..."
+    ])
+  };
+
+  /* ---------- eyes ----------
+     e pupil | W eye-white | x ink | - ink   */
+  const EYES = {
+    neutral: pad(["", "", "", "", ".....e...e......"]),
+    wide: pad([
+      "",
+      "",
+      "",
+      ".....WW...WW....",
+      ".....We..eW.....",
+      ".....WW...WW...."
+    ]),
+    happy: pad(["", "", "", "....x.....x.....", ".....x...x......"]),
+    sleepy: pad(["", "", "", "", ".....-...-......"]),
+    wink: pad(["", "", "", "", ".....e...x......"]),
+    cyclops: pad(["", "", "", "", "......e.e.e....."])
+  };
+
+  /* ---------- mouths ---------- */
+  const MOUTHS = {
+    none: [],
+    smile: pad(["", "", "", "", "", "", ".....M..M.......", "......MM........"]),
+    neutral: pad(["", "", "", "", "", "", "......MM........"]),
+    grin: pad(["", "", "", "", "", "", ".....MMMM......."]),
+    open: pad(["", "", "", "", "", "", "......MMM.......", "......MMM......."]),
+    smirk: pad(["", "", "", "", "", "", ".....MMM........"])
+  };
+
+  /* ---------- beards (drawn under mouth) ---------- */
+  const BEARDS = {
+    none: [],
+    full: pad([
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "....BBBBBBBB....",
+      "....BBBBBBBB....",
+      "....BBBBBBBB...."
+    ]),
+    goatee: pad(["", "", "", "", "", "", "", "", "", "", "......BB........", "......BB........"]),
+    mustache: pad(["", "", "", "", "", "", ".....BBBB......."]),
+    chinstrap: pad(["", "", "", "", "", "", "", "", "....B......B....", "....B......B....", "....B......B....", "....B......B...."])
+  };
+
+  /* ---------- accessories (topmost) — A = gold ---------- */
+  const ACCESSORIES = {
+    none: [],
+    glasses: pad(["", "", "", "....AAAA..AAAA..", "....AAAA..AAAA..", "......AA........"]),
+    sunglasses: pad(["", "", "", "....AAAA..AAAA..", "....AAAAAAAAAA..", "......AA........"]),
+    eyepatch: pad(["", "", "", "....AAAA........", "....AAAA........", "....AAAA........", ".....AA........."]),
+    earrings: pad(["", "", "", "", "", "...A........A..."]),
+    headphones: pad(["", "....AAAAAA......", "...A........A...", "...A........A..."]),
+    cap: pad(["....AAAAAAAA....", "...AAAAAAAAAA...", "..AAAAAAAAAAAA.."])
+  };
+
+  /* ---------- layer registry ---------- */
+  const LAYERS = {
+    face:       { options: Object.keys(FACES),         grid: (s) => FACES[s.face] },
+    beard:      { options: Object.keys(BEARDS),        grid: (s) => BEARDS[s.beard] },
+    hair:       { options: Object.keys(HAIRSTYLES),    grid: (s) => HAIRSTYLES[s.hair] },
+    eyes:       { options: Object.keys(EYES),          grid: (s) => EYES[s.eyes] },
+    mouth:      { options: Object.keys(MOUTHS),        grid: (s) => MOUTHS[s.mouth] },
+    accessory:  { options: Object.keys(ACCESSORIES),   grid: (s) => ACCESSORIES[s.accessory] }
+  };
+
+  /* ---------- state ---------- */
+  const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  function randomState() {
+    return {
+      face: rand(LAYERS.face.options),
+      hair: rand(LAYERS.hair.options.filter((o) => o !== "none")),
+      beard: rand(LAYERS.beard.options),
+      eyes: rand(LAYERS.eyes.options),
+      mouth: rand(LAYERS.mouth.options),
+      accessory: rand(LAYERS.accessory.options),
+      skin: rand(SKINS).c,
+      hairColor: rand(HAIRS).c,
+      shirt: rand(SHIRTS).c,
+      bg: rand(BGS)
+    };
+  }
+
+  const DEFAULT_STATE = {
+    face: "human", hair: "short", beard: "none",
+    eyes: "neutral", mouth: "smile", accessory: "none",
+    skin: "#f2c49b", hairColor: "#231d2b",
+    shirt: "#ff5d5d", bg: "#2a2337"
+  };
+
+  /* ---------- render ---------- */
+  function charColor(ch, st) {
+    switch (ch) {
+      case "S": return st.skin;
+      case "s": return shade(st.skin, 0.72);
+      case "H": return st.hairColor;
+      case "h": return shade(st.hairColor, 0.7);
+      case "T": return st.shirt;
+      case "t": return shade(st.shirt, 0.75);
+      case "B": return st.hairColor;
+      case "A": return "#c9a227";
+      case "K": return "#231d2b";
+      case "e": case "x": case "-": case "M": return "#231d2b";
+      case "W": return "#ffffff";
+      default:  return null;
+    }
+  }
+
+  function composite(st) {
+    const bg = st.bg === null ? null : st.bg;
+    const buf = [];
+    for (let y = 0; y < SIZE; y++) {
+      buf.push(new Array(SIZE).fill(bg));
+    }
+    const order = ["face", "beard", "hair", "eyes", "mouth", "accessory"];
+    for (const key of order) {
+      const grid = LAYERS[key].grid(st);
+      for (let y = 0; y < SIZE && y < grid.length; y++) {
+        const row = grid[y];
+        for (let x = 0; x < Math.min(row.length, SIZE); x++) {
+          const c = charColor(row[x], st);
+          if (c) buf[y][x] = c;
+        }
+      }
+    }
+    return buf;
+  }
+
+  function paint(canvas, st) {
+    const ctx = canvas.getContext("2d");
+    const px = Math.max(1, Math.floor(canvas.width / SIZE));
+    const buf = composite(st);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const c = buf[y][x];
+        if (c === null) continue; /* transparent pixel — leave canvas clear */
+        ctx.fillStyle = c;
+        ctx.fillRect(x * px, y * px, px, px);
+      }
+    }
+  }
+
+  /* ---------- UI builder ---------- */
+  function el(tag, cls, attrs) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (attrs) Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+    return e;
+  }
+
+  function swatchRow(colors, current, onPick) {
+    const row = el("div", "swatch-row");
+    colors.forEach((c) => {
+      const b = el("button", "swatch", { type: "button", title: c });
+      b.style.background = c;
+      if (c.toLowerCase() === String(current).toLowerCase()) b.classList.add("active");
+      b.addEventListener("click", () => {
+        row.querySelectorAll(".swatch").forEach((s) => s.classList.remove("active"));
+        b.classList.add("active");
+        onPick(c);
+      });
+      row.appendChild(b);
+    });
+    return row;
+  }
+
+  function label(text, key) {
+    const l = el("label", null, { "data-i18n": key });
+    l.textContent = text;
+    return l;
+  }
+
+  function selectRow(labelTxt, i18nKey, options, current, onPick) {
+    const wrap = el("div", "av-field");
+    wrap.appendChild(label(labelTxt, i18nKey));
+    const sel = el("select");
+    options.forEach((o) => {
+      const opt = el("option", null, { value: o });
+      opt.textContent = o.charAt(0).toUpperCase() + o.slice(1);
+      if (o === current) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener("change", () => onPick(sel.value));
+    wrap.appendChild(sel);
+    return wrap;
+  }
+
+  /**
+   * Builds the avatar editor UI inside `container`.
+   * onChange(state) fires on every mutation (state is mutated in place).
+   */
+  function initUI(container, state, onChange) {
+    container.innerHTML = "";
+    container.classList.add("avatar-editor");
+
+    const notify = () => onChange(state);
+
+    /* dice */
+    const dice = el("button", "btn secondary dice-btn", { type: "button", id: "randomizeAvatar", "data-i18n": "av_random" });
+    dice.textContent = "🎲 Random avatar";
+    dice.addEventListener("click", () => {
+      Object.assign(state, randomState());
+      initUI(container, state, onChange); /* rebuild with new selection highlights */
+      onChange(state);
+    });
+    container.appendChild(dice);
+
+    const groups = el("div", "av-groups");
+
+    /* face style + skin */
+    const gFace = el("div", "av-group");
+    gFace.appendChild(selectRow("Face", "av_face", LAYERS.face.options, state.face, (v) => { state.face = v; notify(); }));
+    gFace.appendChild(label("Skin tone", "av_skin"));
+    gFace.appendChild(swatchRow(SKINS.map((s) => s.c), state.skin, (c) => { state.skin = c; notify(); }));
+    groups.appendChild(gFace);
+
+    /* hair + color */
+    const gHair = el("div", "av-group");
+    gHair.appendChild(selectRow("Hair", "av_hair", LAYERS.hair.options, state.hair, (v) => { state.hair = v; notify(); }));
+    gHair.appendChild(label("Hair color", "av_hair_color"));
+    gHair.appendChild(swatchRow(HAIRS.map((h) => h.c), state.hairColor, (c) => { state.hairColor = c; notify(); }));
+    groups.appendChild(gHair);
+
+    /* features */
+    const gFeat = el("div", "av-group");
+    gFeat.appendChild(selectRow("Eyes", "av_eyes", LAYERS.eyes.options, state.eyes, (v) => { state.eyes = v; notify(); }));
+    gFeat.appendChild(selectRow("Mouth", "av_mouth", LAYERS.mouth.options, state.mouth, (v) => { state.mouth = v; notify(); }));
+    gFeat.appendChild(selectRow("Beard", "av_beard", LAYERS.beard.options, state.beard, (v) => { state.beard = v; notify(); }));
+    groups.appendChild(gFeat);
+
+    /* accessory + shirt + bg */
+    const gAcc = el("div", "av-group");
+    gAcc.appendChild(selectRow("Accessory", "av_accessory", LAYERS.accessory.options, state.accessory, (v) => { state.accessory = v; notify(); }));
+    gAcc.appendChild(label("Shirt", "av_shirt"));
+    gAcc.appendChild(swatchRow(SHIRTS.map((s) => s.c), state.shirt, (c) => { state.shirt = c; notify(); }));
+    gAcc.appendChild(label("Background", "av_bg"));
+    const bgWrap = swatchRow(BGS, state.bg, (c) => { state.bg = c; notify(); });
+    bgWrap.classList.add("swatch-bg");
+    gAcc.appendChild(bgWrap);
+    groups.appendChild(gAcc);
+
+    container.appendChild(groups);
+  }
+
+  /* ---------- public API ---------- */
+  window.NetizenAvatar = {
+    SIZE,
+    DEFAULT_STATE,
+    randomState,
+    paint,
+    composite,
+    initUI
+  };
+})();
+
+/* ============================================================
+   NETIZEN ID — 3/4: app.js
+   Core: i18n, form, live preview, tags, PWA wiring
+   ============================================================ */
+
+(function () {
+  "use strict";
+
+  /* ---------- utilities ---------- */
+  const $  = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+
+  function store(key, val) {
+    try {
+      if (arguments.length === 2) localStorage.setItem("netizen:" + key, JSON.stringify(val));
+      else { const v = localStorage.getItem("netizen:" + key); return v ? JSON.parse(v) : null; }
+    } catch (e) { return null; }
+  }
+
+  function toast(msg, type) {
+    const t = $("#toast");
+    t.textContent = msg;
+    t.className = type === "err" ? "err" : (type === "ok" ? "ok" : "");
+    t.classList.remove("hidden");
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.add("hidden"), 3500);
+  }
+
+  /* ID hash → serial + deterministic barcode */
+  function hash(str) {
+    let h = 5381;
+    for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) >>> 0;
+    return h;
+  }
+  function serialFrom(username) {
+    const h = hash(username.toLowerCase().trim());
+    return "NID-" + h.toString(36).toUpperCase().padStart(7, "0").slice(0, 7);
+  }
+
+  /* Bridge 1: exposed for the exporter */
+  window.__nidHash = hash;
+
+  /* ---------- localized date ---------- */
+  function localizedDate() {
+    return new Date().toLocaleDateString(
+      state.lang === "el" ? "el-GR" : "en-GB",
+      { day: "2-digit", month: "short", year: "numeric" }
+    );
+  }
+
+  /* ---------- shareable avatar state (URL hash, no server, no PII) ---------- */
+  /* FIX: unescape/escape (deprecated) → TextEncoder/TextDecoder (Unicode-safe) */
+  function bytesToB64url(bytes) {
+    let bin = "";
+    bytes.forEach((b) => bin += String.fromCharCode(b));
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  function avatarToHash(st) {
+    return bytesToB64url(new TextEncoder().encode(JSON.stringify(st)));
+  }
+  function avatarFromHash(h) {
+    try {
+      let b64 = h.replace(/-/g, "+").replace(/_/g, "/");
+      while (b64.length % 4) b64 += "=";
+      const bin = atob(b64);
+      const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+      const obj = JSON.parse(new TextDecoder().decode(bytes));
+      if (obj && typeof obj === "object" && "face" in obj) return obj;
+    } catch (e) { /* malformed hash — ignore */ }
+    return null;
+  }
+
+  /* ---------- i18n ---------- */
+  const I18N = {
+    en: {
+      app_title: "Netizen ID — Soffitta",
+      app_tagline: "Live preview",
+      install_app: "⬇ Install app",
+      designed_by: "Designed by",
+      all_apps: "All apps",
+      privacy_line: "No cookies · No tracking · No ads · No accounts · MIT",
+      identity_details: "🪪 Identity card details",
+      sec_identity: "Identity", sec_contact: "Contact",
+      sec_sites: "Sites & Socials", sec_bio: "Bio / Motto",
+      sec_avatar: "🎨 Pixel Art Avatar",
+      username: "Username *", fullname: "Full name", alias: "Nickname / handle",
+      gender: "Gender (Male, Female, Plant…)", birthday: "Birthday",
+      location: "City / country", address: "Address (optional)",
+      phones: "Phones (one per line)", emails: "Emails (one per line)",
+      websites: "Websites", blogs: "Blogs", socials: "Social networks (@user…)",
+      ims: "Instant messengers", bio: "Say something memorable…",
+      tags_title: "Tags & characteristics",
+      tag_add_ph: "Add your own tag…", tag_add_btn: "Add",
+      av_random: "🎲 Random avatar", av_face: "Face", av_skin: "Skin tone",
+      av_hair: "Hair", av_hair_color: "Hair color", av_eyes: "Eyes",
+      av_mouth: "Mouth", av_beard: "Beard", av_accessory: "Accessory",
+      av_shirt: "Shirt", av_bg: "Background",
+      card_netizen: "NETIZEN", card_id: "IDENTITY CARD",
+      card_issued: "ISSUED", card_username: "USERNAME",
+      note_privacy: "No data leaves your browser. The exported card contains only what you filled in.",
+      note_optional: "Everything is optional except the username. Blank fields stay hidden on the card.",
+      err_username: "Please enter a username first.",
+      ok_lang: "Language switched to English",
+      err_webp: "This browser doesn't export WEBP — saved as PNG instead.",
+      err_gif: "Couldn't encode GIF — saved as PNG instead.",
+      err_pdf: "PDF library missing — saved as PNG instead.",
+      card_lbl_name: "Name", card_lbl_aka: "A.K.A.", card_lbl_gender: "Gender",
+      card_lbl_born: "Born", card_lbl_loc: "Location", card_lbl_addr: "Address",
+      card_lbl_tel: "Tel", card_lbl_mail: "Mail", card_lbl_web: "Web",
+      card_lbl_blog: "Blog", card_lbl_soc: "Social", card_lbl_im: "IM",
+      av_dl: "Download avatar:", scheme_label: "Card style",
+      av_tools: "Avatar tools:", av_transparent: "Transparent background",
+      av_copy: "Copy image", av_share: "🔗 Share link",
+      ok_clip: "Avatar copied to clipboard",
+      err_clip: "Image clipboard not supported here — use PNG download",
+      ok_share: "Shareable avatar link copied"
+    },
+    el: {
+      app_title: "Netizen ID — Soffitta",
+      app_tagline: "Ζωντανή προεπισκόπηση",
+      install_app: "⬇ Εγκατάσταση",
+      designed_by: "Σχεδιασμένο από τον",
+      all_apps: "Όλα τα apps",
+      privacy_line: "Χωρίς cookies · Χωρίς tracking · Χωρίς διαφημίσεις · Χωρίς λογαριασμούς · MIT",
+      identity_details: "🪪 Στοιχεία ταυτότητας",
+      sec_identity: "Ταυτότητα", sec_contact: "Επικοινωνία",
+      sec_sites: "Ιστοσελίδες & Δίκτυα", sec_bio: "Βιογραφικό / Μότο",
+      sec_avatar: "🎨 Pixel Art Άβαταρ",
+      username: "Username *", fullname: "Ονοματεπώνυμο", alias: "Ψευδώνυμο",
+      gender: "Φύλο (Άνδρας, Γυναίκα, Φυτό…)", birthday: "Γενέθλια",
+      location: "Πόλη / χώρα", address: "Διεύθυνση (προαιρετικό)",
+      phones: "Τηλέφωνα (ένα ανά γραμμή)", emails: "Emails (ένα ανά γραμμή)",
+      websites: "Ιστοσελίδες", blogs: "Blogs", socials: "Κοινωνικά δίκτυα (@user…)",
+      ims: "Μηνύματα (IMs)", bio: "Πες κάτι αξέχαστο…",
+      tags_title: "Ετικέτες & χαρακτηριστικά",
+      tag_add_ph: "Πρόσθεσε δική σου ετικέτα…", tag_add_btn: "Προσθήκη",
+      av_random: "🎲 Τυχαίο άβαταρ", av_face: "Πρόσωπο", av_skin: "Χρώμα δέρματος",
+      av_hair: "Μαλλιά", av_hair_color: "Χρώμα μαλλιών", av_eyes: "Μάτια",
+      av_mouth: "Στόμα", av_beard: "Γένια", av_accessory: "Αξεσουάρ",
+      av_shirt: "Κοστούμι", av_bg: "Φόντο",
+      card_netizen: "NETIZEN", card_id: "ΤΑΥΤΟΤΗΤΑ",
+      card_issued: "ΕΚΔΟΘΗΚΕ", card_username: "ΧΡΗΣΤΗΣ",
+      note_privacy: "Κανένα δεδομένο δεν φεύγει από τον browser σου. Η κάρτα περιέχει μόνο ό,τι συμπλήρωσες.",
+      note_optional: "Όλα είναι προαιρετικά εκτός από το username. Τα κενά πεδία μένουν κρυφά.",
+      err_username: "Δώσε πρώτα ένα username.",
+      ok_lang: "Η γλώσσα άλλαξε σε Ελληνικά",
+      err_webp: "Αυτός ο browser δεν εξάγει WEBP — αποθηκεύτηκε ως PNG.",
+      err_gif: "Δεν βγήκε το GIF — αποθηκεύτηκε ως PNG.",
+      err_pdf: "Το jsPDF δεν φορτώθηκε — αποθηκεύτηκε ως PNG.",
+      card_lbl_name: "Όνομα", card_lbl_aka: "Ψευδώνυμο", card_lbl_gender: "Φύλο",
+      card_lbl_born: "Γέννηση", card_lbl_loc: "Τόπος", card_lbl_addr: "Διεύθυνση",
+      card_lbl_tel: "Τηλ", card_lbl_mail: "Email", card_lbl_web: "Ιστός",
+      card_lbl_blog: "Blog", card_lbl_soc: "Δίκτυο", card_lbl_im: "IM",
+      av_dl: "Λήψη άβαταρ:", scheme_label: "Στυλ κάρτας",
+      av_tools: "Εργαλεία άβαταρ:", av_transparent: "Διαφανές φόντο",
+      av_copy: "Αντιγραφή εικόνας", av_share: "🔗 Διαμοιρασμός",
+      ok_clip: "Το άβαταρ αντιγράφηκε στο πρόχειρο",
+      err_clip: "Το πρόχειρο εικόνας δεν υποστηρίζεται εδώ — κατέβασε PNG",
+      ok_share: "Ο σύνδεσμος άβαταρ αντιγράφηκε"
+    }
+  };
+
+  const TAGS_PRESET = [
+    "Netizen", "Open-Sourcerer", "Creative Commoner", "A.I. Tamer",
+    "Privacy Advocate", "Digital Nomad", "Cypherpunk", "Free Culture",
+    "Mapper", "Bookworm", "Blogger", "Podcaster", "Dev", "Designer",
+    "Night Owl", "Coffee-Powered", "Plants Are People Too", "Robot-Friendly"
+  ];
+
+  /* ---------- language (suite key + migration από το παλιό netizen:lang) ---------- */
+  function detectLang() {
+    try {
+      const saved = localStorage.getItem("soffitta.lang");
+      if (saved === "en" || saved === "el") return saved;
+      const legacy = store("lang"); /* netizen:lang — one-time migration */
+      if (legacy === "en" || legacy === "el") return legacy;
+    } catch (e) {}
+    return (navigator.language || "en").slice(0, 2).toLowerCase() === "el" ? "el" : "en";
+  }
+
+  /* ---------- state ---------- */
+  const state = {
+    lang: detectLang(),
+    avatar: Object.assign({}, window.NetizenAvatar.DEFAULT_STATE),
+    cardScheme: "terminal",
+    selectedTags: store("tags") || [],
+    customTags: store("customTags") || []
+  };
+
+  const t = (k) => (I18N[state.lang] && I18N[state.lang][k]) || I18N.en[k] || k;
+
+  /* Bridge: exporter reads translations through this */
+  window.__nidT = t;
+
+  /* Bridge: exporter reads the localized issue date through this */
+  window.__nidDate = localizedDate;
+
+  /* ---------- i18n application ---------- */
+  function applyLang() {
+    document.documentElement.lang = state.lang === "el" ? "el" : "en";
+    document.title = t("app_title");
+    $$("[data-i18n]").forEach((el) => {
+      const k = el.getAttribute("data-i18n");
+      const v = I18N[state.lang][k];
+      if (v) el.textContent = v;
+    });
+    $$("[data-i18n-ph]").forEach((el) => {
+      const v = I18N[state.lang][el.getAttribute("data-i18n-ph")];
+      if (v) el.placeholder = v;
+    });
+    try { localStorage.setItem("soffitta.lang", state.lang); } catch (e) {}
+    $("#langEn").classList.toggle("active", state.lang === "en");
+    $("#langEl").classList.toggle("active", state.lang === "el");
+  }
+
+  /* ---------- form → data ---------- */
+  const FIELD_ORDER = [
+    "fullname", "alias", "gender", "birthday", "location", "address",
+    "phones", "emails", "websites", "blogs", "socials", "ims", "bio"
+  ];
+  const MULTILINE = ["phones", "emails", "websites", "blogs", "socials", "ims"];
+
+  function collect() {
+    const data = { username: $("#username").value.trim() };
+    FIELD_ORDER.forEach((f) => {
+      const el = document.querySelector('[name="' + f + '"]');
+      if (!el) return;
+      let v = el.value.trim();
+      if (!v) return;
+      if (MULTILINE.indexOf(f) >= 0) {
+        v = v.split("\n").map((l) => l.trim()).filter(Boolean);
+        if (!v.length) return;
+      }
+      data[f] = v;
+    });
+    if (state.selectedTags.length) data.tags = state.selectedTags.slice();
+    data.avatar = state.avatar;
+    data.serial = serialFrom(data.username || "anonymous");
+    data.scheme = state.cardScheme;
+    return data;
+  }
+
+  /* ---------- card rendering ---------- */
+  const CARD_LABEL_KEYS = {
+    fullname: "card_lbl_name", alias: "card_lbl_aka", gender: "card_lbl_gender",
+    birthday: "card_lbl_born", location: "card_lbl_loc", address: "card_lbl_addr",
+    phones: "card_lbl_tel", emails: "card_lbl_mail", websites: "card_lbl_web",
+    blogs: "card_lbl_blog", socials: "card_lbl_soc", ims: "card_lbl_im"
+  };
+
+  function fmtValue(field, v) {
+    if (MULTILINE.indexOf(field) >= 0) return v.join(" · ");
+    return v;
+  }
+
+  function buildCard(data) {
+    const card = document.createElement("div");
+    card.className = "id-card scheme-" + (data.scheme || "terminal");
+
+    /* photo */
+    const photo = document.createElement("div");
+    photo.className = "card-photo";
+    const cv = document.createElement("canvas");
+    cv.width = 160; cv.height = 160;
+    photo.appendChild(cv);
+    window.NetizenAvatar.paint(cv, data.avatar || window.NetizenAvatar.DEFAULT_STATE);
+
+    /* body */
+    const body = document.createElement("div");
+    body.className = "card-body";
+    const h = document.createElement("p");
+    h.className = "card-headline";
+    h.innerHTML = t("card_netizen") + ' <span class="cc">' + t("card_id") + "</span>";
+    body.appendChild(h);
+
+    const un = document.createElement("p");
+    un.className = "card-username";
+    un.textContent = data.username || "· · ·";
+    body.appendChild(un);
+
+    const dl = document.createElement("dl");
+    FIELD_ORDER.forEach((f) => {
+      if (f === "bio" || !(f in data)) return;
+      const row = document.createElement("div");
+      row.className = "card-row";
+      const dt = document.createElement("dt"); dt.textContent = t(CARD_LABEL_KEYS[f]);
+      const dd = document.createElement("dd"); dd.textContent = fmtValue(f, data[f]);
+      row.appendChild(dt); row.appendChild(dd);
+      dl.appendChild(row);
+    });
+    if (dl.children.length) body.appendChild(dl);
+
+    if (data.bio) {
+      const bio = document.createElement("p");
+      bio.className = "card-bio";
+      bio.textContent = "“" + data.bio + "”";
+      body.appendChild(bio);
+    }
+
+    if (data.tags && data.tags.length) {
+      const tw = document.createElement("div");
+      tw.className = "card-tags";
+      data.tags.forEach((tag) => {
+        const chip = document.createElement("span");
+        chip.className = "card-tag";
+        chip.textContent = tag;
+        tw.appendChild(chip);
+      });
+      body.appendChild(tw);
+    }
+
+    /* right rail */
+    const rail = document.createElement("div");
+    rail.className = "card-rail";
+    const serial = document.createElement("span");
+    serial.className = "card-serial";
+    serial.textContent = data.serial;
+    rail.appendChild(serial);
+
+    const bar = document.createElement("div");
+    bar.className = "card-barcode";
+    const seed = hash(data.username || "nid");
+    for (let i = 0; i < 12; i++) {
+      const s = document.createElement("span");
+      const on = ((seed >> i) & 1) === 1 || i % 5 === 0;
+      s.className = on ? "on" : "off";
+      bar.appendChild(s);
+    }
+    rail.appendChild(bar);
+
+    const issue = document.createElement("span");
+    issue.className = "card-issue";
+    issue.textContent = t("card_issued") + " " + localizedDate();
+    rail.appendChild(issue);
+
+    card.appendChild(photo);
+    card.appendChild(body);
+    card.appendChild(rail);
+    return card;
+  }
+
+  function render() {
+    const holder = $("#cardHolder");
+    holder.innerHTML = "";
+    const data = collect();
+    store("draft", data);
+    holder.appendChild(buildCard(data));
+
+    /* Bridge 2: current card data for exporters */
+    window.__nidRenderData = data;
+  }
+
+  /* ---------- tags UI ---------- */
+  function renderTags() {
+    const wrap = $("#characteristics .tags-list");
+    wrap.innerHTML = "";
+    const all = TAGS_PRESET.concat(state.customTags);
+    all.forEach((tag) => {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "tag-chip" + (state.selectedTags.indexOf(tag) >= 0 ? " active" : "");
+      chip.textContent = tag;
+      chip.addEventListener("click", () => {
+        const i = state.selectedTags.indexOf(tag);
+        if (i >= 0) state.selectedTags.splice(i, 1);
+        else state.selectedTags.push(tag);
+        store("tags", state.selectedTags);
+        renderTags();
+        render();
+      });
+      wrap.appendChild(chip);
+    });
+  }
+
+  function wireTagAdd() {
+    const input = $("#customTagInput");
+    const btn = $("#addTagBtn");
+    const add = () => {
+      const v = input.value.trim();
+      if (!v) return;
+      if (TAGS_PRESET.concat(state.customTags).indexOf(v) < 0) {
+        state.customTags.push(v);
+        store("customTags", state.customTags);
+      }
+      if (state.selectedTags.indexOf(v) < 0) state.selectedTags.push(v);
+      store("tags", state.selectedTags);
+      input.value = "";
+      renderTags();
+      render();
+    };
+    btn.addEventListener("click", add);
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); add(); } });
+  }
+
+  /* ---------- draft restore ---------- */
+  function restoreDraft(skipAvatar) {
+    const d = store("draft");
+    if (!d) return;
+    Object.keys(d).forEach((k) => {
+      const el = document.querySelector('[name="' + k + '"]');
+      if (!el) return;
+      if (Array.isArray(d[k])) el.value = d[k].join("\n");
+      else if (typeof d[k] === "string") el.value = d[k];
+    });
+    if (d.avatar && !skipAvatar) Object.assign(state.avatar, d.avatar);
+    if (d.scheme) state.cardScheme = d.scheme;
+  }
+
+  /* ---------- bindings ---------- */
+  function bind() {
+    /* language — suite buttons */
+    $("#langEn").addEventListener("click", () => {
+      state.lang = "en";
+      applyLang();
+      renderTags();
+      render();
+      toast(t("ok_lang"), "ok");
+    });
+    $("#langEl").addEventListener("click", () => {
+      state.lang = "el";
+      applyLang();
+      renderTags();
+      render();
+      toast(t("ok_lang"), "ok");
+    });
+
+    /* form → live preview */
+    $("#identityForm").addEventListener("input", render);
+    $("#identityForm").addEventListener("change", render);
+
+    /* dice */
+    $("#diceBtn").addEventListener("click", () => {
+      Object.assign(state.avatar, window.NetizenAvatar.randomState());
+      render();
+    });
+
+    /* card scheme */
+    const schemeSel = $("#cardScheme");
+    schemeSel.value = state.cardScheme;
+    schemeSel.addEventListener("change", () => {
+      state.cardScheme = schemeSel.value;
+      render();
+    });
+
+    /* avatar-only downloads */
+    const uname = () => $("#username").value.trim();
+    const transparent = () => $("#avatarTransparent").checked;
+    $("#downloadAvatarPng").addEventListener("click", () =>
+      window.NetizenExport.avatarPng(state.avatar, uname(), transparent()));
+    $("#downloadAvatarSvg").addEventListener("click", () =>
+      window.NetizenExport.avatarSvg(state.avatar, uname(), transparent()));
+
+    /* avatar clipboard copy */
+    $("#copyAvatarClip").addEventListener("click", () =>
+      window.NetizenExport.avatarCopy(state.avatar, transparent()));
+
+    /* shareable avatar link (self-contained URL hash — everything stays local) */
+    $("#shareAvatarLink").addEventListener("click", () => {
+      const link = location.href.split("#")[0] + "#av=" + avatarToHash(state.avatar);
+      navigator.clipboard.writeText(link).then(
+        () => toast(t("ok_share"), "ok"),
+        () => toast(link, "") /* clipboard refused — at least show the link */
+      );
+    });
+
+    /* exports (delegated to the exporter) — data gathered once, per click */
+    $("#downloadPng").addEventListener("click", () => {
+      const data = collect();
+      if (!data.username) return toast(t("err_username"), "err");
+      window.NetizenExport.png(data);
+    });
+    $("#downloadJpg").addEventListener("click", () => {
+      const data = collect();
+      if (!data.username) return toast(t("err_username"), "err");
+      window.NetizenExport.jpg(data);
+    });
+    $("#downloadGif").addEventListener("click", () => {
+      const data = collect();
+      if (!data.username) return toast(t("err_username"), "err");
+      window.NetizenExport.gif(data);
+    });
+    $("#downloadWebp").addEventListener("click", () => {
+      const data = collect();
+      if (!data.username) return toast(t("err_username"), "err");
+      window.NetizenExport.webp(data);
+    });
+    $("#downloadSvg").addEventListener("click", () => {
+      const data = collect();
+      if (!data.username) return toast(t("err_username"), "err");
+      window.NetizenExport.svg(data);
+    });
+    $("#downloadPdf").addEventListener("click", () => {
+      const data = collect();
+      if (!data.username) return toast(t("err_username"), "err");
+      window.NetizenExport.pdf(data);
+    });
+    $("#downloadHtml").addEventListener("click", () => {
+      const data = collect();
+      if (!data.username) return toast(t("err_username"), "err");
+      window.NetizenExport.html(data);
+    });
+
+    wireTagAdd();
+  }
+
+  /* ---------- boot ---------- */
+  document.addEventListener("DOMContentLoaded", () => {
+    /* stamp i18n keys onto dynamic bits */
+    $("#username").closest(".field").querySelector("label").setAttribute("data-i18n", "username");
+    const phMap = { fullname: "fullname", alias: "alias", gender: "gender",
+      phones: "phones", emails: "emails", websites: "websites", blogs: "blogs",
+      socials: "socials", ims: "ims", bio: "bio" };
+    Object.keys(phMap).forEach((n) => {
+      const el = document.querySelector('[name="' + n + '"]');
+      if (el) el.setAttribute("data-i18n-ph", phMap[n]);
+    });
+    $("#customTagInput").setAttribute("data-i18n-ph", "tag_add_ph");
+
+    /* restore avatar from a shared link (#av=…) — wins over local draft */
+    let fromShared = false;
+    if (location.hash.indexOf("#av=") === 0) {
+      const shared = avatarFromHash(location.hash.slice(4));
+      if (shared) { Object.assign(state.avatar, shared); fromShared = true; }
+    }
+
+    restoreDraft(fromShared);
+
+    /* avatar editor inside form (reuse the static host from index.html) */
+    let avHost = $("#avatarControls");
+    if (!avHost) {
+      avHost = document.createElement("div");
+      avHost.id = "avatarControls";
+      ($("#secAvatarAnchor") || $(".pane-form form")).appendChild(avHost);
+    }
+    window.NetizenAvatar.initUI(avHost, state.avatar, () => render());
+
+    /* applyLang AFTER initUI so avatar-editor labels are translated too */
+    applyLang();
+
+    renderTags();
+    render();
+    bind();
+
+    /* PWA — κοινός SW της σουίτας (FIX: "../sw.js", όχι τοπικό sw.js) */
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("../sw.js").catch(() => {});
+    }
+
+    /* FIX: install button (πριν έλειχε εντελώς το beforeinstallprompt) */
+    let deferredPrompt = null;
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const b = $("#installBtn");
+      b.hidden = false;
+      b.addEventListener("click", () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        deferredPrompt = null;
+        b.hidden = true;
+      });
+    });
+    window.addEventListener("appinstalled", () => {
+      deferredPrompt = null;
+      $("#installBtn").hidden = true;
+    });
+  });
+})();
+
+/* ============================================================
+   NETIZEN ID — 4/4: exporter.js
+   PNG / JPG / GIF / WEBP / SVG / PDF / HTML export
+   All local. No network. Ever.
+   ============================================================ */
+
+(function () {
+  "use strict";
+
+  const PDF_MM_W = 85.6, PDF_MM_H = 54;        /* ISO ID-1 */
+  const RASTER_W = 1712, RASTER_H = 1080;      /* ID-1 @ ~200 dpi */
+  const GIF_W = 856, GIF_H = 540;              /* lighter: literal LZW is bulky */
+
+  const T = (k) => (window.__nidT ? window.__nidT(k) : k);
+
+  function notify(msg, type) {
+    const el = document.getElementById("toast");
+    if (!el) return;
+    el.textContent = msg;
+    el.className = type === "err" ? "err" : (type === "ok" ? "ok" : "");
+    el.classList.remove("hidden");
+    clearTimeout(el._timer);
+    el._timer = setTimeout(() => el.classList.add("hidden"), 3500);
+  }
+
+  function xmlEsc(s) {
+    return String(s).replace(/[&<>"]/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  /* ---------- canvas painter ---------- */
+  function drawCardDirect(d, w, h) {
+    const cv = document.createElement("canvas");
+    cv.width = w; cv.height = h;
+    const ctx = cv.getContext("2d");
+    const S = d.schemeVars;
+    const pad = Math.round(w * 0.045);
+
+    ctx.fillStyle = S.bg; ctx.fillRect(0, 0, w, h);
+
+    const bandH = Math.round(h * 0.032);
+    let x = 0;
+    const bands = [[S.accent, 0.16], ["#ffc24b", 0.09], ["#00b89c", 0.13]];
+    bands.forEach(([c, frac]) => { ctx.fillStyle = c; ctx.fillRect(x, 0, Math.round(w * frac), bandH); x += Math.round(w * frac); });
+    ctx.fillStyle = S.accent; ctx.fillRect(x, 0, w - x, bandH);
+
+    const phW = Math.round(w * 0.28);
+    const phH = phW;
+    const phX = pad, phY = Math.round((h - phH) / 2);
+    ctx.fillStyle = "#231d2b"; ctx.fillRect(phX - 3, phY - 3, phW + 6, phH + 6);
+    ctx.fillStyle = "#fff";     ctx.fillRect(phX, phY, phW, phH);
+
+    const tmp = document.createElement("canvas");
+    tmp.width = 256; tmp.height = 256;
+    window.NetizenAvatar.paint(tmp, d.avatar);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(tmp, phX, phY, phW, phH);
+
+    const tx = phX + phW + Math.round(w * 0.03);
+    let ty = pad + bandH + Math.round(h * 0.07);
+    ctx.textBaseline = "top";
+    ctx.fillStyle = S.ink;
+    ctx.font = "bold " + Math.round(h * 0.052) + "px monospace";
+    ctx.fillText("NETIZEN", tx, ty);
+    const nw = ctx.measureText("NETIZEN").width;
+    ctx.fillStyle = S.accent;
+    ctx.fillText("ID", tx + nw + Math.round(h * 0.02), ty);
+    ty += Math.round(h * 0.085);
+    ctx.fillStyle = S.ink;
+    ctx.font = "bold " + Math.round(h * 0.062) + "px monospace";
+    ctx.fillText(d.username || "···", tx, ty);
+    ty += Math.round(h * 0.10);
+
+    const fields = d.rows;
+    fields.slice(0, 7).forEach((f) => {
+      ctx.fillStyle = S.sub;
+      ctx.font = "bold " + Math.round(h * 0.030) + "px monospace";
+      ctx.fillText(f.label.toUpperCase(), tx, ty);
+      const lw = ctx.measureText(f.label.toUpperCase()).width;
+      ctx.fillStyle = S.ink;
+      ctx.font = Math.round(h * 0.038) + "px monospace";
+      ctx.fillText(String(f.value).slice(0, 34), tx + lw + 8, ty);
+      ty += Math.round(h * 0.062);
+    });
+
+    if (d.bio && ty < h - pad * 2) {
+      ctx.fillStyle = S.ink;
+      ctx.font = "italic " + Math.round(h * 0.034) + "px monospace";
+      ctx.fillText("“" + String(d.bio).slice(0, 42) + "”", tx, ty);
+      ty += Math.round(h * 0.055);
+    }
+
+    const tags = (d.tags || []).slice(0, 4);
+    if (tags.length) {
+      ctx.font = "bold " + Math.round(h * 0.026) + "px monospace";
+      const chipH = Math.round(h * 0.055);
+      const tagGap = Math.round(w * 0.008);
+      const maxX = w - pad - Math.round(w * 0.075);
+      let tagX = tx;
+      for (const tag of tags) {
+        const tw = ctx.measureText(tag).width + Math.round(h * 0.03);
+        if (tagX + tw > maxX) break;
+        ctx.fillStyle = S.accent;
+        if (ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(tagX, ty, tw, chipH, 99);
+          ctx.fill();
+        } else {
+          ctx.fillRect(tagX, ty, tw, chipH);
+        }
+        ctx.fillStyle = S.bg;
+        ctx.fillText(tag, tagX + Math.round(h * 0.015), ty + Math.round(h * 0.012));
+        tagX += tw + tagGap;
+      }
+    }
+
+    const rx = w - pad;
+    ctx.textAlign = "right";
+    ctx.fillStyle = S.sub;
+    ctx.font = "bold " + Math.round(h * 0.026) + "px monospace";
+    ctx.fillText(d.serial, rx, pad + bandH + 4);
+
+    const bcH = Math.round(h * 0.22);
+    let bx = rx - 12 * 5;
+    for (let i = 0; i < 12; i++) {
+      const on = ((d.seedNum >> i) & 1) === 1 || i % 5 === 0;
+      ctx.fillStyle = on ? S.ink : "rgba(0,0,0,.18)";
+      ctx.fillRect(bx + i * 5, h - pad - bcH - Math.round(h * 0.07), 3, bcH);
+    }
+    ctx.fillStyle = S.sub;
+    ctx.font = Math.round(h * 0.024) + "px monospace";
+    ctx.fillText(d.issueDate, rx, h - pad);
+    ctx.textAlign = "left";
+
+    return cv;
+  }
+
+  /* ---------- payload ---------- */
+  function payload(data) {
+    const map = { fullname: "card_lbl_name", alias: "card_lbl_aka", gender: "card_lbl_gender",
+      birthday: "card_lbl_born", location: "card_lbl_loc", address: "card_lbl_addr",
+      phones: "card_lbl_tel", emails: "card_lbl_mail", websites: "card_lbl_web",
+      blogs: "card_lbl_blog", socials: "card_lbl_soc", ims: "card_lbl_im" };
+    const rows = [];
+    Object.keys(map).forEach((k) => {
+      if (data[k]) rows.push({ label: T(map[k]),
+        value: Array.isArray(data[k]) ? data[k].join(" · ") : data[k] });
+    });
+    const schemeVars = {
+      terminal: { bg: "#211c2b", ink: "#f2ecf7", sub: "#a79db5", accent: "#ff5c5c" },
+      paper:    { bg: "#faf6ef", ink: "#231d2b", sub: "#6f6679", accent: "#ff5d5d" },
+      mint:     { bg: "#eafaf5", ink: "#0d3d33", sub: "#4e7d72", accent: "#00b89c" },
+      rose:     { bg: "#fff0ef", ink: "#33161a", sub: "#8a5b5f", accent: "#ff5d5d" }
+    }[data.scheme || "terminal"];
+    return {
+      username: data.username, avatar: data.avatar, rows, bio: data.bio,
+      tags: data.tags, serial: data.serial, schemeVars,
+      seedNum: window.__nidHash(data.username || "nid"),
+      issueDate: (window.__nidT ? window.__nidT("card_issued") : "ISSUED") + " " +
+        (window.__nidDate ? window.__nidDate() : new Date().toISOString().slice(0, 10))
+    };
+  }
+
+  /* ---------- SVG export (vector, infinite resolution) ---------- */
+  function drawCardSVG(p) {
+    const w = 856, h = 540;
+    const S = p.schemeVars;
+    const pad = Math.round(w * 0.045);
+    const bandH = Math.round(h * 0.032);
+    const phW = Math.round(w * 0.28), phH = phW;
+    const phX = pad, phY = Math.round((h - phH) / 2);
+    const tx = phX + phW + Math.round(w * 0.03);
+    const rx = w - pad;
+    const parts = [];
+
+    /* avatar as tiny lossless pixel PNG (16×16) */
+    const tmp = document.createElement("canvas");
+    tmp.width = 16; tmp.height = 16;
+    window.NetizenAvatar.paint(tmp, p.avatar);
+    const avHref = tmp.toDataURL("image/png");
+
+    parts.push('<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h +
+      '" viewBox="0 0 ' + w + " " + h + '" font-family="monospace">');
+    parts.push('<rect width="' + w + '" height="' + h + '" fill="' + S.bg + '"/>');
+
+    let bandX = 0;
+    [[S.accent, 0.16], ["#ffc24b", 0.09], ["#00b89c", 0.13]].forEach(([c, f]) => {
+      const bw = Math.round(w * f);
+      parts.push('<rect x="' + bandX + '" y="0" width="' + bw + '" height="' + bandH + '" fill="' + c + '"/>');
+      bandX += bw;
+    });
+    parts.push('<rect x="' + bandX + '" y="0" width="' + (w - bandX) + '" height="' + bandH + '" fill="' + S.accent + '"/>');
+
+    parts.push('<rect x="' + (phX - 3) + '" y="' + (phY - 3) + '" width="' + (phW + 6) + '" height="' + (phH + 6) + '" fill="#231d2b"/>');
+    parts.push('<rect x="' + phX + '" y="' + phY + '" width="' + phW + '" height="' + phH + '" fill="#ffffff"/>');
+    parts.push('<image x="' + phX + '" y="' + phY + '" width="' + phW + '" height="' + phH +
+      '" href="' + avHref + '" preserveAspectRatio="none" image-rendering="pixelated"/>');
+
+    /* text helper: SVG y = baseline ≈ canvas-top + 0.8·fontSize */
+    const text = (x, top, fs, fill, weight, content, anchor) =>
+      '<text x="' + x + '" y="' + (top + Math.round(fs * 0.8)) + '" font-size="' + fs + '"' +
+      (weight ? ' font-weight="' + weight + '"' : "") +
+      (anchor ? ' text-anchor="' + anchor + '"' : "") +
+      ' fill="' + fill + '">' + content + "</text>";
+
+    let ty = pad + bandH + Math.round(h * 0.07);
+    parts.push(text(tx, ty, Math.round(h * 0.052), S.ink, "bold",
+      "NETIZEN <tspan fill=\u0022" + S.accent + "\u0022>ID</tspan>"));
+    ty += Math.round(h * 0.085);
+    parts.push(text(tx, ty, Math.round(h * 0.062), S.ink, "bold", xmlEsc(p.username || "···")));
+    ty += Math.round(h * 0.10);
+
+    p.rows.slice(0, 7).forEach((f) => {
+      parts.push(text(tx, ty, Math.round(h * 0.030), S.sub, "bold", xmlEsc(f.label.toUpperCase())));
+      const lw = Math.round(f.label.length * Math.round(h * 0.030) * 0.62);
+      parts.push(text(tx + lw + 8, ty, Math.round(h * 0.038), S.ink, null,
+        xmlEsc(String(f.value).slice(0, 34))));
+      ty += Math.round(h * 0.062);
+    });
+
+    if (p.bio && ty < h - pad * 2) {
+      parts.push('<text x="' + tx + '" y="' + (ty + Math.round(h * 0.027)) +
+        '" font-size="' + Math.round(h * 0.034) + '" font-style="italic" fill="' + S.ink +
+        '">' + xmlEsc(String(p.bio).slice(0, 42)) + "</text>");
+      ty += Math.round(h * 0.055);
+    }
+
+    /* tags (approximate widths — monospace keeps them predictable) */
+    const tagFs = Math.round(h * 0.026);
+    let tagX = tx;
+    const maxX = rx - Math.round(w * 0.075);
+    (p.tags || []).slice(0, 4).forEach((tag) => {
+      const tw = Math.round(tag.length * tagFs * 0.62) + Math.round(h * 0.03);
+      if (tagX + tw > maxX) return;
+      const chipH = Math.round(h * 0.055);
+      parts.push('<rect x="' + tagX + '" y="' + ty + '" width="' + tw + '" height="' + chipH +
+        '" rx="' + Math.round(chipH / 2) + '" fill="' + S.accent + '"/>');
+      parts.push(text(tagX + Math.round(h * 0.015), ty + Math.round(h * 0.012), tagFs, S.bg,
+        "bold", xmlEsc(tag)));
+      tagX += tw + Math.round(w * 0.008);
+    });
+
+        /* rail */
+    parts.push(text(rx, pad + bandH + 4, Math.round(h * 0.026), S.sub, "bold",
+      xmlEsc(p.serial), "end"));
+    const bcH = Math.round(h * 0.22);
+    const bcTop = h - pad - bcH - Math.round(h * 0.07);
+    const bx = rx - 12 * 5;
+    for (let i = 0; i < 12; i++) {
+      const on = ((p.seedNum >> i) & 1) === 1 || i % 5 === 0;
+      parts.push('<rect x="' + (bx + i * 5) + '" y="' + bcTop + '" width="3" height="' + bcH +
+        '" fill="' + (on ? S.ink : "rgba(0,0,0,.18)") + '"/>');
+    }
+    parts.push(text(rx, h - pad - Math.round(h * 0.019), Math.round(h * 0.024), S.sub, null,
+      xmlEsc(p.issueDate), "end"));
+
+    parts.push("</svg>");
+    return parts.join("");
+  }
+
+  /* ---------- standalone HTML ---------- */
+  /* FIX: link στο εξαγόμενο HTML — koulaxizis.github.io → soffitta.site/netizen/ */
+  function standalonePage(data, imageDataUrl) {
+    return '<!DOCTYPE html>\n<html lang="en">\n<head>\n' +
+      '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">\n' +
+      "<title>Netizen ID — " + xmlEsc(data.username) + "</title>\n" +
+      '<meta name="robots" content="index,follow">\n' +
+      "<style>body{margin:0;background:#15121a;display:grid;place-items:center;" +
+      "min-height:100vh;font-family:monospace;color:#f2ecf7}" +
+      "img{max-width:92vw;box-shadow:0 6px 30px rgba(0,0,0,.5);border-radius:14px}" +
+      "footer p{font-size:.75rem}" +
+      "footer a{color:#0fbfa0;text-decoration:none}</style>\n</head>\n<body>\n" +
+      '<img src="' + imageDataUrl + '" alt="Netizen ID card of ' + xmlEsc(data.username) + '">\n' +
+      '<footer><p><a href="https://soffitta.site/netizen/">Make your own Netizen ID</a></p></footer>\n' +
+      "</body>\n</html>";
+  }
+
+  /* ---------- format builders ---------- */
+  function safeName(u, fallback) {
+    return String(u || fallback || "card").replace(/[^a-z0-9_-]/gi, "_") || "card";
+  }
+  function baseName(data) { return "netizen-id_" + safeName(data.username); }
+
+  function rasterExport(ext, mime, quality, warnOnFallback) {
+    return function (data) {
+      const p = payload(data);
+      const cv = drawCardDirect(p, RASTER_W, RASTER_H);
+      const name = baseName(data) + "." + ext;
+      cv.toBlob((blob) => {
+        if (blob && blob.type === mime) return downloadBlob(blob, name);
+        /* browser silently refused the mime (e.g. WEBP on Firefox/Safari) */
+        if (warnOnFallback) notify(T("err_webp"), "err");
+        cv.toBlob((png) => downloadBlob(png, baseName(data) + ".png"), "image/png");
+      }, mime, quality);
+    };
+  }
+
+  /* ---------- public API ---------- */
+  window.__nidExportPayload = payload;   /* bridge kept (unused externally, harmless) */
+  window.__nidDrawCard = drawCardDirect; /* bridge kept */
+
+  window.NetizenExport = {
+    png:  rasterExport("png",  "image/png",  undefined, false),
+    jpg:  rasterExport("jpg",  "image/jpeg", 0.95,      false),
+    webp: rasterExport("webp", "image/webp", 0.95,      true),
+
+    gif: function (data) {
+      const p = payload(data);
+      const cv = drawCardDirect(p, GIF_W, GIF_H);
+      const bytes = window.NIDGif.encode(cv);
+      if (!bytes) {
+        notify(T("err_gif"), "err");
+        cv.toBlob((png) => downloadBlob(png, baseName(data) + ".png"), "image/png");
+        return;
+      }
+      downloadBlob(new Blob([bytes], { type: "image/gif" }), baseName(data) + ".gif");
+    },
+
+    svg: function (data) {
+      const svg = drawCardSVG(payload(data));
+      downloadBlob(new Blob([svg], { type: "image/svg+xml" }), baseName(data) + ".svg");
+    },
+
+    pdf: function (data) {
+      const p = payload(data);
+      const cv = drawCardDirect(p, RASTER_W, RASTER_H);
+      const { jsPDF } = window.jspdf || {};
+      if (!jsPDF) {
+        notify(T("err_pdf"), "err");
+        cv.toBlob((png) => downloadBlob(png, baseName(data) + ".png"), "image/png");
+        return;
+      }
+      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: [PDF_MM_W, PDF_MM_H] });
+      pdf.addImage(cv.toDataURL("image/png"), "PNG", 0, 0, PDF_MM_W, PDF_MM_H);
+      pdf.save(baseName(data) + ".pdf");
+    },
+
+    /* FIX: HTML export filename — baseName() prefix όπως όλα τα formats */
+    html: function (data) {
+      const p = payload(data);
+      const cv = drawCardDirect(p, RASTER_W, RASTER_H);
+      const html = standalonePage(data, cv.toDataURL("image/png"));
+      downloadBlob(new Blob([html], { type: "text/html" }), baseName(data) + ".html");
+    },
+
+    /* ---------- avatar-only exports (profile picture use-case) ---------- */
+    avatarPng: function (avatar, username, transparent) {
+      const st = transparent ? Object.assign({}, avatar, { bg: null }) : avatar;
+      const cv = document.createElement("canvas");
+      cv.width = 1024; cv.height = 1024;   /* 16 × 64 — exact multiple, pixel-perfect */
+      window.NetizenAvatar.paint(cv, st);
+      const name = "netizen-avatar_" + safeName(username, "anon") + ".png";
+      cv.toBlob((blob) => downloadBlob(blob, name), "image/png");
+    },
+
+    avatarSvg: function (avatar, username, transparent) {
+      const st = transparent ? Object.assign({}, avatar, { bg: null }) : avatar;
+      const buf = window.NetizenAvatar.composite(st);
+      const parts = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" ' +
+        'width="16" height="16" shape-rendering="crispEdges">'];
+      for (let y = 0; y < window.NetizenAvatar.SIZE; y++) {
+        let x = 0;
+        while (x < window.NetizenAvatar.SIZE) {
+          const c = buf[y][x];
+          let run = 1;
+          while (x + run < window.NetizenAvatar.SIZE && buf[y][x + run] === c) run++;
+          if (c !== null) { /* transparent pixels produce no rect */
+            parts.push('<rect x="' + x + '" y="' + y + '" width="' + run + '" height="1" fill="' + c + '"/>');
+          }
+          x += run;
+        }
+      }
+      parts.push("</svg>");
+      const name = "netizen-avatar_" + safeName(username, "anon") + ".svg";
+      downloadBlob(new Blob([parts.join("")], { type: "image/svg+xml" }), name);
+    },
+
+    avatarCopy: function (avatar, transparent) {
+      if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
+        notify(T("err_clip"), "err");
+        return;
+      }
+      const st = transparent ? Object.assign({}, avatar, { bg: null }) : avatar;
+      const cv = document.createElement("canvas");
+      cv.width = 512; cv.height = 512;
+      window.NetizenAvatar.paint(cv, st);
+      cv.toBlob((blob) => {
+        navigator.clipboard.write([new ClipboardItem({ "image/png": blob })])
+          .then(() => notify(T("ok_clip"), "ok"))
+          .catch(() => notify(T("err_clip"), "err"));
+      }, "image/png");
+    }
+  };
+})();
+</script>
+
 </body>
 </html>
