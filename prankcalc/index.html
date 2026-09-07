@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prank Calculator — Soffitta</title>
+<meta name="description" content="A suspiciously cute calculator with a troll mode — it refuses to answer. Free, open source, no cookies, no tracking.">
+<link rel="canonical" href="https://soffitta.site/prankcalc/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://soffitta.site/prankcalc/">
+<meta property="og:title" content="Prank Calculator — Soffitta">
+<meta property="og:description" content="A suspiciously cute calculator with a troll mode — it refuses to answer.">
+<!-- TODO (αργότερα): og-cover.png 1200×630 στον φάκελο prankcalc/ -->
+<meta property="og:image" content="https://soffitta.site/prankcalc/og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#150e21">
+<link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23150e21'/%3E%3Cpath d='M10 35L32 11L54 35' fill='none' stroke='%23e6ce9a' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='25' y='40' width='14' height='13' rx='3' fill='%23ff8fc7'/%3E%3C/svg%3E">
+<link rel="manifest" href="../manifest.webmanifest">
+<style>
+:root{
+  --skin-a:#ff8fc7; --skin-b:#c77dff; --skin-dark:#2a1b38; --skin-deep:#1b1230;
+  --page-bg:#150e21; --panel:#221833; --text:#f3ecff; --dim:#a89bc2;
+  --btn:#2e2145; --btn-hover:#3b2b57; --btn-op:var(--skin-a);
+}
+body.light{
+  --page-bg:#fdf4fa; --panel:#ffffff; --text:#2a1b38; --dim:#7a6d92;
+  --btn:#f4ecf7; --btn-hover:#eadcf2; --skin-deep:#ffffff;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+  background:radial-gradient(circle at 50% 0%, var(--panel) 0%, var(--page-bg) 70%);
+  color:var(--text); min-height:100vh;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:16px; transition:background .4s, color .4s;
+}
+.wrap{width:min(360px,94vw)}
+.topbar{display:flex;gap:6px;justify-content:flex-end;align-items:center;margin-bottom:10px}
+.pill{
+  background:transparent;border:1px solid var(--dim);color:var(--dim);
+  border-radius:20px;padding:5px 11px;font-size:.72rem;cursor:pointer;
+  transition:.2s; text-transform:uppercase; letter-spacing:.05em; font-family:inherit;
+}
+.pill:hover{border-color:var(--skin-a);color:var(--skin-a)}
+
+.card{
+  background:var(--panel);border-radius:22px;padding:20px;
+  box-shadow:0 14px 40px rgba(0,0,0,.35);
+}
+
+/* ---------- FACE ---------- */
+.face{width:110px;height:96px;margin:0 auto 8px;display:block}
+.face svg{width:100%;height:100%}
+.eyes-smug,.mouth-smug,.eyes-think,.mouth-think{opacity:0;transition:opacity .18s}
+.face.mock .eyes-open,.face.mock .mouth-idle{opacity:0}
+.face.mock .eyes-smug,.face.mock .mouth-smug{opacity:1}
+.face.calc .eyes-open,.face.calc .mouth-idle{opacity:0}
+.face.calc .eyes-think,.face.calc .mouth-think{opacity:1}
+.eyeblink{animation:blink 4.5s infinite}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}95.5%{transform:scaleY(.08)}}
+.pupil-g{transform-origin:center}
+.wobble{transform-origin:60px 50px}
+.face.mock .wobble{animation:wob .5s ease}
+@keyframes wob{0%,100%{transform:rotate(0)}25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
+
+/* ---------- DISPLAY ---------- */
+.display{
+  background:var(--skin-deep);border-radius:14px;padding:12px 14px;
+  min-height:86px;margin:6px 0 14px;display:flex;flex-direction:column;
+  justify-content:flex-end;text-align:right;overflow:hidden;
+}
+.expr{font-size:.95rem;color:var(--dim);min-height:1.3em;word-break:break-all}
+.result{font-size:1.9rem;font-weight:700;color:var(--text)}
+.result.quip{font-size:1.15rem;color:var(--skin-a);min-height:1.6em;font-weight:600}
+.caret{display:inline-block;width:2px;height:1em;background:var(--skin-a);
+  vertical-align:-2px;animation:caret .7s steps(1) infinite;margin-left:1px}
+@keyframes caret{50%{opacity:0}}
+
+/* ---------- TOGGLES ROW ---------- */
+.row{display:flex;gap:8px;margin-bottom:14px;align-items:center}
+.switch{
+  flex:1;display:flex;background:var(--btn);border-radius:14px;padding:4px;
+  cursor:pointer;position:relative;user-select:none;
+}
+.switch .knob{
+  position:absolute;top:4px;left:4px;width:calc(50% - 4px);height:calc(100% - 8px);
+  background:var(--skin-a);border-radius:10px;transition:left .22s cubic-bezier(.6,-.2,.3,1.4);
+  box-shadow:0 3px 8px rgba(0,0,0,.3);
+}
+.switch.troll .knob{left:50%}
+.switch span{
+  flex:1;z-index:1;text-align:center;font-size:.8rem;font-weight:600;
+  padding:7px 0;color:var(--dim);transition:color .2s;text-transform:uppercase;letter-spacing:.04em;
+}
+.switch:not(.troll) span:first-child,.switch.troll span:last-child{color:var(--skin-dark)}
+.skin-strip{display:flex;gap:6px}
+.skin-dot{
+  width:34px;height:34px;border-radius:12px;border:2px solid transparent;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;background:var(--btn);
+  transition:.15s; padding:0; overflow:hidden;
+}
+.skin-dot svg{width:24px;height:20px}
+.skin-dot:hover{transform:translateY(-2px)}
+.skin-dot.active{border-color:var(--skin-a);background:var(--btn-hover)}
+
+/* ---------- SHARE BUTTON ---------- */
+.share-btn{
+  width:100%;margin-bottom:12px;padding:9px 0;border:1px dashed var(--dim);
+  border-radius:12px;background:transparent;color:var(--dim);font-family:inherit;
+  font-size:.8rem;font-weight:600;cursor:pointer;transition:.2s;display:none;
+}
+.share-btn.show{display:block}
+.share-btn:hover{border-color:var(--skin-a);color:var(--skin-a)}
+
+/* ---------- HISTORY ---------- */
+.hist-btn{position:relative}
+.hist-badge{
+  position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:8px;
+  background:var(--skin-a);color:var(--skin-dark);font-size:.6rem;font-weight:700;
+  display:none;align-items:center;justify-content:center;padding:0 4px;
+}
+.hist-badge.show{display:flex}
+.hist-panel{
+  max-height:0;overflow:hidden;transition:max-height .3s ease, margin .3s ease;
+}
+.hist-panel.open{max-height:220px;margin-bottom:12px}
+.hist-list{
+  background:var(--skin-deep);border-radius:14px;padding:10px 12px;
+  max-height:220px;overflow-y:auto;
+}
+.hist-empty{text-align:center;font-size:.78rem;color:var(--dim);padding:14px 0}
+.hist-item{
+  display:flex;justify-content:space-between;gap:10px;font-size:.82rem;
+  padding:6px 2px;border-bottom:1px solid color-mix(in srgb,var(--dim) 15%,transparent);
+}
+.hist-item:last-child{border-bottom:none}
+.hist-expr{color:var(--dim)}
+.hist-val{font-weight:700;color:var(--text)}
+.hist-val.fake{color:var(--skin-a)}
+.hist-clear{
+  margin-top:8px;width:100%;padding:6px 0;background:transparent;border:none;
+  color:var(--dim);font-size:.72rem;cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.05em;
+}
+.hist-clear:hover{color:var(--skin-a)}
+
+/* ---------- KEYPAD ---------- */
+.pad{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.key{
+  border:none;border-radius:14px;padding:13px 0;font-size:1.15rem;font-weight:600;
+  cursor:pointer;color:var(--text);background:var(--btn);
+  transition:.12s; font-family:inherit;
+}
+.key:hover{background:var(--btn-hover);transform:translateY(-1px)}
+.key:active{transform:translateY(1px) scale(.97)}
+.key.op{background:var(--btn-op,var(--skin-a));color:var(--skin-dark)}
+.key.op:hover{filter:brightness(1.12)}
+.key.eq{background:var(--skin-b);color:var(--skin-dark);font-size:1.3rem}
+.key.util{color:var(--dim);font-size:1rem}
+.key.util:hover{color:var(--text)}
+
+/* ---------- FOOTER ---------- */
+footer{
+  margin-top:26px;padding-top:16px;border-top:1px solid var(--dim);
+  border-top:1px solid color-mix(in srgb, var(--dim) 30%, transparent);
+  font-size:.74rem;color:var(--dim);text-align:center;line-height:1.8;
+}
+footer a{color:var(--text);text-decoration:none;border-bottom:1px dotted var(--dim)}
+footer a:hover{color:var(--skin-a);border-bottom-style:solid}
+
+@media (prefers-reduced-motion:reduce){
+  .eyeblink,.face.mock .wobble,.caret{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <button class="pill" id="langBtn" type="button">ΕΛ</button>
+    <button class="pill" id="histBtn" type="button" data-i18n="history" title="History">History</button>
+    <button class="pill" id="soundBtn" type="button" aria-label="sounds">🔊</button>
+    <button class="pill" id="themeBtn" type="button" aria-label="theme">☾</button>
+  </div>
+
+  <div class="card">
+    <div class="face" id="face"></div>
+
+    <div class="display">
+      <div class="expr" id="expr"></div>
+      <div class="result" id="result">0</div>
+    </div>
+
+    <div class="hist-panel" id="histPanel">
+      <div class="hist-list" id="histList"></div>
+    </div>
+
+    <button class="share-btn" id="shareBtn" type="button" data-i18n="sharePrank">📋 Copy the joke</button>
+
+    <div class="row">
+      <div class="switch" id="modeSwitch" role="switch" tabindex="0" aria-checked="false">
+        <div class="knob"></div>
+        <span data-i18n="modeNormal">Normal</span><span data-i18n="modeTroll">Troll</span>
+      </div>
+      <div class="skin-strip" id="skinStrip"></div>
+    </div>
+
+    <div class="pad" id="pad">
+      <button class="key util" data-k="C" data-i18n-title="clear" title="Clear">AC</button>
+      <button class="key util" data-k="⌫">⌫</button>
+      <button class="key util" data-k="%">%</button>
+      <button class="key op" data-k="/">÷</button>
+
+      <button class="key" data-k="7">7</button><button class="key" data-k="8">8</button>
+      <button class="key" data-k="9">9</button><button class="key op" data-k="*">×</button>
+
+      <button class="key" data-k="4">4</button><button class="key" data-k="5">5</button>
+      <button class="key" data-k="6">6</button><button class="key op" data-k="-">−</button>
+
+      <button class="key" data-k="1">1</button><button class="key" data-k="2">2</button>
+      <button class="key" data-k="3">3</button><button class="key op" data-k="+">+</button>
+
+      <button class="key" data-k="±">±</button><button class="key" data-k="0">0</button>
+      <button class="key" data-k=".">.</button><button class="key eq" data-k="=">=</button>
+    </div>
+  </div>
+
+  <footer>
+    <span data-i18n="designedBy">Designed by</span>
+    <a href="https://koulaxizis.gr" target="_blank" rel="noopener">Christos Koulaxizis</a> ·
+    <a href="../" data-i18n="allApps">All apps</a><br>
+    <span data-i18n="moto">No cookies · No tracking · Open source</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ===================== I18N ===================== */
+const I18N = {
+  en:{
+    designedBy:"Designed by", allApps:"All apps",
+    moto:"No cookies · No tracking · Open source",
+    modeNormal:"Normal", modeTroll:"Troll",
+    history:"History", clear:"Clear",
+    sharePrank:"📋 Copy the joke",
+    histEmpty:"No calculations yet.",
+    copied:"Copied!",
+    shareText:"I asked a calculator:\n{q}\nIt said:\n"{a}"\n(psst… it's actually {n})",
+    revealPrefix:["Okay, fine — it's ","Alright, alright… ","Ugh. It's ","Fine!! It's "],
+    revealSuffix:". Happy now?","Are you proud?"," Don't tell anyone."," Sheesh.",
+    quips:[
+      "I have no idea.","How should I know?","Leave me alone!",
+      "I don't know how to count...","Math is hard.",
+      "I ate the answer. It was tasty.","My paw slipped on the keys.",
+      "Error 404: answer not found.","Have you tried asking a human?",
+      "*pretends to think*","Numbers are scary!!",
+      "The dog deleted my homework.","Zzz... were you talking to me?",
+      "Does it LOOK like I do math?","According to my calculations... nope.",
+      "42? No wait, that one's taken.","I was busy licking my fur."
+    ]
+  },
+  el:{
+    designedBy:"Σχεδιασμένο από τον", allApps:"Όλα τα apps",
+    moto:"Χωρίς cookies · Χωρίς tracking · Ανοιχτού κώδικα",
+    modeNormal:"Κανονική", modeTroll:"Απάτη",
+    history:"Ιστορικό", clear:"Καθαρισμός",
+    sharePrank:"📋 Αντίγραψε την πλάκα",
+    histEmpty:"Καμία πράξη ακόμα.",
+    copied:"Αντιγράφηκε!",
+    shareText:"Ρώτησα έναν υπολογιστή:\n{q}\nΜου είπε:\n"{a}"\n(ψιτ… στην πραγματικότητα είναι {n})",
+    revealPrefix:["Εντάξει, εντάξει — είναι ","Αρκετά… ","Ουφ. Είναι ","Άκρη το βρήκα! Τo "],
+    revealSuffix:". Χαρούμενος τώρα;",". Είσαι περήφανος;",". Μη το πεις σε κανέναν.",". Τι τα θες τόσα…"],
+    quips:[
+      "Δεν έχω ιδέα.","Πώς να το ξέρω;","Άφησέ με ήσυχο!",
+      "Δεν ξέρω να μετράω...","Τα μαθηματικά είναι δύσκολα.",
+      "Έφαγα την απάντηση. Ήταν νόστιμη.","Η πατούσα μου γλίστρησε.",
+      "Λάθος 404: δεν βρέθηκε απάντηση.","Δοκίμασες να ρωτήσεις άνθρωπο;",
+      "*προσποιείται ότι σκέφτεται*","Οι αριθμοί τρομάζουν!!",
+      "Ο σκύλος έφαγε την εργασία μου.","Ζζζ... μιλούσες σε μένα;",
+      "ΣΟΥ ΦΑΙΝΕΤΑΙ ότι κάνω μαθηματικά;","Σύμφωνα με τους υπολογισμούς μου... όχι.",
+      "42; Όχι, αυτό το πήρε άλλος.","Ήμουν απασχολημένος με το γλείψιμο."
+    ]
+  }
+};
+const TRUTH_REVEAL_CHANCE = 1/15;
+
+/* ===================== SKINS ===================== */
+function faceSVG(id){
+  const open  ='<g class="eyes-open"><g class="pupil-g"><circle cx="42" cy="52" r="4.5" fill="#241a30"/><circle cx="78" cy="52" r="4.5" fill="#241a30"/></g></g>';
+  const smug  ='<g class="eyes-smug"><path d="M35 53 Q42 47 49 53" stroke="#241a30" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M71 53 Q78 47 85 53" stroke="#241a30" stroke-width="3.5" fill="none" stroke-linecap="round"/></g>';
+  const think ='<g class="eyes-think"><circle cx="42" cy="52" r="4.5" fill="#241a30"/><circle cx="78" cy="52" r="4.5" fill="#241a30"/><path d="M31 43 Q42 38 53 42" stroke="#241a30" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M67 42 Q78 38 89 43" stroke="#241a30" stroke-width="3" fill="none" stroke-linecap="round"/></g>';
+  const mIdle ='<g class="mouth-idle"><path d="M52 66 Q60 73 68 66" stroke="#241a30" stroke-width="3" fill="none" stroke-linecap="round"/></g>';
+  const mSmug ='<g class="mouth-smug"><path d="M50 68 Q55 63 60 68 Q65 73 70 68" stroke="#241a30" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="35" cy="63" rx="5" ry="3" fill="var(--blush)" opacity=".7"/><ellipse cx="85" cy="63" rx="5" ry="3" fill="var(--blush)" opacity=".7"/></g>';
+  const mThink='<g class="mouth-think"><path d="M52 67 L68 67" stroke="#241a30" stroke-width="3" stroke-linecap="round"/></g>';
+  const eyes=open+smug+think, mouths=mIdle+mSmug+mThink;
+
+  const shapes={
+    neko:'<path d="M18 34 L24 8 L40 26 Z" fill="var(--fur)"/><path d="M102 34 L96 8 L80 26 Z" fill="var(--fur)"/>'+
+         '<ellipse cx="60" cy="58" rx="46" ry="42" fill="var(--fur)"/>',
+    dog:'<ellipse cx="20" cy="58" rx="12" ry="24" fill="var(--furDark)"/><ellipse cx="100" cy="58" rx="12" ry="24" fill="var(--furDark)"/>'+
+        '<ellipse cx="60" cy="60" rx="46" ry="42" fill="var(--fur)"/>',
+    alien:'<path d="M52 10 L60 26 L68 10" stroke="var(--fur)" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="52" cy="10" r="3.5" fill="var(--accent)"/>'+
+          '<ellipse cx="60" cy="62" rx="42" ry="40" fill="var(--fur)"/>',
+    robot:'<rect x="16" y="22" width="88" height="76" rx="16" fill="var(--fur)"/><path d="M60 22 L60 8" stroke="var(--fur)" stroke-width="4"/><circle cx="60" cy="7" r="5" fill="var(--accent)"/>'+
+          '<rect x="46" y="14" width="28" height="8" rx="4" fill="var(--fur)"/>',
+    duck:'<circle cx="60" cy="58" r="46" fill="var(--fur)"/><path d="M46 68 Q60 84 74 68 Q60 76 46 68 Z" fill="var(--accent)"/>'
+  };
+  const deco = id==="neko" ? '' :
+               id==="dog"  ? '<path d="M30 30 Q22 20 26 10" stroke="var(--furDark)" stroke-width="4" fill="none" stroke-linecap="round"/>' :
+               id==="duck" ? '<circle cx="60" cy="18" r="6" fill="var(--fur)"/>' :
+               '';
+  return '<svg viewBox="0 0 120 104" aria-hidden="true"><g class="wobble">'+shapes[id]+deco+eyes+mouths+'</g></svg>';
+}
+
+const SKINS=[
+  {id:"neko",  a:"#ff8fc7", b:"#c77dff", fur:"#ffb3d9", furDark:"#e98bc4", blush:"#ff6fa8"},
+  {id:"dog",   a:"#ffb95e", b:"#f08a5d", fur:"#ffd9a0", furDark:"#e8a765", blush:"#ff9e6d"},
+  {id:"alien", a:"#8aff80", b:"#39d98a", fur:"#b8ffb0", furDark:"#8fe888", blush:"#5cff8f"},
+  {id:"robot", a:"#7cd5ff", b:"#679bff", fur:"#cfeaff", furDark:"#9fd4f5", blush:"#a0e9ff"},
+  {id:"duck",  a:"#ffe066", b:"#ffab4a", fur:"#fff3b0", furDark:"#ffe066", blush:"#ffc94d"}
+];
+
+/* ===================== STATE ===================== */
+const LS_KEY="soffitta-prankalc";
+let state={lang:"en",theme:"dark",skin:"neko",troll:false,sound:true,hist:[]};
+try{ const s=JSON.parse(localStorage.getItem(LS_KEY)||"{}"); Object.assign(state,s);}catch(e){}
+if(!Array.isArray(state.hist)) state.hist=[];
+/* κοινή γλώσσα σουίτας: ό,τι διάλεξε ο επισκέπτης σε άλλο app, ισχύει και εδώ */
+try{
+  const suiteLang = localStorage.getItem("soffitta.lang");
+  if(suiteLang === "en" || suiteLang === "el") state.lang = suiteLang;
+}catch(e){}
+function save(){ try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){} }
+
+let expr="", lastQuip=false, lastHidden=null, typingTimer=null, moodTimer=null;
+let prevAnswer=null;
+
+const $=id=>document.getElementById(id);
+const faceEl=$("face"), exprEl=$("expr"), resEl=$("result"),
+      padEl=$("pad"), stripEl=$("skinStrip"),
+      modeSw=$("modeSwitch"), langBtn=$("langBtn"), themeBtn=$("themeBtn"),
+      soundBtn=$("soundBtn"), histBtn=$("histBtn"), histPanel=$("histPanel"),
+      histList=$("histList"), shareBtn=$("shareBtn");
+
+/* ===================== AUDIO (WebAudio, εντελώς τοπικό) ===================== */
+let actx=null;
+function audio(){
+  if(!state.sound) return null;
+  try{ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
+       if(actx.state==="suspended") actx.resume();
+       return actx;
+  }catch(e){ return null; }
+}
+function blip(freq,dur,type,vol,slideTo){
+  const c=audio(); if(!c) return;
+  try{
+    const o=c.createOscillator(), g=c.createGain();
+    o.type=type||"sine"; o.frequency.value=freq;
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo,c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.06,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur+0.02);
+  }catch(e){}
+}
+const KEYSOUND={ digit:n=>blip(520+parseInt(n)*38,0.06,"triangle",0.05),
+                 op:  ()=>blip(420,0.09,"square",0.045),
+                 util:()=>blip(330,0.08,"triangle",0.05),
+                 eq:  ()=>blip(660,0.16,"sine",0.06,880),
+                 skin:()=>blip(500,0.12,"sine",0.05,900),
+                 tick:()=>blip(880,0.02,"square",0.018) };
+/* ================= VOICES PER SKIN ================= */
+/* νιαούρι: δύο αρμονικές με καμπύλη πάνω-κάτω */
+function voiceNeko(){
+  const c=audio(); if(!c) return;
+  try{
+    [[520,0.06],[780,0.03]].forEach(([f,v])=>{
+      const o=c.createOscillator(), g=c.createGain();
+      o.type="sawtooth";
+      o.frequency.setValueAtTime(f*0.7,c.currentTime);
+      o.frequency.linearRampToValueAtTime(f*1.25,c.currentTime+0.12);
+      o.frequency.linearRampToValueAtTime(f*0.85,c.currentTime+0.32);
+      g.gain.setValueAtTime(0.0001,c.currentTime);
+      g.gain.linearRampToValueAtTime(v,c.currentTime+0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+0.35);
+      const lp=c.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=1600;
+      o.connect(lp); lp.connect(g); g.connect(c.destination);
+      o.start(); o.stop(c.currentTime+0.4);
+    });
+  }catch(e){}
+}
+/* γάβ: χαμηλό saw με κάτω pitch sweep, διπλή «βαριά» πνοή */
+function voiceDog(){
+  const c=audio(); if(!c) return;
+  try{
+    const o=c.createOscillator(), g=c.createGain();
+    o.type="sawtooth";
+    o.frequency.setValueAtTime(170,c.currentTime);
+    o.frequency.exponentialRampToValueAtTime(95,c.currentTime+0.18);
+    g.gain.setValueAtTime(0.0001,c.currentTime);
+    g.gain.linearRampToValueAtTime(0.11,c.currentTime+0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+0.24);
+    const lp=c.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=600; lp.Q.value=2;
+    o.connect(lp); lp.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+0.28);
+    /* δεύτερο κοντό γάβ σαν ηχώ */
+    setTimeout(()=>{
+      const c2=audio(); if(!c2) return;
+      const o2=c2.createOscillator(), g2=c2.createGain();
+      o2.type="sawtooth";
+      o2.frequency.setValueAtTime(150,c2.currentTime);
+      o2.frequency.exponentialRampToValueAtTime(85,c2.currentTime+0.15);
+      g2.gain.setValueAtTime(0.0001,c2.currentTime);
+      g2.gain.linearRampToValueAtTime(0.07,c2.currentTime+0.02);
+      g2.gain.exponentialRampToValueAtTime(0.0001,c2.currentTime+0.2);
+      const lp2=c2.createBiquadFilter(); lp2.type="lowpass"; lp2.frequency.value=550;
+      o2.connect(lp2); lp2.connect(g2); g2.connect(c2.destination);
+      o2.start(); o2.stop(c2.currentTime+0.24);
+    },170);
+  }catch(e){}
+}
+/* εξωγήινο: boop-boop ascending με vibrato */
+function voiceAlien(){
+  const c=audio(); if(!c) return;
+  try{
+    [[380,0],[520,120]].forEach(([f,delay],idx)=>{
+      const o=c.createOscillator(), g=c.createGain(),
+            lfo=c.createOscillator(), lg=c.createGain();
+      o.type="sine";
+      o.frequency.setValueAtTime(f,c.currentTime+delay/1000);
+      lfo.frequency.value=14; lg.gain.value=f*0.05;  /* vibrato */
+      lfo.connect(lg); lg.connect(o.frequency);
+      g.gain.setValueAtTime(0.0001,c.currentTime+delay/1000);
+      g.gain.linearRampToValueAtTime(0.07,c.currentTime+delay/1000+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+delay/1000+0.16);
+      o.connect(g); g.connect(c.destination);
+      o.start(c.currentTime+delay/1000); o.stop(c.currentTime+delay/1000+0.18);
+      lfo.start(c.currentTime+delay/1000); lfo.stop(c.currentTime+delay/1000+0.18);
+    });
+  }catch(e){}
+}
+/* ρομποτικό bzzt: square με γρήγορη συχνοτική τρεμούλα */
+function voiceRobot(){
+  const c=audio(); if(!c) return;
+  try{
+    const o=c.createOscillator(), g=c.createGain(),
+          lfo=c.createOscillator(), lg=c.createGain();
+    o.type="square";
+    o.frequency.setValueAtTime(240,c.currentTime);
+    o.frequency.linearRampToValueAtTime(200,c.currentTime+0.3);
+    lfo.type="square"; lfo.frequency.value=32; lg.gain.value=55; /* τρεμουλιαστή τρεμούλα */
+    lfo.connect(lg); lg.connect(o.frequency);
+    g.gain.setValueAtTime(0.0001,c.currentTime);
+    g.gain.linearRampToValueAtTime(0.05,c.currentTime+0.02);
+    g.gain.setValueAtTime(0.05,c.currentTime+0.24);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+0.34);
+    const hp=c.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=150;
+    o.connect(hp); hp.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+0.36);
+    lfo.start(); lfo.stop(c.currentTime+0.36);
+  }catch(e){}
+}
+/* κουάκ: square με γρήγορη διαμόρφωση έντασης (nasal AM) και ελαφρύ pitch drop */
+function voiceDuck(){
+  const c=audio(); if(!c) return;
+  try{
+    const o=c.createOscillator(), g=c.createGain(),
+          am=c.createOscillator(), ag=c.createGain();
+    o.type="square";
+    o.frequency.setValueAtTime(340,c.currentTime);
+    o.frequency.linearRampToValueAtTime(290,c.currentTime+0.14);
+    am.frequency.value=38; ag.gain.value=0.04; /* «ρουφηχτό» AM */
+    am.connect(ag); ag.connect(g.gain);
+    g.gain.setValueAtTime(0.05,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+0.16);
+    const bp=c.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=700; bp.Q.value=1.5;
+    o.connect(bp); bp.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+0.18);
+    am.start(); am.stop(c.currentTime+0.18);
+    /* δεύτερο κουάκ, πιο ψηλό */
+    setTimeout(()=>{
+      const c2=audio(); if(!c2) return;
+      const o2=c2.createOscillator(), g2=c2.createGain();
+      o2.type="square";
+      o2.frequency.setValueAtTime(395,c2.currentTime);
+      o2.frequency.linearRampToValueAtTime(320,c2.currentTime+0.12);
+      g2.gain.setValueAtTime(0.045,c2.currentTime);
+      g2.gain.exponentialRampToValueAtTime(0.0001,c2.currentTime+0.14);
+      const bp2=c2.createBiquadFilter(); bp2.type="bandpass"; bp2.frequency.value=760; bp2.Q.value=1.5;
+      o2.connect(bp2); bp2.connect(g2); g2.connect(c2.destination);
+      o2.start(); o2.stop(c2.currentTime+0.16);
+    },140);
+  }catch(e){}
+}
+/* dispatcher: μία φωνή ανά skin */
+function speak(){
+  ({neko:voiceNeko, dog:voiceDog, alien:voiceAlien,
+    robot:voiceRobot, duck:voiceDuck}[state.skin]||voiceNeko)();
+}
+function chime(){ blip(880,0.18,"sine",0.05,1320); setTimeout(()=>blip(1180,0.22,"sine",0.045,1560),90); }
+
+/* ===================== SKIN / THEME / LANG ===================== */
+function applySkin(id,silent){
+  const sk=SKINS.find(s=>s.id===id)||SKINS[0];
+  state.skin=sk.id;
+  const r=document.documentElement.style;
+  r.setProperty("--skin-a",sk.a); r.setProperty("--skin-b",sk.b);
+  r.setProperty("--btn-op",sk.a); r.setProperty("--fur",sk.fur);
+  r.setProperty("--furDark",sk.furDark); r.setProperty("--blush",sk.blush);
+  r.setProperty("--skin-dark", state.theme==="light" ? "#ffffff" : "#1b1230");
+  faceEl.innerHTML=faceSVG(sk.id);
+  document.querySelectorAll(".skin-dot").forEach(d=>d.classList.toggle("active",d.dataset.skin===sk.id));
+  if(!silent) KEYSOUND.skin();
+  save();
+}
+function applyTheme(){
+  document.body.classList.toggle("light",state.theme==="light");
+  themeBtn.textContent = state.theme==="light" ? "☀" : "☾";
+  applySkin(state.skin,true);
+}
+function applyLang(){
+  document.documentElement.lang = state.lang;
+  langBtn.textContent = state.lang==="en" ? "ΕΛ" : "EN";
+  const t=I18N[state.lang];
+  document.querySelectorAll("[data-i18n]").forEach(el=>{
+    el.textContent=t[el.getAttribute("data-i18n")]||el.textContent;
+  });
+  try{ localStorage.setItem("soffitta.lang", state.lang); }catch(e){}
+  renderHist();
+  save();
+}
+function applyTroll(){
+  modeSw.classList.toggle("troll",state.troll);
+  modeSw.setAttribute("aria-checked",String(state.troll));
+  shareBtn.classList.toggle("show", state.troll && lastHidden!==null);
+  save();
+}
+function applySound(){
+  soundBtn.textContent = state.sound ? "🔊" : "🔇";
+}
+
+/* ===================== HISTORY ===================== */
+const HIST_MAX=20;
+function pushHist(expression,value,isFake){
+  state.hist.push({e:expression, v:String(value), f:!!isFake});
+  if(state.hist.length>HIST_MAX) state.hist.shift();
+  save(); renderHist();
+}
+function renderHist(){
+  histList.innerHTML="";
+  const t=I18N[state.lang];
+  if(!state.hist.length){
+    histList.innerHTML='<div class="hist-empty">'+t.histEmpty+'</div>';
+  }else{
+    state.hist.slice().reverse().forEach(h=>{
+      const row=document.createElement("div"); row.className="hist-item";
+      const e=document.createElement("span"); e.className="hist-expr"; e.textContent=h.e+" =";
+      const v=document.createElement("span"); v.className="hist-val"+(h.f?" fake":""); v.textContent=h.v;
+      row.append(e,v); histList.appendChild(row);
+    });
+    const cl=document.createElement("button"); cl.type="button"; cl.className="hist-clear";
+    cl.textContent=t.clear;
+    cl.onclick=()=>{ state.hist=[]; save(); renderHist(); KEYSOUND.util(); };
+    histList.appendChild(cl);
+  }
+}
+function fakeValue(real){
+  /* ψεύτικο αποτέλεσμα: «λογικά πιθανό» αλλά λάθος */
+  const mag=Math.abs(real);
+  if(mag<2) return Math.round((real + (Math.random()<0.5?-1:1)*(1+Math.random()*8))*10)/10;
+  const err=1+(Math.random()<0.5?-1:1)*(0.08+Math.random()*0.5); /* ±8–58% */
+  let f=real*err;
+  f=Math.round(f*10)/10;
+  if(Math.abs(f-real)<0.1) f=real+ (mag<10?2:Math.round(mag*0.2));
+  return f;
+}
+
+/* ===================== CALC ===================== */
+let evalCache=null;
+function currentNum(){
+  const m=expr.match(/(\d+\.?\d*)$/); return m?m[1]:"";
+}
+function pressKey(k){
+  clearTypewriter();
+  if(lastQuip){ expr=""; lastQuip=false; setMood(null); }
+
+  if(k==="C"){ expr=""; evalCache=null; showResult("0",false); setMood(null); KEYSOUND.util(); return; }
+  if(k==="⌫"){
+    if(lastQuip) return;
+    if(currentNum()==="" && /[+\-*/]/.test(expr.slice(-1))) expr=expr.slice(0,-1);
+    else expr=expr.replace(/(\d+\.?\d*)$/,"");
+    expr=expr.replace(/[+\-*/]$/,"");
+    updateDisplay(false); KEYSOUND.util(); return;
+  }
+  if(k==="±"){
+    if(lastQuip) return;
+    const n=currentNum();
+    if(n){ expr = expr.slice(0,expr.length-n.length) + (n.startsWith("-")?n.slice(1):"-"+n); updateDisplay(false); KEYSOUND.util();}
+    return;
+  }
+  if(k==="%"){
+    if(lastQuip) return;
+    const n=currentNum(); if(!n) return;
+    expr = expr.slice(0,expr.length-n.length)+String(parseFloat(n)/100);
+    updateDisplay(false); KEYSOUND.util(); return;
+  }
+  if(k==="="){ doEquals(); return; }
+
+  if(/[+\-*/]/.test(k)){
+    if(expr===""){ if(k!=="-" && prevAnswer==null) return; if(expr==="") expr=String(prevAnswer??0); }
+    if(/[+\-*/]$/.test(expr)) expr=expr.slice(0,-1);
+    expr+=k; updateDisplay(false); KEYSOUND.op(); return;
+  }
+  if(k==="."){
+    if(currentNum().includes(".")) return;
+    if(currentNum()==="") expr+="0";
+    expr+=k; updateDisplay(false); KEYSOUND.digit("."); return;
+  }
+  if(/^\d$/.test(k)){
+    if(currentNum()==="0") expr=expr.slice(0,-1);
+    expr+=k; updateDisplay(false); KEYSOUND.digit(k); return;
+  }
+}
+
+function doEquals(){
+  if(lastQuip){ lastQuip=false; }
+  if(expr===""||/[+\-*/.]$/.test(expr)){ updateDisplay(false); return; }
+  setMood("calc");
+  KEYSOUND.eq();
+  setTimeout(()=>{
+    let val;
+    try{
+      const safe=expr;
+      if(!/^[\d+\-.*\/ ()]+$/.test(safe)) throw 0;
+      val=Function('"use strict";return('+safe+')')();
+      if(typeof val!=="number"||!isFinite(val)) throw 0;
+    }catch(e){ val=null; }
+    evalCache=val; prevAnswer=val;
+    const prettyExpr = expr.replace(/\*/g,"×").replace(/\//g,"÷");
+
+    if(val===null){
+      showResult(I18N[state.lang].quips[0],true); /* fallback */
+      setMood(null); return;
+    }
+
+    if(state.troll){
+      const reveal = Math.random()<TRUTH_REVEAL_CHANCE;
+      if(reveal){
+        /* ---- ΣΠΑΝΙΑ ΑΠΟΚΑΛΥΨΗ: αληθινή απάντηση με αστεία σημείωση ---- */
+        lastQuip=false; lastHidden=null; shareBtn.classList.remove("show");
+        const t=I18N[state.lang];
+        const pre=t.revealPrefix[Math.floor(Math.random()*t.revealPrefix.length)];
+        const suf=t.revealSuffix[Math.floor(Math.random()*t.revealSuffix.length)];
+        const msg=pre+fmt(val)+suf;
+        setMood("mock"); speak(); chime();
+        typeOut(msg);
+        pushHist(prettyExpr,val,false);
+      }else{
+        /* ---- ΚΑΝΟΝΙΚΗ ΦΑΡΣΑ ---- */
+        lastQuip=true; lastHidden={expr:prettyExpr, real:fmt(val)};
+        shareBtn.classList.add("show");
+        const q=I18N[state.lang].quips;
+        let quip=q[Math.floor(Math.random()*q.length)];
+        const extra={ neko:{en:"Nyan~ numbers are scary!",el:"Νιάου~ οι αριθμοί τρομάζουν!"},
+                      dog:{en:"Woof. I chase balls, not digits.",el:"Γάβ. Κυνηγάω μπαλάκια, όχι ψηφία."},
+                      alien:{en:"Your Earth math is irrelevant here.",el:"Τα γήινα μαθηματικά δεν με αφορούν."},
+                      robot:{en:"BZZT. Logic module on vacation.",el:"ΜΠΡΡΡ. Η λογική μονάδα κάνει διακοπές."},
+                      duck:{en:"Quack. I only count breadcrumbs.",el:"Κουάκ. Μετράω μόνο ψίχουλα."}}[state.skin];
+        if(extra && Math.random()<0.4) quip = state.lang==="en"?extra.en:extra.el;
+        setMood("mock"); speak();
+        typeOut(quip);
+        /* ψεύτικο ιστορικό: το panel «θυμάται» ΛΑΘΟΣ αποτελέσματα επίτηδες */
+        pushHist(prettyExpr, fakeValue(val), true);
+      }
+    }else{
+      showResult(fmt(val),false);
+      setMood(null);
+      pushHist(prettyExpr,val,false);
+    }
+  },260);
+}
+
+function fmt(v){
+  if(v===null||v===undefined) return "???";
+  const r=Math.round(v*1e10)/1e10;
+  return String(r);
+}
+function updateDisplay(){
+  exprEl.textContent=expr||"0";
+  const n=currentNum();
+  showResult(n||"0",false);
+}
+function showResult(txt,isQuip){
+  resEl.textContent=txt;
+  resEl.classList.toggle("quip",isQuip);
+}
+function typeOut(text){
+  clearTypewriter();
+  resEl.classList.add("quip"); resEl.textContent="";
+  let i=0;
+  typingTimer=setInterval(()=>{
+    resEl.textContent=text.slice(0,++i);
+    if(i%3===0) KEYSOUND.tick();
+    if(i>=text.length){ clearInterval(typingTimer); typingTimer=null; }
+  },26);
+}
+function clearTypewriter(){ if(typingTimer){clearInterval(typingTimer);typingTimer=null;} }
+
+/* ===================== SHARE PRANK ===================== */
+function sharePrank(){
+  if(!lastHidden) return;
+  const t=I18N[state.lang];
+  const txt=t.shareText
+    .replace("{q}",lastHidden.expr)
+    .replace("{a}",resEl.textContent||t.quips[0])
+    .replace("{n}",lastHidden.real);
+  const done=()=>{ chime(); flashToast(t.copied); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done).catch(()=>fallbackCopy(txt,done));
+  }else fallbackCopy(txt,done);
+}
+function fallbackCopy(txt,done){
+  try{
+    const ta=document.createElement("textarea");
+    ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); document.body.removeChild(ta);
+    done();
+  }catch(e){ flashToast("Ctrl+C"); }
+}
+function flashToast(msg){
+  const old=resEl.textContent;
+  const d=document.createElement("div");
+  d.textContent=msg;
+  d.style.cssText="position:fixed;left:50%;top:20px;transform:translateX(-50%);"+
+    "background:var(--skin-a);color:var(--skin-dark);padding:8px 18px;border-radius:20px;"+
+    "font-size:.8rem;font-weight:700;z-index:99;transition:opacity .4s;pointer-events:none;";
+  document.body.appendChild(d);
+  setTimeout(()=>{d.style.opacity="0";setTimeout(()=>d.remove(),450);},1400);
+}
+
+/* ===================== MOOD ===================== */
+function setMood(m){
+  if(moodTimer){clearTimeout(moodTimer);moodTimer=null;}
+  faceEl.classList.remove("mock","calc");
+  if(m==="mock"){ faceEl.classList.add("mock");
+    moodTimer=setTimeout(()=>{faceEl.classList.remove("mock");},4000);
+  }
+  else if(m==="calc"){ faceEl.classList.add("calc"); }
+}
+
+/* ===================== UI WIRING ===================== */
+padEl.addEventListener("click",e=>{
+  const b=e.target.closest(".key"); if(b) pressKey(b.dataset.k);
+});
+modeSw.addEventListener("click",()=>{
+  state.troll=!state.troll; applyTroll(); KEYSOUND.op();
+  if(!state.troll){ shareBtn.classList.remove("show"); lastHidden=null; }
+});
+modeSw.addEventListener("keydown",e=>{
+  if(e.key===" "||e.key==="Enter"){e.preventDefault();state.troll=!state.troll;applyTroll();}
+});
+langBtn.addEventListener("click",()=>{ state.lang=state.lang==="en"?"el":"en"; applyLang(); KEYSOUND.util(); });
+themeBtn.addEventListener("click",()=>{ state.theme=state.theme==="light"?"dark":"light"; applyTheme(); KEYSOUND.util(); });
+soundBtn.addEventListener("click",()=>{ state.sound=!state.sound; applySound(); save(); if(state.sound) chime(); });
+shareBtn.addEventListener("click",sharePrank);
+histBtn.addEventListener("click",()=>{
+  histPanel.classList.toggle("open"); KEYSOUND.util();
+});
+
+/* skins strip */
+SKINS.forEach(sk=>{
+  const b=document.createElement("button");
+  b.type="button"; b.className="skin-dot"; b.dataset.skin=sk.id;
+  b.title=sk.id.charAt(0).toUpperCase()+sk.id.slice(1);
+  b.setAttribute("aria-label",b.title+" skin");
+  b.innerHTML=faceSVG(sk.id)
+    .replace(/var\(--fur\)/g,sk.fur).replace(/var\(--furDark\)/g,sk.furDark)
+    .replace(/var\(--accent\)/g,sk.b).replace(/var\(--blush\)/g,sk.blush);
+  b.onclick=()=>applySkin(sk.id);
+  stripEl.appendChild(b);
+});
+
+/* keyboard */
+document.addEventListener("keydown",e=>{
+  if(e.ctrlKey||e.metaKey||e.altKey) return;
+  const map={"Enter":"=","Backspace":"⌫","Escape":"C","Delete":"C","+":"+","-":"-","*":"*","/":"/","%":"%",".":"."};
+  if(/^[0-9]$/.test(e.key)) pressKey(e.key);
+  else if(map[e.key]){ e.preventDefault(); pressKey(map[e.key]); }
+});
+
+/* ===================== INIT ===================== */
+applyTheme(); applySkin(state.skin,true); applyTroll(); applySound(); applyLang();
+renderHist(); showResult("0",false);
+})();
+</script>
+</body>
+</html>
